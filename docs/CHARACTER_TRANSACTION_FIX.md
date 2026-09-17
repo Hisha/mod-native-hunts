@@ -1,3 +1,7 @@
+HISTORICAL RECORD — captured before the mod-native-hunts cleanup.
+Legacy modes, old installation paths, and earlier test results below are archival,
+not current instructions or fresh validation. See ../NATIVE_HUNTS_CLEANUP.md.
+
 # mod-hunts CharacterDatabase worker transaction fix
 
 Apply this changed-files-only ZIP at the AzerothCore root. It contains only `modules/mod-hunts/...` paths. Original files under `/home/smithkt/git/mod-hunts` were read and copied, not edited. No core, SQL schema, statement registration, Content Manager integration, Seal quantity or migration state-machine change is included.

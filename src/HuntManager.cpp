@@ -714,30 +714,30 @@ bool IsSpecCompatibleEquipment(uint32 spec, ItemTemplate const& item)
     return true;
 }
 
-bool MatchesSealStoreSlot(ItemTemplate const& item, hunts::SealStoreSlot slot)
+bool MatchesHuntEquipmentSlot(ItemTemplate const& item, hunts::HuntEquipmentSlot slot)
 {
     switch (slot)
     {
-        case hunts::SealStoreSlot::Weapon:
+        case hunts::HuntEquipmentSlot::Weapon:
             return item.Class == ITEM_CLASS_WEAPON && item.InventoryType != INVTYPE_WEAPONOFFHAND &&
                 item.InventoryType != INVTYPE_RANGED && item.InventoryType != INVTYPE_RANGEDRIGHT &&
                 item.InventoryType != INVTYPE_THROWN && item.InventoryType != INVTYPE_RELIC;
-        case hunts::SealStoreSlot::Head: return item.InventoryType == INVTYPE_HEAD;
-        case hunts::SealStoreSlot::Neck: return item.InventoryType == INVTYPE_NECK;
-        case hunts::SealStoreSlot::Shoulder: return item.InventoryType == INVTYPE_SHOULDERS;
-        case hunts::SealStoreSlot::Back: return item.InventoryType == INVTYPE_CLOAK;
-        case hunts::SealStoreSlot::Chest: return item.InventoryType == INVTYPE_CHEST || item.InventoryType == INVTYPE_ROBE;
-        case hunts::SealStoreSlot::Wrist: return item.InventoryType == INVTYPE_WRISTS;
-        case hunts::SealStoreSlot::Hands: return item.InventoryType == INVTYPE_HANDS;
-        case hunts::SealStoreSlot::Waist: return item.InventoryType == INVTYPE_WAIST;
-        case hunts::SealStoreSlot::Legs: return item.InventoryType == INVTYPE_LEGS;
-        case hunts::SealStoreSlot::Feet: return item.InventoryType == INVTYPE_FEET;
-        case hunts::SealStoreSlot::Ring: return item.InventoryType == INVTYPE_FINGER;
-        case hunts::SealStoreSlot::Trinket: return item.InventoryType == INVTYPE_TRINKET;
-        case hunts::SealStoreSlot::OffHand:
+        case hunts::HuntEquipmentSlot::Head: return item.InventoryType == INVTYPE_HEAD;
+        case hunts::HuntEquipmentSlot::Neck: return item.InventoryType == INVTYPE_NECK;
+        case hunts::HuntEquipmentSlot::Shoulder: return item.InventoryType == INVTYPE_SHOULDERS;
+        case hunts::HuntEquipmentSlot::Back: return item.InventoryType == INVTYPE_CLOAK;
+        case hunts::HuntEquipmentSlot::Chest: return item.InventoryType == INVTYPE_CHEST || item.InventoryType == INVTYPE_ROBE;
+        case hunts::HuntEquipmentSlot::Wrist: return item.InventoryType == INVTYPE_WRISTS;
+        case hunts::HuntEquipmentSlot::Hands: return item.InventoryType == INVTYPE_HANDS;
+        case hunts::HuntEquipmentSlot::Waist: return item.InventoryType == INVTYPE_WAIST;
+        case hunts::HuntEquipmentSlot::Legs: return item.InventoryType == INVTYPE_LEGS;
+        case hunts::HuntEquipmentSlot::Feet: return item.InventoryType == INVTYPE_FEET;
+        case hunts::HuntEquipmentSlot::Ring: return item.InventoryType == INVTYPE_FINGER;
+        case hunts::HuntEquipmentSlot::Trinket: return item.InventoryType == INVTYPE_TRINKET;
+        case hunts::HuntEquipmentSlot::OffHand:
             return item.InventoryType == INVTYPE_SHIELD || item.InventoryType == INVTYPE_HOLDABLE ||
                 item.InventoryType == INVTYPE_WEAPONOFFHAND;
-        case hunts::SealStoreSlot::Relic:
+        case hunts::HuntEquipmentSlot::Relic:
             return item.InventoryType == INVTYPE_RELIC || item.InventoryType == INVTYPE_RANGED ||
                 item.InventoryType == INVTYPE_RANGEDRIGHT || item.InventoryType == INVTYPE_THROWN;
         default:
@@ -817,7 +817,7 @@ void HuntManager::RemoveReturnRift(HuntRuntime& runtime, char const* reason)
         return;
     ObjectGuid const objectGuid = runtime.ReturnRiftGuid;
     runtime.ReturnRiftGuid.Clear();
-    LOG_DEBUG("module.hunts", "[Hunts] Return Rift cleanup character {} hunt {}: {}.",
+    LOG_DEBUG("module.native_hunts", "[NativeHunts] Return Rift cleanup character {} hunt {}: {}.",
         runtime.CharacterGuid, runtime.PreyId, reason);
     // Keep the shared object until the last credited hunter loses their grant.
     for (auto const& [guid, other] : _runtimes)
@@ -842,7 +842,7 @@ bool HuntManager::OnReturnRiftUsed(Player* player, GameObject* object, std::stri
     auto reject = [&](char const* reason)
     {
         message = reason;
-        LOG_DEBUG("module.hunts", "[Hunts] Return Rift rejected character {}: {}",
+        LOG_DEBUG("module.native_hunts", "[NativeHunts] Return Rift rejected character {}: {}",
             player ? player->GetGUID().GetCounter() : 0, reason);
         return false;
     };
@@ -892,7 +892,7 @@ bool HuntManager::OnReturnRiftUsed(Player* player, GameObject* object, std::stri
     if (!player->TeleportTo(spawn->mapid, arrival.GetPositionX(), arrival.GetPositionY(),
         arrival.GetPositionZ(), arrival.GetOrientation()))
         return reject("Teleport failed. Your return opportunity is still available.");
-    LOG_DEBUG("module.hunts", "[Hunts] Return Rift used by character {} hunt {} to Huntmaster spawn {}.",
+    LOG_DEBUG("module.native_hunts", "[NativeHunts] Return Rift used by character {} hunt {} to Huntmaster spawn {}.",
         runtime.CharacterGuid, runtime.PreyId, runtime.GiverSpawnId);
     RemoveReturnRift(runtime, "used");
     return true;
@@ -1028,7 +1028,7 @@ void HuntManager::LoadDefinitions()
         } while (result->NextRow());
     }
 
-    LOG_INFO("server.loading", "[Hunts] Bulk-loaded {} ordinary creature spawn sample(s) for final-site auto-level analysis.",
+    LOG_INFO("server.loading", "[NativeHunts] Bulk-loaded {} ordinary creature spawn sample(s) for final-site auto-level analysis.",
         loadedMobSamples);
 
     constexpr uint32 MinAutoLevelSamples = 8;
@@ -1076,7 +1076,7 @@ void HuntManager::LoadDefinitions()
             ++autoGood;
     }
 
-    LOG_INFO("server.loading", "[Hunts] Auto-level final sites: {} good, {} sparse, {} no-mob, {} outside-zone.",
+    LOG_INFO("server.loading", "[NativeHunts] Auto-level final sites: {} good, {} sparse, {} no-mob, {} outside-zone.",
         autoGood, autoSparse, autoEmpty, autoOutside);
 
     if (QueryResult result = WorldDatabase.Query(
@@ -1120,7 +1120,7 @@ void HuntManager::LoadDefinitions()
         } while (result->NextRow());
     }
 
-    LOG_INFO("module", "[Hunts] Discovered {} additional city-direction NPC alias(es) from registered guard gossip menus.",
+    LOG_INFO("module", "[NativeHunts] Discovered {} additional city-direction NPC alias(es) from registered guard gossip menus.",
         discoveredGuardAliases);
 
     if (QueryResult result = WorldDatabase.Query("SELECT `hunt_giver_id`,`zone_id` FROM `hunt_local_region_zone` WHERE `enabled`=1"))
@@ -1132,7 +1132,7 @@ void HuntManager::LoadDefinitions()
     for (auto const& [preyId, abilities] : _preyAbilities)
         abilityCount += abilities.size();
 
-    LOG_INFO("server.loading", "[Hunts] Loaded {} prey definition(s), {} prey ability row(s), {} zone(s), {} final location(s), {} Huntmaster(s), and {} guard locator entry(s).",
+    LOG_INFO("server.loading", "[NativeHunts] Loaded {} prey definition(s), {} prey ability row(s), {} zone(s), {} final location(s), {} Huntmaster(s), and {} guard locator entry(s).",
         _hunts.size(), abilityCount, _zones.size(), _finalLocations.size(), _giverEntries.size(), _guardLocators.size());
 }
 
@@ -1154,7 +1154,7 @@ void HuntManager::LoadRuntimes()
             _runtimes[r.CharacterGuid]=r;
         } while(result->NextRow());
     }
-    LOG_INFO("server.loading", "[Hunts] Restored {} active hunt runtime(s).", _runtimes.size());
+    LOG_INFO("server.loading", "[NativeHunts] Restored {} active hunt runtime(s).", _runtimes.size());
 }
 
 void HuntManager::SaveRuntime(HuntRuntime const& r)
@@ -1370,7 +1370,7 @@ bool HuntManager::IsEliteAvailableToday(Player const* player) const
     return true;
 }
 
-bool HuntManager::IsSealStoreAvailable(Player const* player) const
+bool HuntManager::IsNativeVendorAvailable(Player const* player) const
 {
     if (!_enabled || !player)
         return false;
@@ -1387,9 +1387,9 @@ uint32 HuntManager::GetSealBalance(Player const* player) const
 
 bool HuntManager::IsNativeProofEligible(Player* player, uint32 spec) const
 {
-    if (!sHuntCurrency.IsNative() || GetSealStoreTierCost(1)!=5) return false;
-    for (uint8 slot=0;slot<=static_cast<uint8>(SealStoreSlot::Relic);++slot)
-        if (IsSealStoreItemEligible(player,spec,1,static_cast<SealStoreSlot>(slot),sHuntCurrency.Vendor().itemEntry)) return true;
+    if (!sHuntCurrency.Available() || _nativeVendorExpectedCost!=5) return false;
+    for (uint8 slot=0;slot<=static_cast<uint8>(HuntEquipmentSlot::Relic);++slot)
+        if (IsNativeVendorItemEligible(player,spec,static_cast<HuntEquipmentSlot>(slot),sHuntCurrency.Vendor().itemEntry)) return true;
     return false;
 }
 
@@ -1410,35 +1410,16 @@ void HuntManager::ConfigureEliteCombat(float rangedPanicRange, float rangedRetre
     _rangedArenaRadius = std::max(20.0f, rangedArenaRadius);
 }
 
-void HuntManager::ConfigureSealStoreTier(uint8 tier, uint32 cost, uint32 minItemLevel, uint32 maxItemLevel)
+void HuntManager::ConfigureNativeVendor(uint32 expectedCost, uint32 minItemLevel, uint32 maxItemLevel)
 {
-    if (tier < 1 || tier > 4)
-        return;
-
-    uint8 const index = tier - 1;
-    _sealStoreTierCost[index] = cost;
-    _sealStoreTierMinItemLevel[index] = std::min(minItemLevel, maxItemLevel);
-    _sealStoreTierMaxItemLevel[index] = std::max(minItemLevel, maxItemLevel);
+    _nativeVendorExpectedCost = expectedCost;
+    _nativeVendorMinItemLevel = std::min(minItemLevel, maxItemLevel);
+    _nativeVendorMaxItemLevel = std::max(minItemLevel, maxItemLevel);
 }
 
-uint32 HuntManager::GetSealStoreTierCost(uint8 tier) const
+bool HuntManager::IsNativeVendorItemEligible(Player* player, uint32 spec, HuntEquipmentSlot slot, uint32 itemId) const
 {
-    return tier >= 1 && tier <= 4 ? _sealStoreTierCost[tier - 1] : 0;
-}
-
-uint32 HuntManager::GetSealStoreTierMinItemLevel(uint8 tier) const
-{
-    return tier >= 1 && tier <= 4 ? _sealStoreTierMinItemLevel[tier - 1] : 0;
-}
-
-uint32 HuntManager::GetSealStoreTierMaxItemLevel(uint8 tier) const
-{
-    return tier >= 1 && tier <= 4 ? _sealStoreTierMaxItemLevel[tier - 1] : 0;
-}
-
-bool HuntManager::IsSealStoreItemEligible(Player* player, uint32 spec, uint8 tier, SealStoreSlot slot, uint32 itemId) const
-{
-    if (!IsSealStoreAvailable(player) || tier < 1 || tier > 4)
+    if (!IsNativeVendorAvailable(player))
         return false;
 
     ItemTemplate const* item = sObjectMgr->GetItemTemplate(itemId);
@@ -1448,11 +1429,11 @@ bool HuntManager::IsSealStoreItemEligible(Player* player, uint32 spec, uint8 tie
         return false;
     if (!IsSpecCompatibleEquipment(spec, *item))
         return false;
-    if (!MatchesSealStoreSlot(*item, slot))
+    if (!MatchesHuntEquipmentSlot(*item, slot))
         return false;
     if (item->RequiredLevel > player->GetLevel())
         return false;
-    if (item->ItemLevel < GetSealStoreTierMinItemLevel(tier) || item->ItemLevel > GetSealStoreTierMaxItemLevel(tier))
+    if (item->ItemLevel < _nativeVendorMinItemLevel || item->ItemLevel > _nativeVendorMaxItemLevel)
         return false;
 
     // Huntmaster progression deliberately stops short of Heroic raid loot.
@@ -1463,7 +1444,7 @@ bool HuntManager::IsSealStoreItemEligible(Player* player, uint32 spec, uint8 tie
     if (player->CanUseItem(item) != EQUIP_ERR_OK)
         return false;
 
-    // Keep the Seal store PvE-focused. PvP pieces can share the same item-level
+    // Keep the native vendor PvE-focused. PvP pieces can share the same item-level
     // bands, but resilience gear is not part of Hunt raid progression.
     for (uint32 i = 0; i < item->StatsCount && i < MAX_ITEM_PROTO_STATS; ++i)
         if (item->ItemStat[i].ItemStatType == ITEM_MOD_RESILIENCE_RATING && item->ItemStat[i].ItemStatValue > 0)
@@ -1475,111 +1456,6 @@ bool HuntManager::IsSealStoreItemEligible(Player* player, uint32 spec, uint8 tie
 
     RewardRole const role = GetRewardRole(player, spec);
     return ScoreRewardItem(player, spec, role, *item) > 0.0f;
-}
-
-std::vector<SealStoreItem> HuntManager::BuildSealStoreItems(Player* player, uint32 spec, uint8 tier, SealStoreSlot slot) const
-{
-    std::vector<SealStoreItem> items;
-    if (!IsSealStoreAvailable(player) || tier < 1 || tier > 4 || GetSealStoreTierCost(tier) == 0)
-        return items;
-
-    RewardRole const role = GetRewardRole(player, spec);
-    for (auto const& [itemId, itemTemplate] : *sObjectMgr->GetItemTemplateStore())
-    {
-        if (!IsSealStoreItemEligible(player, spec, tier, slot, itemId))
-            continue;
-
-        items.push_back({ itemId, itemTemplate.Name1, itemTemplate.ItemLevel,
-            ScoreRewardItem(player, spec, role, itemTemplate) });
-    }
-
-    std::sort(items.begin(), items.end(), [](SealStoreItem const& a, SealStoreItem const& b)
-    {
-        if (std::fabs(a.Score - b.Score) > 0.01f)
-            return a.Score > b.Score;
-        if (a.ItemLevel != b.ItemLevel)
-            return a.ItemLevel > b.ItemLevel;
-        return a.ItemId < b.ItemId;
-    });
-
-    // Gossip is the stock-client fallback UI. Keep each category readable; a
-    // future optional addon can expose the same authoritative store more richly.
-    if (items.size() > 20)
-        items.resize(20);
-
-    return items;
-}
-
-bool HuntManager::PurchaseSealStoreItem(Player* player, uint32 spec, uint8 tier, uint32 itemId, std::string& message)
-{
-    if (!sHuntCurrency.IsLegacy())
-    { message="Use the native Huntmaster vendor; virtual Seal purchases are disabled."; return false; }
-
-    if (!IsSealStoreAvailable(player))
-    {
-        message = "Huntmaster's Seal rewards are reserved for level-cap hunters.";
-        return false;
-    }
-
-    uint32 const cost = GetSealStoreTierCost(tier);
-    if (!cost)
-    {
-        message = "That Huntmaster reward tier is disabled.";
-        return false;
-    }
-
-    bool eligible = false;
-    for (uint8 rawSlot = static_cast<uint8>(SealStoreSlot::Weapon);
-         rawSlot <= static_cast<uint8>(SealStoreSlot::Relic); ++rawSlot)
-    {
-        if (IsSealStoreItemEligible(player, spec, tier, static_cast<SealStoreSlot>(rawSlot), itemId))
-        {
-            eligible = true;
-            break;
-        }
-    }
-    if (!eligible)
-    {
-        message = "That item is not an eligible Huntmaster's Seal reward for this specialization and tier.";
-        return false;
-    }
-
-    uint32 const balance = GetSealBalance(player);
-    if (balance < cost)
-    {
-        message = "You need " + std::to_string(cost) + " Huntmaster's Seals, but you only have " + std::to_string(balance) + ".";
-        return false;
-    }
-
-    ItemPosCountVec dest;
-    if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemId, 1) != EQUIP_ERR_OK)
-    {
-        message = "Make room in your bags before purchasing this reward.";
-        return false;
-    }
-
-    if (!sHuntCurrency.SpendLegacy(player,cost))
-    { message="Seal purchase could not be completed."; return false; }
-
-    if (Item* item = player->StoreNewItem(dest, itemId, true))
-    {
-        // Seal-store equipment is personal progression. Bind the awarded item
-        // instance even when the original Blizzard template happens to be BoE.
-        item->SetBinding(true);
-        player->SendNewItem(item, 1, true, false);
-        ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(itemId);
-        uint32 const remaining = GetSealBalance(player);
-        message = "Purchased " + std::string(itemTemplate ? itemTemplate->Name1 : "Huntmaster reward") +
-            " for " + std::to_string(cost) + " Huntmaster's Seals. " + std::to_string(remaining) + " Seal" +
-            (remaining == 1 ? " remains." : "s remain.");
-        return true;
-    }
-
-    // Extremely unlikely after CanStoreNewItem succeeds, but never consume a
-    // virtual currency if the item could not actually be created.
-    sHuntCurrency.RefundLegacy(player,cost);
-    message = "The purchase could not be completed; your Huntmaster's Seals were restored.";
-    return false;
 }
 
 bool HuntManager::RequestEliteHunt(Player* player, Creature* giver, std::string& message)
@@ -1648,7 +1524,7 @@ bool HuntManager::TurnInHunt(Player* player, Creature* giver, std::string& messa
     HuntRuntime const& r=it->second;
     if(r.State!=HuntState::ReadyToTurnIn){message="Your quarry still lives.";return false;}
     if(r.GiverEntry!=giver->GetEntry() || (r.GiverSpawnId && r.GiverSpawnId!=giver->GetSpawnId())){message="Return to the Huntmaster who gave you this hunt.";return false;}
-    if (!sHuntCurrency.Available()) {message="Seal operations are paused: "+sHuntCurrency.Reason();return false;}
+    if (!sHuntCurrency.Available()) {message="Native Seal operations are unavailable: "+sHuntCurrency.Reason();return false;}
     HuntRuntime& mutableRuntime=it->second; RemoveFinalActivator(player,mutableRuntime);
 
     HuntDefinition const* hunt = GetDefinition(r.PreyId);
@@ -1835,7 +1711,6 @@ bool HuntManager::TurnInHunt(Player* player, Creature* giver, std::string& messa
     uint32 const bonusSeals = (sealEligible && noUpgradeEliteReward) ? _eliteNoUpgradeBonusSeals : 0;
     uint32 const sealsAwarded = sealEligible ? (_eliteSealsPerCompletion + bonusSeals) : 0;
 
-    uint32 const virtualAward=sHuntCurrency.VirtualAward(sealsAwarded);
     char const* qualityColumn = nullptr;
     if (rewardedItemId)
     {
@@ -1845,13 +1720,13 @@ bool HuntManager::TurnInHunt(Player* player, Creature* giver, std::string& messa
     }
 
     std::ostringstream statsSql;
-    statsSql << "INSERT INTO `hunt_stats` (`guid`,`total_completed`,`daily_completed`,`daily_reset_date`,`greens_received`,`blues_received`,`epics_received`,`elite_total_completed`,`elite_daily_completed`,`elite_daily_reset_date`,`huntmaster_seals`,`last_completed_at`) "
+    statsSql << "INSERT INTO `hunt_stats` (`guid`,`total_completed`,`daily_completed`,`daily_reset_date`,`greens_received`,`blues_received`,`epics_received`,`elite_total_completed`,`elite_daily_completed`,`elite_daily_reset_date`,`last_completed_at`) "
              << "VALUES (" << r.CharacterGuid << ",1,1,CURRENT_DATE(),"
              << (qualityColumn && std::string(qualityColumn)=="greens_received" ? 1 : 0) << ","
              << (qualityColumn && std::string(qualityColumn)=="blues_received" ? 1 : 0) << ","
              << (qualityColumn && std::string(qualityColumn)=="epics_received" ? 1 : 0) << ","
              << (eliteHunt ? 1 : 0) << "," << (eliteHunt ? 1 : 0) << ","
-             << (eliteHunt ? "CURRENT_DATE()" : "NULL") << "," << virtualAward << ",CURRENT_TIMESTAMP()) "
+             << (eliteHunt ? "CURRENT_DATE()" : "NULL") << ",CURRENT_TIMESTAMP()) "
              << "ON DUPLICATE KEY UPDATE `total_completed`=`total_completed`+1, "
              << "`daily_completed`=IF(`daily_reset_date`=CURRENT_DATE(),`daily_completed`+1,1), "
              << "`daily_reset_date`=CURRENT_DATE(),";
@@ -1859,18 +1734,12 @@ bool HuntManager::TurnInHunt(Player* player, Creature* giver, std::string& messa
         statsSql << "`elite_total_completed`=`elite_total_completed`+1,"
                  << "`elite_daily_completed`=IF(`elite_daily_reset_date`=CURRENT_DATE(),`elite_daily_completed`+1,1),"
                  << "`elite_daily_reset_date`=CURRENT_DATE(),";
-    if (virtualAward)
-        statsSql << "`huntmaster_seals`=`huntmaster_seals`+" << virtualAward << ",";
     if (qualityColumn)
         statsSql << "`" << qualityColumn << "`=`" << qualityColumn << "`+1,";
     statsSql << "`last_completed_at`=CURRENT_TIMESTAMP()";
-    if (sHuntCurrency.IsNative())
-    {
-        // Keep existing XP/gold/equipment timing and quantities. Only the Seal
-        // delivery, completion stats and durable hunt removal share this tx.
-        if (!sHuntCurrency.CompleteNativeHunt(player,sealsAwarded,statsSql.str(),message)) return false;
-    }
-    else CharacterDatabase.DirectExecute(statsSql.str().c_str());
+    // Keep existing XP/gold/equipment timing and quantities. Only the Seal
+    // delivery, completion stats and durable hunt removal share this tx.
+    if (!sHuntCurrency.CompleteNativeHunt(player,sealsAwarded,statsSql.str(),message)) return false;
 
     std::ostringstream rewardMessage;
     rewardMessage << "A fine hunt. Reward: ";
@@ -1899,10 +1768,10 @@ bool HuntManager::TurnInHunt(Player* player, Creature* giver, std::string& messa
         uint32 sealBalance = GetSealBalance(player);
         rewardMessage << ", and " << sealsAwarded << " Huntmaster's Seal" << (sealsAwarded == 1 ? "" : "s") << " total for this Elite Hunt (" << sealBalance << " total balance)";
     }
-    if (sHuntCurrency.IsNative() && sealsAwarded) rewardMessage << ". Your physical Seals are attached to mail; collect them to add to your usable balance";
+    if (sealsAwarded) rewardMessage << ". Your physical Seals are attached to mail; collect them to add to your usable balance";
     rewardMessage << ".";
 
-    DeleteRuntime(r.CharacterGuid,sHuntCurrency.IsNative()); message=rewardMessage.str(); return true;
+    DeleteRuntime(r.CharacterGuid,true); message=rewardMessage.str(); return true;
 }
 
 uint8 HuntManager::GetNextAmbushThreshold(HuntRuntime const& r, HuntDefinition const& h) const
@@ -2045,10 +1914,10 @@ void HuntManager::OnCreatureKill(Player* player, Creature* killed)
                         if (returnRift)
                         {
                             returnRift->SetPhaseMask(killed->GetPhaseMask(), true);
-                            LOG_DEBUG("module.hunts", "[Hunts] Return Rift created for prey {} ({} seconds).", preyId, _returnRiftDuration);
+                            LOG_DEBUG("module.native_hunts", "[NativeHunts] Return Rift created for prey {} ({} seconds).", preyId, _returnRiftDuration);
                         }
                         else
-                            LOG_DEBUG("module.hunts", "[Hunts] Return Rift creation failed for character {} hunt {}.", guid, runtime.PreyId);
+                            LOG_DEBUG("module.native_hunts", "[NativeHunts] Return Rift creation failed for character {} hunt {}.", guid, runtime.PreyId);
                     }
                     if (returnRift)
                     {
@@ -2056,7 +1925,7 @@ void HuntManager::OnCreatureKill(Player* player, Creature* killed)
                         runtime.ReturnRiftMap = killed->GetMapId();
                         runtime.ReturnRiftInstance = killed->GetInstanceId();
                         runtime.ReturnRiftExpires = riftExpiry;
-                        LOG_DEBUG("module.hunts", "[Hunts] Return Rift eligible character {} hunt {}.", guid, runtime.PreyId);
+                        LOG_DEBUG("module.native_hunts", "[NativeHunts] Return Rift eligible character {} hunt {}.", guid, runtime.PreyId);
                     }
                 }
 
@@ -2905,7 +2774,7 @@ bool HuntManager::EnsureFinalActivator(Player* player, HuntRuntime& r)
 
     if (!activator)
     {
-        LOG_ERROR("server.loading", "[Hunts] Failed to spawn final activation object {} for character {} hunt {}.",
+        LOG_ERROR("server.loading", "[NativeHunts] Failed to spawn final activation object {} for character {} hunt {}.",
             hunt->ActivationGameObjectEntry, r.CharacterGuid, r.PreyId);
         return false;
     }
@@ -3600,7 +3469,7 @@ bool HuntManager::LocateFinal(Player* player, HuntRuntime& r)
     HuntFinalLocationDefinition const* location = SelectFinalLocation(r, player ? player->GetLevel() : 1);
     if (!location)
     {
-        LOG_ERROR("server.loading", "[Hunts] Character {} reached final tracking for prey {} in zone {}, but no enabled final location is available.",
+        LOG_ERROR("server.loading", "[NativeHunts] Character {} reached final tracking for prey {} in zone {}, but no enabled final location is available.",
             r.CharacterGuid, r.PreyId, r.ZoneId);
         return false;
     }
@@ -3703,7 +3572,7 @@ void HuntManager::Update(uint32 diff)
                 if (refreshFinalPoi)
                 {
                     LOG_WARN("server.loading",
-                        "[Hunts] Repairing incomplete final state for character {} prey {} zone {} (state={}, final_location_id={}).",
+                        "[NativeHunts] Repairing incomplete final state for character {} prey {} zone {} (state={}, final_location_id={}).",
                         r.CharacterGuid, r.PreyId, r.ZoneId, static_cast<uint32>(r.State), r.FinalLocationId);
                     LocateFinal(p, r);
                 }
@@ -3715,7 +3584,7 @@ void HuntManager::Update(uint32 diff)
                 if (r.State != HuntState::FinalLocated)
                 {
                     LOG_WARN("server.loading",
-                        "[Hunts] Promoting recovered 100% hunt for character {} prey {} from state {} to FinalLocated using final location {}.",
+                        "[NativeHunts] Promoting recovered 100% hunt for character {} prey {} from state {} to FinalLocated using final location {}.",
                         r.CharacterGuid, r.PreyId, static_cast<uint32>(r.State), r.FinalLocationId);
                     r.State = HuntState::FinalLocated;
                     SaveRuntime(r);
@@ -3779,7 +3648,7 @@ std::string HuntManager::BuildStats(Player const* player) const
     if (!player) return "No hunting record is available.";
     uint32 guid = player->GetGUID().GetCounter();
     QueryResult result = CharacterDatabase.Query(
-        "SELECT `total_completed`,IF(`daily_reset_date`=CURRENT_DATE,`daily_completed`,0),`greens_received`,`blues_received`,`epics_received`,`huntmaster_seals`,`elite_total_completed` "
+        "SELECT `total_completed`,IF(`daily_reset_date`=CURRENT_DATE,`daily_completed`,0),`greens_received`,`blues_received`,`epics_received`,`elite_total_completed` "
         "FROM `hunt_stats` WHERE `guid`={}", guid);
     if (!result) return "Hunting Record: 0 completed hunts. No rewards recorded yet.";
     Field* f = result->Fetch();
@@ -3787,7 +3656,7 @@ std::string HuntManager::BuildStats(Player const* player) const
     out << "Hunting Record: " << f[0].Get<uint32>() << " total | " << f[1].Get<uint32>() << " today"
         << " | green rewards " << f[2].Get<uint32>() << " | blue rewards " << f[3].Get<uint32>()
         << " | epic rewards " << f[4].Get<uint32>()
-        << " | Elite Hunts " << f[6].Get<uint32>();
+        << " | Elite Hunts " << f[5].Get<uint32>();
     if (player->GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
         out << " | Huntmaster's Seals " << GetSealBalance(player);
     return out.str();

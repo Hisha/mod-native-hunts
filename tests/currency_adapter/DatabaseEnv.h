@@ -1,7 +1,9 @@
 // Test-only synchronous adapter. Exercises production SQL against disposable MySQL;
 // it does not simulate AzerothCore's async worker pool or Field metadata checks.
 #pragma once
+#ifndef NATIVE_HUNTS_MEMORY_DATABASE
 #include <mysql.h>
+#endif
 #include <future>
 #include <cstdint>
 #include <memory>
@@ -51,6 +53,22 @@ struct Transaction
     void Append(TestStatement* s){sql.push_back(s->Sql());delete s;}
 };
 struct TransactionCallback { std::future<bool> m_future; };
+#ifdef NATIVE_HUNTS_MEMORY_DATABASE
+// Startup dependency tests: no SQL engine, connections or external state.
+class TestDatabase
+{
+public:
+    std::function<QueryResult(std::string const&)> query;
+    unsigned transactions = 0;
+    TestStatement* GetPreparedStatement(TestStatementKind kind){return new TestStatement{kind};}
+    QueryResult Query(std::string const& sql){return query(sql);}
+    std::shared_ptr<Transaction> BeginTransaction(){++transactions;return std::make_shared<Transaction>();}
+    TransactionCallback AsyncCommitTransaction(std::shared_ptr<Transaction>)
+    {
+        throw std::runtime_error("Unexpected commit in startup dependency test");
+    }
+};
+#else
 class TestDatabase
 {
     MYSQL* connection=nullptr;
@@ -114,6 +132,7 @@ public:
         return callback;
     }
 };
+#endif
 inline TestDatabase WorldDatabase,CharacterDatabase;
 
 using CharacterDatabaseTransaction=std::shared_ptr<Transaction>;

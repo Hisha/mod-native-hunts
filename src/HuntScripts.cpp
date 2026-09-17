@@ -10,19 +10,15 @@
 #include "GameObjectScript.h"
 #include "ObjectMgr.h"
 #include "ObjectAccessor.h"
-#include "Opcodes.h"
 #include "SharedDefines.h"
 #include "Player.h"
 #include "PlayerScript.h"
 #include "ScriptedCreature.h"
 #include "SpellAuras.h"
 #include "SpellInfo.h"
-#include "WorldPacket.h"
 
 #include <algorithm>
 #include <sstream>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include "ScriptedGossip.h"
 
@@ -36,13 +32,7 @@ enum HuntGossipAction : uint32
     ACTION_ABANDON_HUNT = GOSSIP_ACTION_INFO_DEF + 4,
     ACTION_HUNT_STATS = GOSSIP_ACTION_INFO_DEF + 5,
     ACTION_REQUEST_ELITE_HUNT = GOSSIP_ACTION_INFO_DEF + 6,
-    ACTION_SEAL_STORE = GOSSIP_ACTION_INFO_DEF + 20,
-    ACTION_SEAL_SPEC_BASE = GOSSIP_ACTION_INFO_DEF + 100,
-    ACTION_SEAL_TIER_BASE = GOSSIP_ACTION_INFO_DEF + 110,
-    ACTION_SEAL_SLOT_BASE = GOSSIP_ACTION_INFO_DEF + 120,
-    ACTION_SEAL_ITEM_BASE = GOSSIP_ACTION_INFO_DEF + 200,
-    ACTION_SEAL_BUY_CONFIRM = GOSSIP_ACTION_INFO_DEF + 250,
-    ACTION_SEAL_CANCEL = GOSSIP_ACTION_INFO_DEF + 251,
+    ACTION_NATIVE_VENDOR = GOSSIP_ACTION_INFO_DEF + 20,
     ACTION_GUARD_HUNTMASTER = GOSSIP_ACTION_INFO_DEF + 700
 };
 
@@ -51,55 +41,6 @@ struct SealSpecChoice
     uint32 Spec = 0;
     char const* Name = "";
 };
-
-struct SealStoreContext
-{
-    uint32 Spec = 0;
-    uint8 Tier = 0;
-    hunts::SealStoreSlot Slot = hunts::SealStoreSlot::Weapon;
-    std::vector<uint32> ItemIds;
-    uint32 PendingItemId = 0;
-};
-
-std::unordered_map<uint32, SealStoreContext> sealStoreContexts;
-std::unordered_set<uint32> huntsAddonSessions;
-std::unordered_map<uint32, ObjectGuid> huntsAddonStoreGivers;
-
-struct HuntsAddonCatalogItem
-{
-    uint32 Spec = 0;
-    uint8 Tier = 0;
-};
-
-std::unordered_map<uint32, std::unordered_map<uint32, HuntsAddonCatalogItem>> huntsAddonCatalogs;
-
-std::vector<std::string> SplitAddonRequest(std::string const& value, char delimiter = '|')
-{
-    std::vector<std::string> parts;
-    std::stringstream stream(value);
-    std::string part;
-    while (std::getline(stream, part, delimiter))
-        parts.push_back(part);
-    return parts;
-}
-
-uint32 ParseAddonUInt(std::string const& value)
-{
-    try
-    {
-        return static_cast<uint32>(std::stoul(value));
-    }
-    catch (...)
-    {
-        return 0;
-    }
-}
-
-bool HasHuntsAddon(Player const* player)
-{
-    return player && huntsAddonSessions.find(player->GetGUID().GetCounter()) != huntsAddonSessions.end();
-}
-
 
 std::vector<SealSpecChoice> GetSealSpecs(Player const* player)
 {
@@ -135,149 +76,11 @@ std::vector<SealSpecChoice> GetSealSpecs(Player const* player)
 
 bool NativeProofEligible(Player* player, Creature* creature)
 {
-    if (!sHuntCurrency.IsNative() || !creature || creature->GetEntry()!=sHuntCurrency.Vendor().creatureEntry) return false;
-    // Legacy shoppers may select any valid specialization of their class. Keep
-    // those same eligibility rules without adding a new spec picker.
+    if (!sHuntCurrency.Available() || !creature || creature->GetEntry()!=sHuntCurrency.Vendor().creatureEntry) return false;
+    // Preserve eligibility for every valid specialization of the player's class.
     for (auto const& choice:GetSealSpecs(player))
         if(sHuntMgr.IsNativeProofEligible(player,choice.Spec))return true;
     return false;
-}
-
-std::string BuildSealAddonOpenPayload(Player* player)
-{
-    std::vector<SealSpecChoice> specs = GetSealSpecs(player);
-    std::ostringstream out;
-    out << "OPEN|" << sHuntMgr.GetSealBalance(player) << "|";
-    for (uint32 i = 0; i < specs.size(); ++i)
-    {
-        if (i)
-            out << ",";
-        out << specs[i].Spec << ":" << specs[i].Name;
-    }
-    return out.str();
-}
-
-bool SendHuntsSealMerchantCatalog(Player* player, Creature* giver, uint32 spec)
-{
-    if (!player || !giver || !player->GetSession())
-        return false;
-
-    // Slot-first ordering keeps all four Seal tiers together for easy comparison.
-    static hunts::SealStoreSlot const slotOrder[] =
-    {
-        hunts::SealStoreSlot::Head,
-        hunts::SealStoreSlot::Shoulder,
-        hunts::SealStoreSlot::Chest,
-        hunts::SealStoreSlot::Hands,
-        hunts::SealStoreSlot::Legs,
-        hunts::SealStoreSlot::Wrist,
-        hunts::SealStoreSlot::Waist,
-        hunts::SealStoreSlot::Feet,
-        hunts::SealStoreSlot::Back,
-        hunts::SealStoreSlot::Neck,
-        hunts::SealStoreSlot::Ring,
-        hunts::SealStoreSlot::Trinket,
-        hunts::SealStoreSlot::Weapon,
-        hunts::SealStoreSlot::OffHand,
-        hunts::SealStoreSlot::Relic
-    };
-
-    struct CatalogRow
-    {
-        uint32 ItemId = 0;
-        uint8 Tier = 0;
-        uint32 Cost = 0;
-    };
-
-    std::vector<CatalogRow> catalog;
-    catalog.reserve(60);
-
-    for (hunts::SealStoreSlot slot : slotOrder)
-    {
-        for (uint8 tier = 1; tier <= 4; ++tier)
-        {
-            std::vector<hunts::SealStoreItem> items = sHuntMgr.BuildSealStoreItems(player, spec, tier, slot);
-            if (!items.empty())
-                catalog.push_back({items.front().ItemId, tier, sHuntMgr.GetSealStoreTierCost(tier)});
-        }
-    }
-
-    uint32 const guid = player->GetGUID().GetCounter();
-    auto& purchaseMap = huntsAddonCatalogs[guid];
-    purchaseMap.clear();
-
-    WorldPacket data(SMSG_LIST_INVENTORY, 8 + 1 + catalog.size() * 8 * 4);
-    data << giver->GetGUID();
-    std::size_t const countPos = data.wpos();
-    data << uint8(0);
-
-    uint8 count = 0;
-    for (CatalogRow const& row : catalog)
-    {
-        ItemTemplate const* item = sObjectMgr->GetItemTemplate(row.ItemId);
-        if (!item)
-            continue;
-
-        // The native price field carries the virtual Seal cost. HuntsUI hides
-        // Blizzard's coin widgets and renders this same number beside a Seal.
-        data << uint32(count + 1);
-        data << uint32(row.ItemId);
-        data << uint32(item->DisplayInfoID);
-        data << int32(0xFFFFFFFF);
-        data << uint32(row.Cost);
-        data << uint32(item->MaxDurability);
-        data << uint32(item->BuyCount);
-        data << uint32(0);
-
-        purchaseMap[row.ItemId] = {spec, row.Tier};
-        if (++count >= MAX_VENDOR_ITEMS)
-            break;
-    }
-
-    if (!count)
-    {
-        data << uint8(0);
-        player->SendDirectMessage(&data);
-        return false;
-    }
-
-    data.put<uint8>(countPos, count);
-    player->SendDirectMessage(&data);
-    return true;
-}
-
-void SendHuntsAddonPayload(Player* player, std::string const& payload)
-{
-    if (!player || !player->GetSession())
-        return;
-
-    std::string const wire = "HUNTS\t" + payload;
-    WorldPacket data;
-    ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, wire);
-    player->SendDirectMessage(&data);
-}
-
-char const* GetSealSlotName(hunts::SealStoreSlot slot)
-{
-    switch (slot)
-    {
-        case hunts::SealStoreSlot::Weapon: return "Weapons";
-        case hunts::SealStoreSlot::Head: return "Head";
-        case hunts::SealStoreSlot::Neck: return "Neck";
-        case hunts::SealStoreSlot::Shoulder: return "Shoulders";
-        case hunts::SealStoreSlot::Back: return "Back";
-        case hunts::SealStoreSlot::Chest: return "Chest";
-        case hunts::SealStoreSlot::Wrist: return "Wrists";
-        case hunts::SealStoreSlot::Hands: return "Hands";
-        case hunts::SealStoreSlot::Waist: return "Waist";
-        case hunts::SealStoreSlot::Legs: return "Legs";
-        case hunts::SealStoreSlot::Feet: return "Feet";
-        case hunts::SealStoreSlot::Ring: return "Rings";
-        case hunts::SealStoreSlot::Trinket: return "Trinkets";
-        case hunts::SealStoreSlot::OffHand: return "Off-hand / Shields";
-        case hunts::SealStoreSlot::Relic: return "Ranged / Relics";
-        default: return "Equipment";
-    }
 }
 
 class HuntmasterScript final : public CreatureScript
@@ -290,7 +93,6 @@ public:
         if (!sHuntMgr.IsEnabled() || !sHuntMgr.IsHuntGiver(creature->GetEntry()))
             return false;
 
-        sealStoreContexts.erase(player->GetGUID().GetCounter());
         ShowMainMenu(player, creature);
         return true;
     }
@@ -298,106 +100,11 @@ public:
     bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
     {
         ClearGossipMenuFor(player);
-        uint32 const guid = player->GetGUID().GetCounter();
-
-        if (!sHuntCurrency.IsLegacy() && action >= ACTION_SEAL_STORE)
+        if (action == ACTION_NATIVE_VENDOR)
         {
-            sealStoreContexts.erase(guid);huntsAddonCatalogs.erase(guid);huntsAddonStoreGivers.erase(guid);
             CloseGossipMenuFor(player);
-            if (action==ACTION_SEAL_STORE && NativeProofEligible(player,creature))
+            if (NativeProofEligible(player,creature))
                 player->GetSession()->SendListInventory(creature->GetGUID());
-            return true;
-        }
-        if (action == ACTION_SEAL_STORE)
-        {
-            sealStoreContexts[guid] = {};
-            huntsAddonStoreGivers[guid] = creature->GetGUID();
-
-            if (HasHuntsAddon(player))
-            {
-                // HuntsUI announced itself at login. Open Blizzard's native
-                // MerchantFrame immediately with an authoritative dynamic
-                // catalog; HuntsUI will then request the active-spec catalog.
-                std::vector<SealSpecChoice> specs = GetSealSpecs(player);
-                if (specs.empty())
-                {
-                    ShowMainMenu(player, creature);
-                    return true;
-                }
-
-                CloseGossipMenuFor(player);
-                SendHuntsSealMerchantCatalog(player, creature, specs.front().Spec);
-                return true;
-            }
-
-            // Stock 3.3.5 client / addon disabled: retain the complete
-            // server-side gossip Seal store.
-            ShowSealSpecMenu(player, creature);
-            return true;
-        }
-
-        if (action >= ACTION_SEAL_SPEC_BASE && action < ACTION_SEAL_SPEC_BASE + 3)
-        {
-            std::vector<SealSpecChoice> specs = GetSealSpecs(player);
-            uint32 const index = action - ACTION_SEAL_SPEC_BASE;
-            if (index < specs.size())
-            {
-                sealStoreContexts[guid].Spec = specs[index].Spec;
-                ShowSealTierMenu(player, creature);
-                return true;
-            }
-        }
-
-        if (action >= ACTION_SEAL_TIER_BASE && action < ACTION_SEAL_TIER_BASE + 4)
-        {
-            SealStoreContext& context = sealStoreContexts[guid];
-            context.Tier = static_cast<uint8>((action - ACTION_SEAL_TIER_BASE) + 1);
-            ShowSealSlotMenu(player, creature);
-            return true;
-        }
-
-        if (action >= ACTION_SEAL_SLOT_BASE && action <= ACTION_SEAL_SLOT_BASE + static_cast<uint32>(hunts::SealStoreSlot::Relic))
-        {
-            SealStoreContext& context = sealStoreContexts[guid];
-            context.Slot = static_cast<hunts::SealStoreSlot>(action - ACTION_SEAL_SLOT_BASE);
-            ShowSealItemMenu(player, creature);
-            return true;
-        }
-
-        if (action >= ACTION_SEAL_ITEM_BASE && action < ACTION_SEAL_ITEM_BASE + 20)
-        {
-            auto contextIt = sealStoreContexts.find(guid);
-            if (contextIt != sealStoreContexts.end())
-            {
-                uint32 const index = action - ACTION_SEAL_ITEM_BASE;
-                if (index < contextIt->second.ItemIds.size())
-                {
-                    contextIt->second.PendingItemId = contextIt->second.ItemIds[index];
-                    ShowSealConfirmation(player, creature);
-                    return true;
-                }
-            }
-        }
-
-        if (action == ACTION_SEAL_BUY_CONFIRM)
-        {
-            auto contextIt = sealStoreContexts.find(guid);
-            std::string message;
-            if (contextIt != sealStoreContexts.end() && contextIt->second.PendingItemId)
-                sHuntMgr.PurchaseSealStoreItem(player, contextIt->second.Spec, contextIt->second.Tier, contextIt->second.PendingItemId, message);
-            else
-                message = "That Huntmaster reward selection expired. Please choose it again.";
-
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff33ccff[Hunts]|r {}", message);
-            sealStoreContexts.erase(guid);
-            CloseGossipMenuFor(player);
-            return true;
-        }
-
-        if (action == ACTION_SEAL_CANCEL)
-        {
-            sealStoreContexts.erase(guid);
-            ShowMainMenu(player, creature);
             return true;
         }
 
@@ -454,97 +161,18 @@ private:
             AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I wish to abandon this hunt.", GOSSIP_SENDER_MAIN, ACTION_ABANDON_HUNT);
         }
 
-        if (sHuntMgr.IsSealStoreAvailable(player) && (sHuntCurrency.IsLegacy() || NativeProofEligible(player,creature)))
+        if (NativeProofEligible(player,creature))
         {
             std::ostringstream label;
             uint32 const seals = sHuntMgr.GetSealBalance(player);
-            label << (sHuntCurrency.IsNative()?"Trade physical Seals for the proof reward. (":"Browse Huntmaster's Seal rewards. (") << seals << " Seal" << (seals == 1 ? "" : "s") << ")";
-            AddGossipItemFor(player, GOSSIP_ICON_VENDOR, label.str(), GOSSIP_SENDER_MAIN, ACTION_SEAL_STORE);
+            label << "Trade physical Seals for the proof reward. (" << seals << " Seal" << (seals == 1 ? "" : "s") << ")";
+            AddGossipItemFor(player, GOSSIP_ICON_VENDOR, label.str(), GOSSIP_SENDER_MAIN, ACTION_NATIVE_VENDOR);
         }
 
         AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Show me my hunting record.", GOSSIP_SENDER_MAIN, ACTION_HUNT_STATS);
         SendGossipMenuFor(player, 1, creature->GetGUID());
     }
 
-    void ShowSealSpecMenu(Player* player, Creature* creature)
-    {
-        ClearGossipMenuFor(player);
-        std::vector<SealSpecChoice> specs = GetSealSpecs(player);
-        for (uint32 i = 0; i < specs.size() && i < 3; ++i)
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, std::string("Shop for ") + specs[i].Name + " gear.", GOSSIP_SENDER_MAIN, ACTION_SEAL_SPEC_BASE + i);
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Never mind.", GOSSIP_SENDER_MAIN, ACTION_SEAL_CANCEL);
-        SendGossipMenuFor(player, 1, creature->GetGUID());
-    }
-
-    void ShowSealTierMenu(Player* player, Creature* creature)
-    {
-        ClearGossipMenuFor(player);
-        for (uint8 tier = 1; tier <= 4; ++tier)
-        {
-            uint32 const cost = sHuntMgr.GetSealStoreTierCost(tier);
-            if (!cost)
-                continue;
-            std::ostringstream label;
-            label << "Tier " << static_cast<uint32>(tier) << " - ilvl " << sHuntMgr.GetSealStoreTierMinItemLevel(tier);
-            if (sHuntMgr.GetSealStoreTierMaxItemLevel(tier) != sHuntMgr.GetSealStoreTierMinItemLevel(tier))
-                label << "-" << sHuntMgr.GetSealStoreTierMaxItemLevel(tier);
-            label << " - " << cost << " Seals";
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, label.str(), GOSSIP_SENDER_MAIN, ACTION_SEAL_TIER_BASE + (tier - 1));
-        }
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Never mind.", GOSSIP_SENDER_MAIN, ACTION_SEAL_CANCEL);
-        SendGossipMenuFor(player, 1, creature->GetGUID());
-    }
-
-    void ShowSealSlotMenu(Player* player, Creature* creature)
-    {
-        ClearGossipMenuFor(player);
-        for (uint8 rawSlot = static_cast<uint8>(hunts::SealStoreSlot::Weapon);
-             rawSlot <= static_cast<uint8>(hunts::SealStoreSlot::Relic); ++rawSlot)
-        {
-            hunts::SealStoreSlot const slot = static_cast<hunts::SealStoreSlot>(rawSlot);
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, GetSealSlotName(slot), GOSSIP_SENDER_MAIN, ACTION_SEAL_SLOT_BASE + rawSlot);
-        }
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Never mind.", GOSSIP_SENDER_MAIN, ACTION_SEAL_CANCEL);
-        SendGossipMenuFor(player, 1, creature->GetGUID());
-    }
-
-    void ShowSealItemMenu(Player* player, Creature* creature)
-    {
-        ClearGossipMenuFor(player);
-        SealStoreContext& context = sealStoreContexts[player->GetGUID().GetCounter()];
-        context.ItemIds.clear();
-        context.PendingItemId = 0;
-
-        std::vector<hunts::SealStoreItem> items = sHuntMgr.BuildSealStoreItems(player, context.Spec, context.Tier, context.Slot);
-        uint32 const cost = sHuntMgr.GetSealStoreTierCost(context.Tier);
-        for (uint32 i = 0; i < items.size() && i < 20; ++i)
-        {
-            context.ItemIds.push_back(items[i].ItemId);
-            std::ostringstream label;
-            label << items[i].Name << " (ilvl " << items[i].ItemLevel << ") - " << cost << " Seals";
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, label.str(), GOSSIP_SENDER_MAIN, ACTION_SEAL_ITEM_BASE + i);
-        }
-
-        if (items.empty())
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "No suitable rewards are available in this category.", GOSSIP_SENDER_MAIN, ACTION_SEAL_CANCEL);
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Never mind.", GOSSIP_SENDER_MAIN, ACTION_SEAL_CANCEL);
-        SendGossipMenuFor(player, 1, creature->GetGUID());
-    }
-
-    void ShowSealConfirmation(Player* player, Creature* creature)
-    {
-        ClearGossipMenuFor(player);
-        SealStoreContext const& context = sealStoreContexts[player->GetGUID().GetCounter()];
-        ItemTemplate const* item = sObjectMgr->GetItemTemplate(context.PendingItemId);
-        uint32 const cost = sHuntMgr.GetSealStoreTierCost(context.Tier);
-        uint32 const balance = sHuntMgr.GetSealBalance(player);
-
-        std::ostringstream buyLabel;
-        buyLabel << "Purchase " << (item ? item->Name1 : "this item") << " for " << cost << " Seals. (Balance: " << balance << ")";
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, buyLabel.str(), GOSSIP_SENDER_MAIN, ACTION_SEAL_BUY_CONFIRM);
-        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Cancel purchase.", GOSSIP_SENDER_MAIN, ACTION_SEAL_CANCEL);
-        SendGossipMenuFor(player, 1, creature->GetGUID());
-    }
 };
 
 // Extends the normal capital-city guard gossip without replacing the stock
@@ -731,106 +359,6 @@ public:
         sHuntMgr.OnCreatureKill(owner, killed);
     }
 
-    void OnPlayerBeforeSendChatMessage(Player* player, uint32& type, uint32& lang, std::string& msg) override
-    {
-        if (!player || lang != LANG_ADDON || type != CHAT_MSG_WHISPER)
-            return;
-
-        static std::string const prefix = "HUNTS\t";
-        if (msg.compare(0, prefix.size(), prefix) != 0)
-            return;
-
-        uint32 const guid = player->GetGUID().GetCounter();
-        std::string const request = msg.substr(prefix.size());
-        std::vector<std::string> parts = SplitAddonRequest(request);
-        std::string response = "ERR|bad-request";
-
-        if (!parts.empty() && parts[0] == "HELLO")
-        {
-            huntsAddonSessions.insert(guid);
-            response = "HELLO|1";
-        }
-        else if (!sHuntCurrency.IsLegacy())
-            response="ERR|Virtual Seal store disabled; use the native Huntmaster vendor.";
-        else if (!parts.empty() && parts[0] == "OPEN")
-        {
-            huntsAddonSessions.insert(guid);
-            auto giverIt = huntsAddonStoreGivers.find(guid);
-            Creature* giver = giverIt != huntsAddonStoreGivers.end() ? ObjectAccessor::GetCreature(*player, giverIt->second) : nullptr;
-            if (!giver || !sHuntMgr.IsHuntGiver(giver->GetEntry()) || !player->IsWithinDistInMap(giver, 12.0f))
-                response = "ERR|Talk to a Huntmaster and choose Seal rewards first.";
-            else if (!sHuntMgr.IsSealStoreAvailable(player))
-                response = "ERR|The Huntmaster Seal store is not available to you.";
-            else
-            {
-                // OPEN is also the authoritative late handshake.  If HELLO had
-                // not completed before the player clicked Rewards, replace the
-                // just-opened gossip fallback with HuntsUI now.
-                huntsAddonSessions.insert(guid);
-                CloseGossipMenuFor(player);
-
-                response = BuildSealAddonOpenPayload(player);
-            }
-        }
-        else if (parts.size() >= 2 && parts[0] == "CATALOG")
-        {
-            auto giverIt = huntsAddonStoreGivers.find(guid);
-            Creature* giver = giverIt != huntsAddonStoreGivers.end() ? ObjectAccessor::GetCreature(*player, giverIt->second) : nullptr;
-            uint32 const spec = ParseAddonUInt(parts[1]);
-
-            bool validSpec = false;
-            for (SealSpecChoice const& choice : GetSealSpecs(player))
-                if (choice.Spec == spec)
-                {
-                    validSpec = true;
-                    break;
-                }
-
-            if (!giver || !sHuntMgr.IsHuntGiver(giver->GetEntry()) || !player->IsWithinDistInMap(giver, 12.0f))
-                response = "ERR|You are no longer speaking with a Huntmaster.";
-            else if (!validSpec)
-                response = "ERR|Invalid reward specialization.";
-            else
-            {
-                SendHuntsSealMerchantCatalog(player, giver, spec);
-                std::ostringstream out;
-                out << "CATALOG|" << sHuntMgr.GetSealBalance(player) << "|" << spec;
-                response = out.str();
-            }
-        }
-        else if (parts.size() >= 2 && parts[0] == "BUYITEM")
-        {
-            auto giverIt = huntsAddonStoreGivers.find(guid);
-            Creature* giver = giverIt != huntsAddonStoreGivers.end() ? ObjectAccessor::GetCreature(*player, giverIt->second) : nullptr;
-            uint32 const itemId = ParseAddonUInt(parts[1]);
-
-            auto catalogIt = huntsAddonCatalogs.find(guid);
-            auto itemIt = catalogIt != huntsAddonCatalogs.end() ? catalogIt->second.find(itemId) : std::unordered_map<uint32, HuntsAddonCatalogItem>::iterator{};
-
-            if (!giver || !sHuntMgr.IsHuntGiver(giver->GetEntry()) || !player->IsWithinDistInMap(giver, 12.0f))
-                response = "ERR|You are no longer speaking with a Huntmaster.";
-            else if (catalogIt == huntsAddonCatalogs.end() || itemIt == catalogIt->second.end())
-                response = "ERR|That item is not in your current Huntmaster catalog.";
-            else
-            {
-                std::string purchaseMessage;
-                bool const success = sHuntMgr.PurchaseSealStoreItem(player, itemIt->second.Spec, itemIt->second.Tier, itemId, purchaseMessage);
-                std::ostringstream out;
-                out << "BUYITEM|" << (success ? 1 : 0) << "|" << sHuntMgr.GetSealBalance(player) << "|" << itemId;
-                response = out.str();
-                ChatHandler(player->GetSession()).PSendSysMessage("|cff33ccff[Hunts]|r {}", purchaseMessage);
-
-                if (success)
-                    SendHuntsSealMerchantCatalog(player, giver, itemIt->second.Spec);
-            }
-        }
-
-
-        msg = prefix + response;
-        if (msg.size() > 250)
-            msg = prefix + "ERR|response-too-large";
-    }
-
     void OnPlayerSendListInventory(Player* player, ObjectGuid guid, uint32& vendorEntry) override
     {
         Creature* creature=player?ObjectAccessor::GetCreature(*player,guid):nullptr;
@@ -856,17 +384,12 @@ public:
     {
         if (!player)
             return;
-        uint32 const guid = player->GetGUID().GetCounter();
         sHuntMgr.ClearReturnRift(player);
-        huntsAddonSessions.erase(guid);
-        huntsAddonStoreGivers.erase(guid);
-        huntsAddonCatalogs.erase(guid);
-        sealStoreContexts.erase(guid);
     }
 };
 }
 
-void AddHuntGameplayScripts()
+void AddNativeHuntGameplayScripts()
 {
     new HuntmasterScript();
     new HuntGuardLocatorScript();

@@ -1,3 +1,5 @@
+-- Fresh-install seed: do not replay over ACTIVE Content Manager-owned templates.
+-- Content Manager alone adds the native proof vendor flag and vendor row.
 -- ============================================================================
 -- Huntmasters - permanent capital-city service NPCs
 -- No quest flags are used. Each Huntmaster is gossip-only and is discoverable
@@ -36,7 +38,7 @@ INSERT INTO `creature_template` (
     `lootid`,`pickpocketloot`,`skinloot`,`PetSpellDataId`,`VehicleId`,`mingold`,`maxgold`,`AIName`,`MovementType`,`HoverHeight`,`HealthModifier`,`ManaModifier`,`ArmorModifier`,
     `ExperienceModifier`,`RacialLeader`,`movementId`,`RegenHealth`,`CreatureImmunitiesId`,`flags_extra`,`ScriptName`,`VerifiedBuild`)
 SELECT m.entry,0,0,0,0,0,m.npc_name,'Master of the Hunt','Speak',0,
-    60,60,b.`exp`,b.`faction`,129,b.`speed_walk`,b.`speed_run`,b.`speed_swim`,b.`speed_flight`,b.`detection_range`,0,b.`dmgschool`,
+    60,60,b.`exp`,b.`faction`,1,b.`speed_walk`,b.`speed_run`,b.`speed_swim`,b.`speed_flight`,b.`detection_range`,0,b.`dmgschool`,
     b.`DamageModifier`,b.`BaseAttackTime`,b.`RangeAttackTime`,b.`BaseVariance`,b.`RangeVariance`,b.`unit_class`,b.`unit_flags`,b.`unit_flags2`,
     b.`dynamicflags`,b.`family`,b.`type`,b.`type_flags`,0,0,0,0,0,0,0,'',0,b.`HoverHeight`,b.`HealthModifier`,b.`ManaModifier`,b.`ArmorModifier`,
     0,0,0,1,b.`CreatureImmunitiesId`,b.`flags_extra`,'mod_hunts_huntmaster',0
@@ -94,12 +96,6 @@ INSERT INTO `hunt_giver` (`id`,`creature_entry`,`city_name`,`map_id`,`continent_
 (8,@SM_ENTRY,'Silvermoon City',530,1,9801.341,-7324.399,14.6854105,1,'Horde capital Huntmaster'),
 (9,@SH_ENTRY,'Shattrath City',530,3,-2019.2322,5203.5225,-35.69525,1,'Neutral Outland hub Huntmaster'),
 (10,@DA_ENTRY,'Dalaran',571,4,5773.8013,548.9488,651.6386,1,'Neutral Northrend hub Huntmaster');
-
--- Huntmasters carry the vendor NPC flag for HuntsUI's native MerchantFrame,
--- but their Seal inventory is generated per character/spec by mod-hunts.
--- Remove obsolete proof-of-concept static vendor rows if this file is reapplied.
-DELETE FROM `npc_vendor`
-WHERE `entry` IN (@SW_ENTRY,@IF_ENTRY,@DN_ENTRY,@EX_ENTRY,@OG_ENTRY,@TB_ENTRY,@UC_ENTRY,@SM_ENTRY,@SH_ENTRY,@DA_ENTRY);
 
 DELETE FROM `hunt_guard_locator` WHERE `id` BETWEEN 1 AND 14;
 INSERT INTO `hunt_guard_locator` (`id`,`guard_creature_entry`,`hunt_giver_id`,`enabled`,`comment`) VALUES

@@ -1,38 +1,83 @@
-# Native realm cutover tests
+# Native-only validation
 
-These tests are development fixtures. Database harnesses use a disposable MySQL instance with networking disabled, empty root password, and the fixed test database `phase4_test`. **They must not be connected to Eitrigg or another real database.** Tests are serial because they share that fixture name.
-
-## Executed coverage
-
-- `realm_migration_mysql.cpp` executes production `HuntCurrencyMigration.cpp` against actual InnoDB transactions. Only the physical delivery callback is substituted. It tests zero/fresh snapshots, offline balances, unchanged virtual values, chunked delivery, restart idempotence, partial preparation failure, SQL rollback, missing recipients and recovery. Receipts and simulated delivery rows commit or roll back together.
-- `currency_service_mysql.cpp` links production `HuntCurrencyService.cpp` and `HuntCurrencyMigration.cpp` with **no Content Manager objects**. `currency_adapter` supplies narrow core player/item/mail/registry doubles, while all migration/native completion SQL and prepared-mail transactions execute in MySQL. Tests cover missing provider, inactive/invalid activation, dynamic non-Eitrigg IDs, legacy balance/spend/refund and virtual award selection, native physical balance/award, preserved virtual balance, online mail publication after commit, rollback without cached mail, restart, and paused operations after removing the provider from a migrated installation.
-- `mod-content-manager/tests/vendor_mysql_tests.cpp` executes the real package parser, registry, allocator, composers, MPQ builder, parity, server apply and activation against MySQL. It upgrades the 4.2.0 EPF to 4.3.0; checks retained values and baseline identities, byte-identical DBC/AQ payloads, deterministic server artifacts, no build-time vendor mutation, retained ACTIVE baseline before explicit activation, symbolic costs, unowned collision, preflight/transaction drift, rollback after insertion, repeat apply, and owned-row drift.
-- Eight existing CM standalone suites and the production Phase 5 MySQL regression passed, including typed allocation, retained/retired occupancy, descriptor validation, baseline acceptance/history, collisions, cross-package costs, raw DBC rejection, canonical parity and rollback.
-- `test_extended_cost_epf.py --previous-epf <saved-4.2.0.epf>` now validates 4.3.0, preserves the existing four declarations/cost, and accepts only the new logical vendor relationship plus version/description changes.
-- Real-core C++17 compile checks passed for the changed CM and Hunts translation units against reference core commit `06234df3d5ab26c93f4f1f06f3edb828b73ecd3c`. Hunts compilation used its own vendored public header, not a CM include path. This was not a full linked Eitrigg worldserver build.
-
-The mail doubles test atomic persistence/cache ordering; they do not replace a real-client mailbox test. The core BeforeBuy/list hooks and core ExtendedCost debit were inspected and compiled, but actual insufficient/sufficient-funds packets and Currency tab behavior are live acceptance items, not claimed local passes.
-
-## Reproduction outline
-
-Standalone EPF and CM suites require Python 3 and a C++17 compiler:
+Run from the module root:
 
 ```sh
-python3 modules/mod-hunts/tests/test_extended_cost_epf.py --previous-epf /path/to/saved-4.2.0.epf
-python3 modules/mod-content-manager/tests/run_phase4.py
+python3 -B tests/run_native_checks.py
+# Optional read-only compile check against a configured reference core:
+python3 -B tests/run_native_checks.py --compile-commands /path/to/build/compile_commands.json
 ```
 
-Optional CM arguments `--currency-dbc` and `--extended-cost-dbc` read baselines without writing them. Do not pass the 4.3.0 EPF to historical tests that explicitly assert the old 4.1.0 fixture; use the saved fixture appropriate to those tests.
+The optional reference command uses the existing mod-dungeon-quests compilation
+entry for core include paths/definitions; it requires that entry and valid local
+headers. It uses `-fsyntax-only`, does not reconfigure or write the reference
+core/build, and is not a linked worldserver build. All temporary executables
+stay inside this repository and are removed after the run.
+
+## Database-free coverage
+
+- `native_currency_startup.cpp`: production service + migration with memory
+  adapters. Missing/inactive/invalid/duplicate CM provider, physical balance and
+  non-deployment allocated IDs, wrong cost/extra requirement, priced merchandise,
+  missing/non-stackable Seal template, recorded version/identity/state mismatch,
+  startup-only guard, existing NATIVE receipt, and blocked rewards after losing
+  the provider on reinitialization. No real databases or player sessions.
+- `transaction_wait_tests.cpp`: actual helper and migration implementation,
+  worker future true/false/invalid/exception paths, failed snapshot/delivery/final
+  transactions, receipt failures and publish-after-verification ordering.
+- `test_extended_cost_epf.py`: unchanged 4.3.0 symbolic declarations and five-Seal
+  vendor proof. Optional `--previous-epf` accepts a saved 4.2.0 fixture. The runner
+  also compares the authored JSON with the EPF manifest.
+
+## Optional isolated SQL integration harnesses
+
+`currency_service_mysql.cpp` now expects **unavailable** for a missing/inactive
+provider, even before migration. It retains migration, physical reward/balance,
+mail rollback/retry and durable-receipt checks. `realm_migration_mysql.cpp`
+retains the existing import scenarios. These require a disposable MySQL fixture
+named `phase4_test`, never a realm database. Their fixture/setup instructions
+are below; current source expectations supersede old runtime-mode assertions. Compile with
+`tests/currency_adapter`, `src`, and the MySQL client headers/library. Do not
+use `NATIVE_HUNTS_MEMORY_DATABASE` for these SQL tests.
+
+The cleanup pass compiled these SQL harnesses but did not execute SQL tests,
+start a database/worldserver, or claim fresh live-client acceptance. Older
+captured results and CM-specific harnesses are historical evidence, not results
+for this revision. `extended_cost_consumer_mysql.cpp` is an earlier Phase 5 CM
+fixture and still requires its original package version and external CM code.
+
+## Required realm acceptance after rebuild
+
+1. Confirm the new loader and `NativeHunts.*` settings load, with no old server
+   module simultaneously installed. Verify prior custom settings were migrated.
+2. With matching ACTIVE CM content, verify ready startup, retained allocations,
+   unchanged existing migration receipts and physical balances across restart.
+3. On isolated fresh/legacy-import fixtures, check zero-balance startup and
+   offline mail delivery without duplicate issuance after restart/failure.
+4. Test normal/Elite hunts, ambush/prey, tracking, rewards, Hunting Record,
+   Return Rift, class/spec filters and existing authoring commands.
+5. Verify the one-item MerchantFrame purchase: five physical Seals, insufficient
+   funds, ineligible class/level, forged slot/count/item and wrong Huntmaster.
+6. On an isolated fixture with absent/invalid CM content, confirm clear startup
+   errors, blocked turn-in/vendor/reward operations, and no virtual spending.
+
+No client attestation or new UI is added. Operators remain responsible for
+publishing/installing the matching native client content.
+
+## Disposable SQL fixture reproduction (not executed in cleanup)
+
+Create the local `build` output directory first. The commands below are optional
+fixture instructions, not steps for an existing realm.
 
 For the two Hunt SQL tests, compile the named production .cpp files with `tests/currency_adapter` before `src` in the include path and link the MySQL client library, for example:
 
 ```sh
 g++ -std=c++17 $(mysql_config --cflags) \
-  -Imodules/mod-hunts/tests/currency_adapter -Imodules/mod-hunts/src \
-  modules/mod-hunts/tests/currency_service_mysql.cpp \
-  modules/mod-hunts/src/HuntCurrencyService.cpp \
-  modules/mod-hunts/src/HuntCurrencyMigration.cpp \
-  $(mysql_config --libs) -o /tmp/hunt-currency-service-test
+  -Imodules/mod-native-hunts/tests/currency_adapter -Imodules/mod-native-hunts/src \
+  modules/mod-native-hunts/tests/currency_service_mysql.cpp \
+  modules/mod-native-hunts/src/HuntCurrencyService.cpp \
+  modules/mod-native-hunts/src/HuntCurrencyMigration.cpp \
+  $(mysql_config --libs) -o ./build/hunt-currency-service-test
 ```
 
 Create a fresh disposable `phase4_test`, import `004_hunt_currency.sql`, then create these test-only tables:
@@ -47,8 +92,4 @@ CREATE TABLE mail(id INT PRIMARY KEY,messageType INT,stationery INT,mailTemplate
  subject TEXT,body TEXT,has_items INT,expire_time BIGINT UNSIGNED,deliver_time BIGINT UNSIGNED,money INT,cod INT,checked INT) ENGINE=InnoDB;
 ```
 
-Run `/tmp/hunt-currency-service-test /absolute/private/mysql.sock`. For the migration test, use a separately reset fixture, compile `realm_migration_mysql.cpp` plus `HuntCurrencyMigration.cpp`, and add `delivery_items(id INT AUTO_INCREMENT PRIMARY KEY,guid INT,itemEntry INT,amount INT) ENGINE=InnoDB`. It needs the realm/delivery schema plus the simple hunt_stats/characters tables above.
-
-The CM vendor harness follows the existing `PHASE5_TESTS.md` linking/setup procedure, adding production `ContentVendorRow.cpp` and `ContentVendorServer.cpp`. Use the complete reference CREATE TABLE definitions for item_template, currencytypes_dbc, itemextendedcost_dbc, npc_vendor, game_event_npc_vendor, creature_template and creature. Seed stock item 40717, existing creature 14999989 with npcflag=1/ScriptName=mod_hunts_huntmaster, and the occupancy fixture `npc_vendor(entry,item)=(1,-56808)`. Add the existing test-only reference/refund tables described in PHASE5_TESTS.md. Arguments are private socket, disposable fixture root containing baseline copies, saved 4.2.0 EPF, new 4.3.0 EPF, and the Schema-1 AQ EPF. Tests apply/activate ONLY inside this fixture.
-
-See `../docs/NATIVE_TEST_RESULTS.txt` for captured successful output. Intentional transaction-rejection lines are fault-injection results.
+Run `./build/hunt-currency-service-test /absolute/private/mysql.sock`. For the migration test, use a separately reset fixture, compile `realm_migration_mysql.cpp` plus `HuntCurrencyMigration.cpp`, and add `delivery_items(id INT AUTO_INCREMENT PRIMARY KEY,guid INT,itemEntry INT,amount INT) ENGINE=InnoDB`. It needs the realm/delivery schema plus the simple hunt_stats/characters tables above.

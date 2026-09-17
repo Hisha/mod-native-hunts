@@ -44,18 +44,9 @@ enum class HuntsConfig
     EliteRangedBlinkCooldownMs,
     EliteRangedReactionMs,
     EliteRangedArenaRadius,
-    SealStoreTier1Cost,
-    SealStoreTier1MinItemLevel,
-    SealStoreTier1MaxItemLevel,
-    SealStoreTier2Cost,
-    SealStoreTier2MinItemLevel,
-    SealStoreTier2MaxItemLevel,
-    SealStoreTier3Cost,
-    SealStoreTier3MinItemLevel,
-    SealStoreTier3MaxItemLevel,
-    SealStoreTier4Cost,
-    SealStoreTier4MinItemLevel,
-    SealStoreTier4MaxItemLevel,
+    NativeVendorExpectedCost,
+    NativeVendorMinItemLevel,
+    NativeVendorMaxItemLevel,
     TrackingProgressMin,
     TrackingProgressMax,
     GroupCreditRadius,
@@ -72,50 +63,41 @@ public:
     HuntsConfigData() : ConfigValueCache(HuntsConfig::Count) { }
     void BuildConfigCache() override
     {
-        SetConfigValue<bool>(HuntsConfig::ReturnRiftEnable, "Hunts.ReturnRift.Enable", true);
-        SetConfigValue<uint32>(HuntsConfig::ReturnRiftDuration, "Hunts.ReturnRift.DurationSeconds", 120);
-        SetConfigValue<float>(HuntsConfig::ReturnRiftArrivalDistance, "Hunts.ReturnRift.ArrivalDistance", 3.0f);
-        SetConfigValue<bool>(HuntsConfig::Enabled, "Hunts.Enable", true);
-        SetConfigValue<bool>(HuntsConfig::Debug, "Hunts.Debug", false);
-        SetConfigValue<uint32>(HuntsConfig::MinimumLevel, "Hunts.MinimumLevel", 10);
-        SetConfigValue<float>(HuntsConfig::XpMultiplier, "Hunts.XPMultiplier", 0.75f);
-        SetConfigValue<uint32>(HuntsConfig::SearchScope, "Hunts.SearchScope", 0);
-        SetConfigValue<uint32>(HuntsConfig::EliteRequiredNormalCompletions, "Hunts.Elite.RequiredNormalCompletions", 10);
-        SetConfigValue<uint32>(HuntsConfig::EliteDailyLimit, "Hunts.Elite.DailyLimit", 1);
-        SetConfigValue<float>(HuntsConfig::EliteHealthMultiplier, "Hunts.Elite.HealthMultiplier", 1.0f);
-        SetConfigValue<float>(HuntsConfig::EliteDamageMultiplier, "Hunts.Elite.DamageMultiplier", 1.0f);
-        SetConfigValue<float>(HuntsConfig::EliteArmorMultiplier, "Hunts.Elite.ArmorMultiplier", 1.0f);
-        SetConfigValue<float>(HuntsConfig::EliteXpMultiplier, "Hunts.Elite.XPMultiplier", 1.0f);
-        SetConfigValue<float>(HuntsConfig::EliteGoldMultiplier, "Hunts.Elite.GoldMultiplier", 1.0f);
-        SetConfigValue<uint32>(HuntsConfig::EliteSealMinimumLevel, "Hunts.Elite.SealMinimumLevel", 80);
-        SetConfigValue<uint32>(HuntsConfig::EliteSealsPerCompletion, "Hunts.Elite.SealsPerCompletion", 1);
-        SetConfigValue<uint32>(HuntsConfig::EliteEndgameRewardLevel, "Hunts.Elite.EndgameRewardLevel", 80);
-        SetConfigValue<uint32>(HuntsConfig::EliteEndgameRewardMinItemLevel, "Hunts.Elite.EndgameRewardMinItemLevel", 200);
-        SetConfigValue<uint32>(HuntsConfig::EliteEndgameRewardMaxItemLevel, "Hunts.Elite.EndgameRewardMaxItemLevel", 200);
-        SetConfigValue<bool>(HuntsConfig::EliteRewardRequireUpgrade, "Hunts.Elite.RewardRequireUpgrade", true);
-        SetConfigValue<float>(HuntsConfig::EliteRewardUpgradePoolPct, "Hunts.Elite.RewardUpgradePoolPct", 0.70f);
-        SetConfigValue<uint32>(HuntsConfig::EliteNoUpgradeBonusSeals, "Hunts.Elite.NoUpgradeBonusSeals", 1);
-        SetConfigValue<float>(HuntsConfig::EliteRangedPanicRange, "Hunts.Elite.Ranged.PanicRange", 10.0f);
-        SetConfigValue<float>(HuntsConfig::EliteRangedRetreatRangePct, "Hunts.Elite.Ranged.RetreatRangePct", 1.0f);
-        SetConfigValue<uint32>(HuntsConfig::EliteRangedBlinkCooldownMs, "Hunts.Elite.Ranged.BlinkCooldownMs", 15000);
-        SetConfigValue<uint32>(HuntsConfig::EliteRangedReactionMs, "Hunts.Elite.Ranged.ReactionMs", 500);
-        SetConfigValue<float>(HuntsConfig::EliteRangedArenaRadius, "Hunts.Elite.Ranged.ArenaRadius", 35.0f);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier1Cost, "Hunts.SealStore.Tier1.Cost", 5);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier1MinItemLevel, "Hunts.SealStore.Tier1.MinItemLevel", 213);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier1MaxItemLevel, "Hunts.SealStore.Tier1.MaxItemLevel", 219);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier2Cost, "Hunts.SealStore.Tier2.Cost", 10);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier2MinItemLevel, "Hunts.SealStore.Tier2.MinItemLevel", 226);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier2MaxItemLevel, "Hunts.SealStore.Tier2.MaxItemLevel", 232);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier3Cost, "Hunts.SealStore.Tier3.Cost", 20);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier3MinItemLevel, "Hunts.SealStore.Tier3.MinItemLevel", 245);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier3MaxItemLevel, "Hunts.SealStore.Tier3.MaxItemLevel", 251);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier4Cost, "Hunts.SealStore.Tier4.Cost", 30);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier4MinItemLevel, "Hunts.SealStore.Tier4.MinItemLevel", 264);
-        SetConfigValue<uint32>(HuntsConfig::SealStoreTier4MaxItemLevel, "Hunts.SealStore.Tier4.MaxItemLevel", 264);
-        SetConfigValue<uint32>(HuntsConfig::TrackingProgressMin, "Hunts.Tracking.ProgressMin", 3);
-        SetConfigValue<uint32>(HuntsConfig::TrackingProgressMax, "Hunts.Tracking.ProgressMax", 7);
-        SetConfigValue<float>(HuntsConfig::GroupCreditRadius, "Hunts.GroupCreditRadius", 100.0f);
-        SetConfigValue<float>(HuntsConfig::SharedFinalCreditRadius, "Hunts.SharedFinalCreditRadius", 200.0f);
+        SetConfigValue<bool>(HuntsConfig::ReturnRiftEnable, "NativeHunts.ReturnRift.Enable", true);
+        SetConfigValue<uint32>(HuntsConfig::ReturnRiftDuration, "NativeHunts.ReturnRift.DurationSeconds", 120);
+        SetConfigValue<float>(HuntsConfig::ReturnRiftArrivalDistance, "NativeHunts.ReturnRift.ArrivalDistance", 3.0f);
+        SetConfigValue<bool>(HuntsConfig::Enabled, "NativeHunts.Enable", true);
+        SetConfigValue<bool>(HuntsConfig::Debug, "NativeHunts.Debug", false);
+        SetConfigValue<uint32>(HuntsConfig::MinimumLevel, "NativeHunts.MinimumLevel", 10);
+        SetConfigValue<float>(HuntsConfig::XpMultiplier, "NativeHunts.XPMultiplier", 0.75f);
+        SetConfigValue<uint32>(HuntsConfig::SearchScope, "NativeHunts.SearchScope", 0);
+        SetConfigValue<uint32>(HuntsConfig::EliteRequiredNormalCompletions, "NativeHunts.Elite.RequiredNormalCompletions", 10);
+        SetConfigValue<uint32>(HuntsConfig::EliteDailyLimit, "NativeHunts.Elite.DailyLimit", 1);
+        SetConfigValue<float>(HuntsConfig::EliteHealthMultiplier, "NativeHunts.Elite.HealthMultiplier", 1.0f);
+        SetConfigValue<float>(HuntsConfig::EliteDamageMultiplier, "NativeHunts.Elite.DamageMultiplier", 1.0f);
+        SetConfigValue<float>(HuntsConfig::EliteArmorMultiplier, "NativeHunts.Elite.ArmorMultiplier", 1.0f);
+        SetConfigValue<float>(HuntsConfig::EliteXpMultiplier, "NativeHunts.Elite.XPMultiplier", 1.0f);
+        SetConfigValue<float>(HuntsConfig::EliteGoldMultiplier, "NativeHunts.Elite.GoldMultiplier", 1.0f);
+        SetConfigValue<uint32>(HuntsConfig::EliteSealMinimumLevel, "NativeHunts.Elite.SealMinimumLevel", 80);
+        SetConfigValue<uint32>(HuntsConfig::EliteSealsPerCompletion, "NativeHunts.Elite.SealsPerCompletion", 1);
+        SetConfigValue<uint32>(HuntsConfig::EliteEndgameRewardLevel, "NativeHunts.Elite.EndgameRewardLevel", 80);
+        SetConfigValue<uint32>(HuntsConfig::EliteEndgameRewardMinItemLevel, "NativeHunts.Elite.EndgameRewardMinItemLevel", 200);
+        SetConfigValue<uint32>(HuntsConfig::EliteEndgameRewardMaxItemLevel, "NativeHunts.Elite.EndgameRewardMaxItemLevel", 200);
+        SetConfigValue<bool>(HuntsConfig::EliteRewardRequireUpgrade, "NativeHunts.Elite.RewardRequireUpgrade", true);
+        SetConfigValue<float>(HuntsConfig::EliteRewardUpgradePoolPct, "NativeHunts.Elite.RewardUpgradePoolPct", 0.70f);
+        SetConfigValue<uint32>(HuntsConfig::EliteNoUpgradeBonusSeals, "NativeHunts.Elite.NoUpgradeBonusSeals", 1);
+        SetConfigValue<float>(HuntsConfig::EliteRangedPanicRange, "NativeHunts.Elite.Ranged.PanicRange", 10.0f);
+        SetConfigValue<float>(HuntsConfig::EliteRangedRetreatRangePct, "NativeHunts.Elite.Ranged.RetreatRangePct", 1.0f);
+        SetConfigValue<uint32>(HuntsConfig::EliteRangedBlinkCooldownMs, "NativeHunts.Elite.Ranged.BlinkCooldownMs", 15000);
+        SetConfigValue<uint32>(HuntsConfig::EliteRangedReactionMs, "NativeHunts.Elite.Ranged.ReactionMs", 500);
+        SetConfigValue<float>(HuntsConfig::EliteRangedArenaRadius, "NativeHunts.Elite.Ranged.ArenaRadius", 35.0f);
+        SetConfigValue<uint32>(HuntsConfig::NativeVendorExpectedCost, "NativeHunts.NativeVendor.ExpectedSealCost", 5);
+        SetConfigValue<uint32>(HuntsConfig::NativeVendorMinItemLevel, "NativeHunts.NativeVendor.MinItemLevel", 213);
+        SetConfigValue<uint32>(HuntsConfig::NativeVendorMaxItemLevel, "NativeHunts.NativeVendor.MaxItemLevel", 219);
+        SetConfigValue<uint32>(HuntsConfig::TrackingProgressMin, "NativeHunts.Tracking.ProgressMin", 3);
+        SetConfigValue<uint32>(HuntsConfig::TrackingProgressMax, "NativeHunts.Tracking.ProgressMax", 7);
+        SetConfigValue<float>(HuntsConfig::GroupCreditRadius, "NativeHunts.GroupCreditRadius", 100.0f);
+        SetConfigValue<float>(HuntsConfig::SharedFinalCreditRadius, "NativeHunts.SharedFinalCreditRadius", 200.0f);
     }
 };
 
@@ -183,24 +165,12 @@ public:
             huntsConfig.GetConfigValue<uint32>(HuntsConfig::EliteRangedBlinkCooldownMs),
             huntsConfig.GetConfigValue<uint32>(HuntsConfig::EliteRangedReactionMs),
             huntsConfig.GetConfigValue<float>(HuntsConfig::EliteRangedArenaRadius));
-        sHuntMgr.ConfigureSealStoreTier(1,
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier1Cost),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier1MinItemLevel),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier1MaxItemLevel));
-        sHuntMgr.ConfigureSealStoreTier(2,
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier2Cost),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier2MinItemLevel),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier2MaxItemLevel));
-        sHuntMgr.ConfigureSealStoreTier(3,
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier3Cost),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier3MinItemLevel),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier3MaxItemLevel));
-        sHuntMgr.ConfigureSealStoreTier(4,
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier4Cost),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier4MinItemLevel),
-            huntsConfig.GetConfigValue<uint32>(HuntsConfig::SealStoreTier4MaxItemLevel));
+        sHuntMgr.ConfigureNativeVendor(
+            huntsConfig.GetConfigValue<uint32>(HuntsConfig::NativeVendorExpectedCost),
+            huntsConfig.GetConfigValue<uint32>(HuntsConfig::NativeVendorMinItemLevel),
+            huntsConfig.GetConfigValue<uint32>(HuntsConfig::NativeVendorMaxItemLevel));
         sHuntMgr.LoadDefinitions();
-        LOG_INFO("server.loading", "Hunts module configured.");
+        LOG_INFO("server.loading", "mod-native-hunts configured.");
     }
 
     void OnStartup() override
@@ -257,7 +227,7 @@ private:
         player = GetCommandPlayer(handler);
         if (!player) return false;
         if (!player->IsGameMaster()) { handler->SendSysMessage("[Hunts] Authoring commands are restricted to Game Masters."); return false; }
-        if (!sHuntMgr.IsDebugEnabled()) { handler->SendSysMessage("[Hunts] Authoring commands require Hunts.Debug = 1."); return false; }
+        if (!sHuntMgr.IsDebugEnabled()) { handler->SendSysMessage("[Hunts] Authoring commands require NativeHunts.Debug = 1."); return false; }
         return true;
     }
 
@@ -285,7 +255,7 @@ private:
 };
 }
 
-void AddHuntsModuleScripts()
+void AddNativeHuntsModuleScripts()
 {
     new HuntsWorldScript();
     new HuntsCommandScript();

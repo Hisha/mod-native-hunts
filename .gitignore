@@ -9,3 +9,4 @@ Thumbs.db
 
 # Local module configuration
 conf/mod_hunts.conf
+conf/mod_native_hunts.conf

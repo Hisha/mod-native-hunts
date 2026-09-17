@@ -1,3 +1,7 @@
+HISTORICAL RECORD — captured before the mod-native-hunts cleanup.
+Legacy modes, old installation paths, and earlier test results below are archival,
+not current instructions or fresh validation. See ../NATIVE_HUNTS_CLEANUP.md.
+
 # mod-hunts 4.2.0 — one staged extended-cost consumer
 
 ## Scope and exact change

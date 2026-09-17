@@ -1,3 +1,7 @@
+HISTORICAL RECORD — captured before the mod-native-hunts cleanup.
+Legacy modes, old installation paths, and earlier test results below are archival,
+not current instructions or fresh validation. See ../NATIVE_HUNTS_CLEANUP.md.
+
 # Native Seal realm cutover and one-item proof — EPF 4.3.0
 
 Build 000011 remains Eitrigg's current ACTIVE baseline. **Do not roll it back.** This package changes source/module content; it does not contain a generated realm MPQ, change an Eitrigg database, apply a build, or activate content.

@@ -1,3 +1,7 @@
+HISTORICAL RECORD — captured before the mod-native-hunts cleanup.
+Legacy modes, old installation paths, and earlier test results below are archival,
+not current instructions or fresh validation. See ../NATIVE_HUNTS_CLEANUP.md.
+
 mod-hunts 4.2.0 bounded consumer — local results, not Eitrigg runtime acceptance
 Content Manager production code used unchanged from /home/smithkt/git/mod-content-manager.
 Private MySQL fixture with networking disabled; no server Apply, Activate or Publish call.

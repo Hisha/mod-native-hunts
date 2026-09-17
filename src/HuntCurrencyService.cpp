@@ -1,4 +1,5 @@
 #include "HuntCurrencyService.h"
+#include "HuntContentIdentity.h"
 #include "HuntCurrencyMigration.h"
 #include "HuntCharacterTransaction.h"
 #include "ScriptMgr.h"
@@ -79,55 +80,56 @@ struct Delivery
 };
 }
 HuntCurrencyService& HuntCurrencyService::Instance(){static HuntCurrencyService service;return service;}
-void HuntCurrencyService::Pause(std::string const& reason)
+void HuntCurrencyService::Fail(std::string const& reason)
 {
-    _mode=Mode::Paused;_reason=reason;
-    LOG_ERROR("module.hunts","mod-hunts: currency mode = PAUSED; {}. Preserved virtual balances are not spendable.",reason);
+    _ready=false;_reason=reason;
+    LOG_ERROR("module.native_hunts","mod-native-hunts: native currency unavailable: {}",reason);
 }
 void HuntCurrencyService::Initialize()
 {
+    _ready=false;_seal=0;_vendor={};
     // Startup only; no login hooks, session approvals, polling or runtime fallback.
     auto schema=CharacterDatabase.Query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN "
         "('hunt_currency_realm','hunt_currency_delivery','hunt_stats','hunt_runtime','characters','item_instance','mail','mail_items') AND ENGINE='InnoDB'");
-    if(!schema||schema->Fetch()[0].Get<std::uint64_t>()!=8){Pause("Apply the Hunt currency character SQL; required InnoDB schema is unavailable");return;}
+    if(!schema||schema->Fetch()[0].Get<std::uint64_t>()!=8){Fail("Apply the Hunt currency character SQL; required InnoDB schema is unavailable");return;}
     auto state=CharacterDatabase.Query("SELECT r.state,r.migration_version,r.seal_item FROM (SELECT 1) s LEFT JOIN hunt_currency_realm r ON r.id=1");
-    if(!state){Pause("Cannot read realm migration state");return;}
+    if(!state){Fail("Cannot read realm migration state");return;}
     bool const latched=!state->Fetch()[0].IsNull();
     ContentCapabilitiesV1::Provider const* provider=nullptr;
     for(auto const& script:ScriptRegistry<WorldScript>::ScriptPointerList)
         if(auto candidate=dynamic_cast<ContentCapabilitiesV1::Provider const*>(script.second))
-        {if(provider){Pause("Multiple Content Manager capability providers");return;}provider=candidate;}
+        {if(provider){Fail("Multiple Content Manager capability providers");return;}provider=candidate;}
     std::vector<ContentCapabilitiesV1::Resource> resources{{"seal","item.id",0},{"seal-cost-5","item-extended-cost.id",0}};
     auto result=ContentCapabilitiesV1::Result::Inactive;
-    _reason="Content Manager unavailable; native Hunt content never activated";
-    if(provider)result=provider->Resolve("mod-hunts","seal-proof-vendor",resources,_vendor,_reason);
+    _reason="Required Content Manager provider or ACTIVE native Hunt content is unavailable";
+    if(provider)result=provider->Resolve(hunts::content::Package,"seal-proof-vendor",resources,_vendor,_reason);
     if(result!=ContentCapabilitiesV1::Result::Ready)
     {
-        if(latched || result==ContentCapabilitiesV1::Result::Invalid){Pause(_reason);return;}
-        _mode=Mode::Legacy;LOG_INFO("module.hunts","mod-hunts: currency mode = LEGACY; {}",_reason);return;
+        Fail(_reason);return;
     }
     _seal=resources[0].value;
     auto cost=sItemExtendedCostStore.LookupEntry(resources[1].value);
     if(!_seal||!cost||_vendor.extendedCostId!=resources[1].value||cost->reqitem[0]!=_seal||cost->reqitemcount[0]!=5
         ||cost->reqhonorpoints||cost->reqarenapoints||cost->reqarenaslot||cost->reqpersonalarenarating)
-    {Pause("Native proof requires exactly five resolved physical Seals");return;}
+    {Fail("Native proof requires exactly five resolved physical Seals");return;}
     for(unsigned i=1;i<MAX_ITEM_EXTENDED_COST_REQUIREMENTS;++i)
-        if(cost->reqitem[i]||cost->reqitemcount[i]){Pause("Native proof has extra cost requirements");return;}
+        if(cost->reqitem[i]||cost->reqitemcount[i]){Fail("Native proof has extra cost requirements");return;}
     auto merchandise=sObjectMgr->GetItemTemplate(_vendor.itemEntry);
     if(!merchandise||merchandise->BuyCount!=1||merchandise->BuyPrice!=0||merchandise->Bonding!=BIND_WHEN_PICKED_UP)
-    {Pause("Native proof merchandise must have one BOP unit and no gold price");return;}
+    {Fail("Native proof merchandise must have one BOP unit and no gold price");return;}
     if(latched && (state->Fetch()[1].Get<std::uint32_t>()!=1 || state->Fetch()[2].Get<std::uint32_t>()!=_seal))
-    {Pause("Realm migration version/Seal identity mismatch; explicit administrative repair required");return;}
+    {Fail("Realm migration version/Seal identity mismatch; explicit administrative repair required");return;}
     if(latched && state->Fetch()[0].Get<std::string>()!="MIGRATING" && state->Fetch()[0].Get<std::string>()!="NATIVE")
-    {Pause("Unknown realm migration state");return;}
-    if(!Migrate()){Pause(_reason);return;}
-    _mode=Mode::Native;_reason="Native activation and durable realm migration complete";
-    LOG_INFO("module.hunts","mod-hunts: currency mode = NATIVE; {}",_reason);
+    {Fail("Unknown realm migration state");return;}
+    if(!Migrate()){Fail(_reason);return;}
+    _ready=true;_reason="Native activation and durable realm migration complete";
+    LOG_INFO("module.native_hunts","mod-native-hunts: native currency ready; {}",_reason);
 }
 bool HuntCurrencyService::Migrate()
 {
     if(!ObjectAccessor::GetPlayers().empty()){_reason="Realm migration requires startup before player logins";return false;}
     auto proto=sObjectMgr->GetItemTemplate(_seal);
+    if(!proto || proto->Stackable<=0){_reason="Resolved Seal item template is missing or cannot be stacked";return false;}
     std::unique_ptr<Delivery> delivery;
     return HuntCurrencyMigration::Run(_seal,std::uint32_t(proto->Stackable),
         [&](auto const& tx,std::uint32_t guid,std::uint32_t amount,std::string& error) {
@@ -137,44 +139,32 @@ bool HuntCurrencyService::Migrate()
 std::uint32_t HuntCurrencyService::GetBalance(Player const* player) const
 {
     if(!player||!Available())return 0;
-    if(IsNative())return player->GetItemCount(_seal,false);
-    auto q=CharacterDatabase.Query("SELECT huntmaster_seals FROM hunt_stats WHERE guid="+N(player->GetGUID().GetCounter()));
-    return q?q->Fetch()[0].Get<std::uint32_t>():0;
-}
-bool HuntCurrencyService::SpendLegacy(Player* player,std::uint32_t amount)
-{
-    if(!IsLegacy()||!player||GetBalance(player)<amount)return false;
-    CharacterDatabase.DirectExecute("UPDATE hunt_stats SET huntmaster_seals=huntmaster_seals-"+N(amount)+" WHERE guid="+N(player->GetGUID().GetCounter())+" AND huntmaster_seals>="+N(amount));
-    return true;
-}
-void HuntCurrencyService::RefundLegacy(Player* player,std::uint32_t amount)
-{
-    if(IsLegacy()&&player)CharacterDatabase.DirectExecute("UPDATE hunt_stats SET huntmaster_seals=huntmaster_seals+"+N(amount)+" WHERE guid="+N(player->GetGUID().GetCounter()));
+    return player->GetItemCount(_seal,false);
 }
 bool HuntCurrencyService::CompleteNativeHunt(Player* player,std::uint32_t amount,std::string const& statsSql,std::string& error)
 {
-    if(!IsNative()||!player){error="Seal operations are paused";return false;}
+    if(!Available()||!player){error="Native Seal operations are unavailable";return false;}
     auto serial=CharacterDatabase.Query("SELECT reward_serial FROM hunt_currency_realm WHERE id=1 AND state='NATIVE'");
-    if(!serial){Pause("Cannot read native reward receipt");error=_reason;return false;}
+    if(!serial){Fail("Cannot read native reward receipt");error=_reason;return false;}
     auto before=serial->Fetch()[0].Get<std::uint64_t>();
-    if(before==std::numeric_limits<std::uint64_t>::max()){Pause("Native reward receipt exhausted");error=_reason;return false;}
+    if(before==std::numeric_limits<std::uint64_t>::max()){Fail("Native reward receipt exhausted");error=_reason;return false;}
     auto guid=player->GetGUID().GetCounter();auto tx=CharacterDatabase.BeginTransaction();
     tx->Append("UPDATE hunt_currency_realm SET id=id WHERE id=1");
     Guard(tx,"EXISTS(SELECT 1 FROM hunt_currency_realm WHERE id=1 AND state='NATIVE' AND seal_item="+N(_seal)+" AND reward_serial="+N(before)+")");
     Guard(tx,"EXISTS(SELECT 1 FROM hunt_runtime WHERE guid="+N(guid)+")");
     Delivery delivery;
-    if(!delivery.Prepare(tx,guid,_seal,amount,error)){Pause(error);return false;}
+    if(!delivery.Prepare(tx,guid,_seal,amount,error)){Fail(error);return false;}
     tx->Append(statsSql);tx->Append("DELETE FROM hunt_runtime WHERE guid="+N(guid));
     auto firstMail=delivery.mails.empty()?0:delivery.mails.front()->messageID;
     tx->Append("UPDATE hunt_currency_realm SET reward_serial="+N(before+1)+",last_reward_guid="+N(guid)+",last_reward_mail="+N(firstMail)+" WHERE id=1");
     if (!hunts::CommitCharacterTransactionAndWait(tx))
     {
-        Pause("Native Seal delivery transaction failed or completion could not be confirmed; review before retrying");
+        Fail("Native Seal delivery transaction failed or completion could not be confirmed; review before retrying");
         error = _reason;
         return false;
     }
     auto receipt=CharacterDatabase.Query("SELECT reward_serial FROM hunt_currency_realm WHERE id=1 AND last_reward_guid="+N(guid)+" AND last_reward_mail="+N(firstMail));
     if(!receipt||receipt->Fetch()[0].Get<std::uint64_t>()!=before+1)
-    {Pause("Native completion commit unverified; restart before further Seal operations");error=_reason;return false;}
+    {Fail("Native completion commit unverified; restart before further Seal operations");error=_reason;return false;}
     delivery.Publish(player);return true;
 }

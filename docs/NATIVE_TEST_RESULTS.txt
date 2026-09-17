@@ -1,3 +1,7 @@
+HISTORICAL RECORD — captured before the mod-native-hunts cleanup.
+Legacy modes, old installation paths, and earlier test results below are archival,
+not current instructions or fresh validation. See ../NATIVE_HUNTS_CLEANUP.md.
+
 epf.log
 PASS EPF 4.3.0: one symbolic native vendor; one seal-cost-5, local seal x5, no authored item/cost IDs; existing declarations preserved
 PASS 4.2.0 comparison: only version, description and vendorRows changed; other payload bytes identical

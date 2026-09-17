@@ -1,3 +1,6 @@
+> Historical Phase 5 fixture instructions, not current native-only acceptance.
+> See NATIVE_TESTS.md and ../NATIVE_HUNTS_CLEANUP.md.
+
 # 4.2.0 extended-cost consumer tests
 
 ## Read-only EPF contract
