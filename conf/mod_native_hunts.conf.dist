@@ -1,93 +1,17 @@
-# mod-native-hunts - requires Content Manager and matching native client content
+# mod-native-hunts Milestone 1 foundation
+# No playable Hunt or managed content is installed by this milestone.
 
 NativeHunts.Enable = 1
 NativeHunts.Debug = 0
 NativeHunts.MinimumLevel = 10
 
-# 0 = Local Region, 1 = Continent, 2 = World
-NativeHunts.SearchScope = 0
-
-# Completion XP multiplier for all NativeHunts. Default preserves current tuning.
-NativeHunts.XPMultiplier = 0.75
-
-# ----------------------------------------------------------
-# Tracking / group credit
-# ----------------------------------------------------------
-# Random tracking progress awarded for a qualifying ordinary kill.
+# Future Westfall tracking defaults.
 NativeHunts.Tracking.ProgressMin = 3
 NativeHunts.Tracking.ProgressMax = 7
 
-# Same-hunt group members must be within this many yards for ordinary kill credit.
-NativeHunts.GroupCreditRadius = 100.0
+# Future physical Huntmaster's Seal reward count.
+NativeHunts.Reward.Seals = 1
 
-# Same-final group members must be within this many yards for shared final credit.
-NativeHunts.SharedFinalCreditRadius = 200.0
-
-# ----------------------------------------------------------
-# Elite Hunts
-# ----------------------------------------------------------
-# Completed normal Hunts required before Elite Hunts unlock.
-NativeHunts.Elite.RequiredNormalCompletions = 10
-
-# Successful Elite Hunt turn-ins allowed per character per day.
-NativeHunts.Elite.DailyLimit = 1
-
-# Global difficulty multipliers applied on top of each Elite prey's DB tuning.
-# 1.0 = authored/default difficulty. Example hard server: 1.75 / 1.35 / 1.20.
-NativeHunts.Elite.HealthMultiplier = 1.0
-NativeHunts.Elite.DamageMultiplier = 1.0
-NativeHunts.Elite.ArmorMultiplier = 1.0
-
-# Additional Elite-only reward multipliers. These stack with NativeHunts.XPMultiplier
-# and the individual prey reward_multiplier from hunt_prey.
-NativeHunts.Elite.XPMultiplier = 1.0
-NativeHunts.Elite.GoldMultiplier = 1.0
-
-# Huntmaster's Seals are endgame progression currency. Characters below this
-# level never receive Seals, even when they complete an Elite Hunt.
-NativeHunts.Elite.SealMinimumLevel = 80
-NativeHunts.Elite.SealsPerCompletion = 1
-
-# At this level, Elite random gear switches to the configured endgame item-level
-# band. Defaults to entry-level Wrath 10-player raid gear only.
-NativeHunts.Elite.EndgameRewardLevel = 80
-NativeHunts.Elite.EndgameRewardMinItemLevel = 200
-NativeHunts.Elite.EndgameRewardMaxItemLevel = 200
-
-# Elite random gear can be restricted to actual upgrades over the character's
-# currently equipped item in the matching slot. UpgradePoolPct controls how
-# close a candidate must be to the best detected upgrade to enter the random
-# selection pool. 0.70 = within the best 70% upgrade band. When upgrade
-# filtering leaves no valid level-cap Elite item, NoUpgradeBonusSeals is added
-# on top of the normal Seal completion reward instead of awarding vendor trash.
-NativeHunts.Elite.RewardRequireUpgrade = 1
-NativeHunts.Elite.RewardUpgradePoolPct = 0.70
-NativeHunts.Elite.NoUpgradeBonusSeals = 1
-
-# Ranged Elite combat behavior. PanicRange is where escape tools such as Blink
-# become eligible. RetreatRangePct is multiplied by each prey's SQL preferred_range
-# when a root/slow creates a kiting opportunity. ReactionMs controls how often
-# movement decisions are reconsidered. Blink defaults to the Wrath Mage 15s cooldown.
-# ArenaRadius is the soft radius around the prey's encounter spawn/home position;
-# ranged prey kite inside it and re-center before stock creature evade can trigger.
-NativeHunts.Elite.Ranged.PanicRange = 10.0
-NativeHunts.Elite.Ranged.RetreatRangePct = 1.0
-NativeHunts.Elite.Ranged.BlinkCooldownMs = 15000
-NativeHunts.Elite.Ranged.ReactionMs = 500
-NativeHunts.Elite.Ranged.ArenaRadius = 35.0
-
-
-# ----------------------------------------------------------
-# Native vendor proof eligibility (not a price override).
-# ExtendedCost remains Content Manager-owned and must charge exactly five Seals.
-# A different ExpectedSealCost disables eligibility; it does not edit the cost.
-NativeHunts.NativeVendor.ExpectedSealCost = 5
-NativeHunts.NativeVendor.MinItemLevel = 213
-NativeHunts.NativeVendor.MaxItemLevel = 219
-
-# Optional return to the issuing Huntmaster after completion; does not turn in.
+# Future owner-bound Return Rift defaults.
 NativeHunts.ReturnRift.Enable = 1
-# Clamped to 1-120 seconds. Existing rifts retain their original deadline.
 NativeHunts.ReturnRift.DurationSeconds = 120
-# Near-position distance in yards, clamped to 1-10; non-finite values use 3.
-NativeHunts.ReturnRift.ArrivalDistance = 3.0
