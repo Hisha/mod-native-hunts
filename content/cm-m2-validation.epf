@@ -1,0 +1,41 @@
+{
+  "schema": 2,
+  "package": "cm-m2-validation",
+  "name": "Content Manager Milestone 2 Validation",
+  "version": "1",
+  "description": "Disposable PTR validation package for managed server resources.",
+  "creatureTemplates": [
+    {
+      "symbol": "test-creature",
+      "copyFrom": 197,
+      "overrides": {
+        "name": "CM Milestone 2 Test NPC",
+        "subname": "Disposable PTR Test",
+        "minLevel": 20,
+        "maxLevel": 20
+      }
+    }
+  ],
+  "gameobjectTemplates": [
+    {
+      "symbol": "test-object",
+      "copyFrom": 34,
+      "overrides": {
+        "name": "CM Milestone 2 Test Object",
+        "size": 1.0
+      }
+    }
+  ],
+  "creatureSpawns": [
+    {
+      "symbol": "test-creature-spawn",
+      "creature": {
+        "symbol": "test-creature"
+      },
+      "map": 0,
+      "x": -10229.946,
+      "y": 1225.396,
+      "z": 43.795517
+    }
+  ]
+}
