@@ -52,18 +52,18 @@ public:
 
 	void OnStartup() override {
 		if (!Config.Enabled) {
-			AC_LOG_INFO("module.native_hunts",
+			LOG_INFO("module.native_hunts",
 						"mod-native-hunts foundation is disabled.");
 			return;
 		}
 
-		AC_LOG_INFO("module.native_hunts",
+		LOG_INFO("module.native_hunts",
 					"mod-native-hunts Milestone 1 foundation loaded. Gameplay "
 					"remains unavailable until managed native content and "
 					"persistence are implemented.");
 
 		if (Config.Debug) {
-			AC_LOG_INFO(
+			LOG_INFO(
 				"module.native_hunts",
 				"Foundation defaults: minimumLevel={}, tracking={}..{}, "
 				"rewardSeals={}, returnRift={}, returnRiftSeconds={}",
