@@ -1,4 +1,4 @@
-#include "ConfigMgr.h"
+#include "Config.h"
 #include "Log.h"
 #include "ScriptMgr.h"
 
