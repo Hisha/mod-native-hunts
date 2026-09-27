@@ -182,20 +182,23 @@ bool NativeHuntsManager::ResolveManagedResources() {
 	auto const *crystal =
 		sObjectMgr->GetGameObjectTemplate(_resources.TrailCrystalEntry);
 	auto const *rift = sObjectMgr->GetGameObjectTemplate(_resources.ReturnRiftEntry);
-	auto const scriptedGoober = [](GameObjectTemplate const *value) {
-		return value && value->type == GAMEOBJECT_TYPE_GOOBER &&
-			value->goober.lockId == 0 && value->goober.questId == 0 &&
-			value->goober.eventId == 0 && value->goober.autoCloseTime == 0 &&
-			value->goober.customAnim == 0 && value->goober.consumable == 0 &&
-			value->goober.cooldown == 0 && value->goober.pageId == 0 &&
-			value->goober.spellId == 0 && value->goober.linkedTrapId == 0 &&
-			value->goober.gossipID == 0;
+	auto const scriptedButton = [](GameObjectTemplate const *value,
+								 char const *scriptName) {
+		return value && value->type == GAMEOBJECT_TYPE_BUTTON &&
+			value->ScriptId == sObjectMgr->GetScriptId(scriptName) &&
+			value->button.startOpen == 0 && value->button.lockId == 0 &&
+			value->button.autoCloseTime == 0 &&
+			value->button.linkedTrap == 0 &&
+			value->button.noDamageImmune == 0 && value->button.large == 0 &&
+			value->button.openTextID == 0 && value->button.closeTextID == 0 &&
+			value->button.losOK == 0;
 	};
-	if (!scriptedGoober(crystal) || !scriptedGoober(rift) ||
+	if (!scriptedButton(crystal, "mod_native_hunts_trail_crystal") ||
+		!scriptedButton(rift, "mod_native_hunts_return_rift") ||
 		!sObjectMgr->GetItemTemplate(_resources.SealItemEntry)) {
 		_resources.Reason =
-			"managed scripted goobers/items are missing, stale, or carry default "
-			"lock/quest/spell behavior; rebuild content and restart worldserver";
+			"managed scripted buttons/items are missing, stale, or carry default "
+			"lock/autoclose/trap behavior; rebuild content and restart worldserver";
 		return false;
 	}
 	for (auto const &[symbol, entry] : _resources.CreatureEntries)
@@ -510,6 +513,9 @@ bool NativeHuntsManager::EnsureCrystal(Player *player, HuntRuntime &runtime) {
 		std::cos(site->Orientation * 0.5f), 3600);
 	if (!crystal)
 		return false;
+	crystal->SetGoState(GO_STATE_READY);
+	crystal->RemoveGameObjectFlag(GO_FLAG_IN_USE | GO_FLAG_LOCKED |
+		GO_FLAG_INTERACT_COND | GO_FLAG_NOT_SELECTABLE);
 	runtime.CrystalGuid = crystal->GetGUID();
 	return true;
 }
@@ -681,6 +687,9 @@ void NativeHuntsManager::CreateReturnRift(Player *player, Creature *prey,
 		_config.ReturnRiftDurationSeconds, false);
 	if (!rift)
 		return;
+	rift->SetGoState(GO_STATE_READY);
+	rift->RemoveGameObjectFlag(GO_FLAG_IN_USE | GO_FLAG_LOCKED |
+		GO_FLAG_INTERACT_COND | GO_FLAG_NOT_SELECTABLE);
 	rift->SetPhaseMask(prey->GetPhaseMask(), true);
 	runtime.ReturnRiftGuid = rift->GetGUID();
 	runtime.ReturnRiftMap = prey->GetMapId();

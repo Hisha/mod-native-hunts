@@ -23,11 +23,15 @@ binary.
 
 ## Content lifecycle
 
-The package version is 3. The trail crystal now copies the clean, zero-data
-gameobject donor 19529 and explicitly retains display 7942. Both it and the
-Return Rift are type-10 scripted goobers with no lock, quest, autoclose, or
-spell behavior. Content Manager must scan, uninstall/install the package
-selection, build, and activate the new cumulative build. Confirm server state
+The package version is 4. The trail crystal and Return Rift copy the clean,
+zero-data gameobject donor 19529 and retain their explicit displays. Both are
+type-1 scripted buttons with no lock, autoclose, linked trap, or default button
+behavior: AzerothCore dispatches `GameObjectScript::OnGossipHello` before the
+type-specific button handler, and each script returns `true`. Unlike a type-10
+goober with `questId = 0`, a button is intrinsically client-usable and does not
+depend on the per-player `GO_DYNFLAG_LO_ACTIVATE` quest gate. Content Manager
+must scan, uninstall/install the package selection, build, and activate the new
+cumulative build. Confirm server state
 `APPLIED`, distribute the matching client artifact, and restart worldserver so
 the object manager loads the new templates.
 

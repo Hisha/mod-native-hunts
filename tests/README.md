@@ -10,8 +10,8 @@
    resource unavailability, abandonment, snapshots, all 195 unique authored
    sites, regional counts, and per-zone site pools;
 2. the managed EPF contract: all ten Huntmasters and spawns, all sixteen
-   standard prey, both clean scripted-goober runtime templates, the physical Seal declaration,
-   and removal of disposable validation symbols;
+   standard prey, both clean scripted-button runtime templates, the physical
+   Seal declaration, and removal of disposable validation symbols;
 3. native-only source/persistence safety checks that reject legacy package,
    table, protocol, migration, world-database assignment placement, undocumented
    configuration reads, and hard-coded allocated identities, and require

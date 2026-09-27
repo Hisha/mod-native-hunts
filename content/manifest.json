@@ -2,7 +2,7 @@
   "schema": 2,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "3",
+  "version": "4",
   "description": "Managed Huntmasters, standard prey, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
   "content": [],
   "dbcRows": [
@@ -76,8 +76,8 @@
     { "symbol": "prey-grimmaw", "copyFrom": 8215, "overrides": { "name": "Grimmaw", "subname": "The Forest Breaker", "faction": 14, "unitFlags": 0 } }
   ],
   "gameobjectTemplates": [
-    { "symbol": "prey-trail-crystal", "copyFrom": 19529, "overrides": { "name": "Prey Trail Crystal", "type": 10, "displayId": 7942, "size": 1.0, "scriptName": "mod_native_hunts_trail_crystal" } },
-    { "symbol": "return-rift", "copyFrom": 19529, "overrides": { "name": "Return Rift", "type": 10, "displayId": 1327, "size": 1.0, "scriptName": "mod_native_hunts_return_rift" } }
+    { "symbol": "prey-trail-crystal", "copyFrom": 19529, "overrides": { "name": "Prey Trail Crystal", "type": 1, "displayId": 7942, "size": 1.0, "scriptName": "mod_native_hunts_trail_crystal" } },
+    { "symbol": "return-rift", "copyFrom": 19529, "overrides": { "name": "Return Rift", "type": 1, "displayId": 1327, "size": 1.0, "scriptName": "mod_native_hunts_return_rift" } }
   ],
   "creatureSpawns": [
     { "symbol": "huntmaster-corvin-spawn", "creature": { "symbol": "huntmaster-corvin" }, "map": 0, "x": -8771.718, "y": 637.399, "z": 97.22381, "orientation": 3.0327725 },

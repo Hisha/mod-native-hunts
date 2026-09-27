@@ -288,6 +288,18 @@ void TestCrystalAndSpawnValidation() {
 	wrongSite.NearPersistedSite = false;
 	Check(CanActivateCrystal(wrongSite) == GameplayDecision::WrongLocation,
 		  "crystal away from persisted site rejected");
+	CrystalUseContext wrongObject = valid;
+	wrongObject.CorrectObject = false;
+	Check(CanActivateCrystal(wrongObject) == GameplayDecision::WrongResource,
+		  "wrong runtime crystal GUID rejected");
+	CrystalUseContext wrongTemplate = valid;
+	wrongTemplate.CorrectTemplate = false;
+	Check(CanActivateCrystal(wrongTemplate) == GameplayDecision::WrongResource,
+		  "wrong crystal template rejected");
+	CrystalUseContext wrongMap = valid;
+	wrongMap.SameMapAndZone = false;
+	Check(CanActivateCrystal(wrongMap) == GameplayDecision::WrongLocation,
+		  "crystal on wrong map or zone rejected");
 
 	HuntAggregate revealed = Revealed();
 	std::uint64_t const revision = revealed.Revision;
@@ -309,13 +321,26 @@ void TestFinalKillRiftAndTurnInValidation() {
 	Check(CanCompleteFinalKill(wrongPrey) == GameplayDecision::WrongResource,
 		  "incorrect prey does not complete");
 
-	ReturnRiftUseContext rift{HuntState::ReadyToTurnIn, true, true, true,
+	HuntAggregate ready = Revealed();
+	ExpectStatus(HuntDomain::Execute(ready, ActivatePrey{}),
+				 TransitionStatus::Applied, "activate prey before Rift proof");
+	ExpectStatus(HuntDomain::Execute(ready, MarkPreyKilled{}),
+				 TransitionStatus::Applied, "reach ReadyToTurnIn for Rift proof");
+	std::uint64_t const readyRevision = ready.Revision;
+	ReturnRiftUseContext rift{ready.State, true, true, true,
 							  true, true, true};
 	Check(CanUseReturnRift(rift) == GameplayDecision::Allowed,
 		  "owner-bound rift accepted");
+	Check(ready.State == HuntState::ReadyToTurnIn &&
+			  ready.Revision == readyRevision,
+		  "Rift validation does not complete or mutate the Hunt");
 	rift.CorrectPlayer = false;
 	Check(CanUseReturnRift(rift) == GameplayDecision::WrongOwner,
 		  "another player's rift rejected");
+	rift.CorrectPlayer = true;
+	rift.CorrectObject = false;
+	Check(CanUseReturnRift(rift) == GameplayDecision::WrongResource,
+		  "wrong runtime Rift GUID rejected");
 
 	TurnInContext turnIn{HuntState::ReadyToTurnIn, true, true, true};
 	Check(CanTurnIn(turnIn) == GameplayDecision::Allowed,

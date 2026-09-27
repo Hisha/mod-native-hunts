@@ -46,7 +46,8 @@ def run_content_checks() -> None:
         if archive.namelist() != ["manifest.json"]:
             raise AssertionError("EPF must contain only manifest.json")
         manifest = json.loads(archive.read("manifest.json"))
-    if manifest.get("package") != "mod-native-hunts" or manifest.get("schema") != 2:
+    if (manifest.get("package") != "mod-native-hunts" or
+            manifest.get("schema") != 2 or manifest.get("version") != "4"):
         raise AssertionError("invalid Native Hunts EPF identity")
     creature_symbols = {row["symbol"] for row in manifest["creatureTemplates"]}
     expected_huntmasters = {
@@ -73,10 +74,13 @@ def run_content_checks() -> None:
     for symbol, display_id in (("prey-trail-crystal", 7942), ("return-rift", 1327)):
         row = scripted_objects[symbol]
         overrides = row["overrides"]
-        if (row["copyFrom"] != 19529 or overrides.get("type") != 10 or
+        expected_script = ("mod_native_hunts_trail_crystal" if
+                           symbol == "prey-trail-crystal" else
+                           "mod_native_hunts_return_rift")
+        if (row["copyFrom"] != 19529 or overrides.get("type") != 1 or
                 overrides.get("displayId") != display_id or
-                not overrides.get("scriptName", "").startswith("mod_native_hunts_")):
-            raise AssertionError(f"{symbol} must use the clean scripted-goober contract")
+                overrides.get("scriptName") != expected_script):
+            raise AssertionError(f"{symbol} must use the clean scripted-button contract")
     item_symbols = {row["symbol"] for row in manifest["dbcRows"]}
     if "huntmaster-seal" not in item_symbols:
         raise AssertionError("physical Huntmaster's Seal is not declared")
@@ -160,6 +164,14 @@ def run_source_safety_checks() -> None:
                   "AmbushPending = false", "final_site="):
         if token not in manager:
             raise AssertionError(f"feedback/ambush/status behavior missing: {token}")
+    for token in ('GameObjectScript("mod_native_hunts_trail_crystal")',
+                  'GameObjectScript("mod_native_hunts_return_rift")',
+                  "GAMEOBJECT_TYPE_BUTTON", "value->button.lockId == 0",
+                  "value->button.autoCloseTime == 0",
+                  "value->button.linkedTrap == 0", "SetGoState(GO_STATE_READY)",
+                  "GO_FLAG_NOT_SELECTABLE"):
+        if token not in module + manager:
+            raise AssertionError(f"scripted GameObject interaction contract missing: {token}")
     print("PASS native-only source and persistence safety checks", flush=True)
 
 
