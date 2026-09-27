@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile and run the database-free Milestone 1 checks."""
+"""Compile and run Native Hunts domain, gameplay, and content checks."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import json
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,24 +32,64 @@ def run_domain_tests() -> None:
     with tempfile.TemporaryDirectory(prefix=".native-hunts-m1-", dir=ROOT) as directory:
         executable = Path(directory) / ("hunt_domain_tests.exe" if os.name == "nt" else "hunt_domain_tests")
         command = [compiler(), "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic", "-Isrc",
-            "tests/hunt_domain_tests.cpp", "src/HuntDomain.cpp", "src/HuntSnapshot.cpp", "-o", str(executable)]
+            "tests/hunt_domain_tests.cpp", "src/HuntDomain.cpp", "src/HuntGameplay.cpp",
+            "src/HuntSnapshot.cpp", "src/HuntCatalog.cpp", "-o", str(executable)]
         subprocess.run(command, cwd=ROOT, check=True)
         subprocess.run([str(executable)], cwd=ROOT, check=True)
-        print("PASS hunt domain and snapshot tests", flush=True)
+        print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
+
+
+def run_content_checks() -> None:
+    epf = ROOT / "content" / "mod-native-hunts.epf"
+    with zipfile.ZipFile(epf) as archive:
+        if archive.namelist() != ["manifest.json"]:
+            raise AssertionError("EPF must contain only manifest.json")
+        manifest = json.loads(archive.read("manifest.json"))
+    if manifest.get("package") != "mod-native-hunts" or manifest.get("schema") != 2:
+        raise AssertionError("invalid Native Hunts EPF identity")
+    creature_symbols = {row["symbol"] for row in manifest["creatureTemplates"]}
+    expected_huntmasters = {
+        "huntmaster-corvin", "huntmaster-brannoc", "huntmaster-shalara",
+        "huntmaster-veylan", "huntmaster-gorrak", "huntmaster-tahu",
+        "huntmaster-morcant", "huntmaster-vaelith", "huntmaster-raleth",
+        "huntmaster-varyn",
+    }
+    expected_prey = {
+        "prey-ashfang", "prey-silkmaw", "prey-gorehide", "prey-whiteclaw",
+        "prey-tidefang", "prey-stonegut", "prey-sootfang", "prey-nightfang",
+        "prey-shadowclaw", "prey-dreadwing", "prey-venomtail", "prey-stormcoil",
+        "prey-mirejaw", "prey-razortalon", "prey-cliffhowl", "prey-grimmaw",
+    }
+    if not (expected_huntmasters | expected_prey) <= creature_symbols:
+        raise AssertionError("missing managed Huntmaster or standard-prey template")
+    spawn_symbols = {row["symbol"] for row in manifest["creatureSpawns"]}
+    if spawn_symbols != {f"{symbol}-spawn" for symbol in expected_huntmasters}:
+        raise AssertionError("managed Huntmaster spawn set is incomplete")
+    objects = {row["symbol"] for row in manifest["gameobjectTemplates"]}
+    if objects != {"prey-trail-crystal", "return-rift"}:
+        raise AssertionError("runtime gameobject template set is incorrect")
+    item_symbols = {row["symbol"] for row in manifest["dbcRows"]}
+    if "huntmaster-seal" not in item_symbols:
+        raise AssertionError("physical Huntmaster's Seal is not declared")
+    serialized = json.dumps(manifest)
+    for disposable in ("test-creature", "test-creature-spawn", "test-object"):
+        if disposable in serialized:
+            raise AssertionError(f"disposable resource remains: {disposable}")
+    print("PASS managed Native Hunts EPF contract", flush=True)
 
 
 def run_source_safety_checks() -> None:
     prohibited = {
         "legacy package key": '"mod-hunts"',
         "old loader": "Addmod_huntsScripts",
-        "old runtime table": "hunt_runtime",
-        "old statistics table": "hunt_stats",
-        "old import table": "hunt_currency_realm",
+        "old runtime table": "`hunt_runtime`",
+        "old statistics table": "`hunt_stats`",
+        "old import table": "`hunt_currency_realm`",
         "old migration component": "HuntCurrencyMigration",
         "old client protocol": '"HUNTS"',
-        "old crystal entry": "14999010",
-        "old rift entry": "14999011",
-        "old Huntmaster entry": "14999980",
+        "hard-coded old crystal entry": "14999010",
+        "hard-coded old rift entry": "14999011",
+        "hard-coded old Huntmaster entry": "14999980",
     }
     production = list((ROOT / "src").glob("**/*")) + list((ROOT / "conf").glob("**/*"))
     for path in production:
@@ -57,18 +99,32 @@ def run_source_safety_checks() -> None:
         for description, token in prohibited.items():
             if token in text:
                 raise AssertionError(f"{description} found in {path.relative_to(ROOT)}: {token}")
-    obsolete_directories = (ROOT / "content", ROOT / "data" / "sql")
-    for obsolete in obsolete_directories:
-        if obsolete.exists() and any(path.is_file() for path in obsolete.rglob("*")):
-            raise AssertionError(f"obsolete milestone content remains: {obsolete.relative_to(ROOT)}")
     obsolete_loader = ROOT / "src" / "mod_hunts_loader.cpp"
     if obsolete_loader.exists():
         raise AssertionError(f"obsolete milestone content remains: {obsolete_loader.relative_to(ROOT)}")
-    print("PASS clean-foundation source safety checks", flush=True)
+    required_schema = {
+        ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql",
+        ROOT / "data/sql/db-characters/base/002_native_hunt_stats.sql",
+    }
+    if not all(path.is_file() for path in required_schema):
+        raise AssertionError("native persistence schema is incomplete")
+    manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
+    required_turn_in_safety = (
+        "SaveInventoryAndGoldToDB(transaction)",
+        "CommitCharacterTransactionAndWait(transaction)",
+        "DestroyItemCount(_resources.SealItemEntry",
+        "repeat rewards are blocked until the result is readable",
+        "Removed the provisional Native Hunt Seal",
+    )
+    for token in required_turn_in_safety:
+        if token not in manager:
+            raise AssertionError(f"turn-in consistency safeguard missing: {token}")
+    print("PASS native-only source and persistence safety checks", flush=True)
 
 
 def main() -> None:
     run_domain_tests()
+    run_content_checks()
     run_source_safety_checks()
 
 

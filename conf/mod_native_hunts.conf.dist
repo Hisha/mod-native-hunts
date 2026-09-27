@@ -1,17 +1,16 @@
-# mod-native-hunts Milestone 1 foundation
-# No playable Hunt or managed content is installed by this milestone.
+# Native Hunts standard gameplay configuration.
 
 NativeHunts.Enable = 1
 NativeHunts.Debug = 0
 NativeHunts.MinimumLevel = 10
 
-# Future Westfall tracking defaults.
 NativeHunts.Tracking.ProgressMin = 3
 NativeHunts.Tracking.ProgressMax = 7
+NativeHunts.GroupCreditRadius = 100.0
 
-# Future physical Huntmaster's Seal reward count.
+# Physical Huntmaster's Seal items awarded at a successful turn-in.
 NativeHunts.Reward.Seals = 1
 
-# Future owner-bound Return Rift defaults.
 NativeHunts.ReturnRift.Enable = 1
 NativeHunts.ReturnRift.DurationSeconds = 120
+NativeHunts.ReturnRift.ArrivalDistance = 3.0

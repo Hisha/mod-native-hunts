@@ -1,7 +1,10 @@
 #include "HuntDomain.h"
+#include "HuntCatalog.h"
+#include "HuntGameplay.h"
 #include "HuntSnapshot.h"
 
 #include <cstdlib>
+#include <set>
 #include <string>
 
 using namespace native_hunts;
@@ -209,6 +212,108 @@ void TestSnapshots() {
 			  "Managed native content is not ACTIVE/APPLIED.",
 		  "unavailable reason");
 }
+
+void TestTrackingEligibility() {
+	TrackingKillContext eligible{true, true, true, true, false, false};
+	Check(CanAdvanceTracking(eligible) == GameplayDecision::Allowed,
+		  "eligible ordinary kill advances");
+	TrackingKillContext grey = eligible;
+	grey.IsGrey = true;
+	Check(CanAdvanceTracking(grey) == GameplayDecision::IneligibleKill,
+		  "grey kill rejected");
+	TrackingKillContext remote = eligible;
+	remote.WithinCreditRadius = false;
+	Check(CanAdvanceTracking(remote) == GameplayDecision::IneligibleKill,
+		  "remote group kill rejected");
+	TrackingKillContext prey = eligible;
+	prey.IsHuntPrey = true;
+	Check(CanAdvanceTracking(prey) == GameplayDecision::IneligibleKill,
+		  "hunt prey cannot become ordinary progress");
+}
+
+void TestCrystalAndSpawnValidation() {
+	CrystalUseContext valid{HuntState::FinalRevealed, true, true, true, true,
+						true};
+	Check(CanActivateCrystal(valid) == GameplayDecision::Allowed,
+		  "owner crystal is usable");
+	CrystalUseContext otherPlayer = valid;
+	otherPlayer.CorrectPlayer = false;
+	Check(CanActivateCrystal(otherPlayer) == GameplayDecision::WrongOwner,
+		  "other player crystal rejected");
+	CrystalUseContext wrongSite = valid;
+	wrongSite.NearPersistedSite = false;
+	Check(CanActivateCrystal(wrongSite) == GameplayDecision::WrongLocation,
+		  "crystal away from persisted site rejected");
+
+	HuntAggregate revealed = Revealed();
+	std::uint64_t const revision = revealed.Revision;
+	ExpectStatus(ApplyPreySpawnOutcome(revealed, false),
+				 TransitionStatus::NoChange, "failed spawn changes no state");
+	Check(revealed.State == HuntState::FinalRevealed &&
+			  revealed.Revision == revision,
+		  "failed spawn remains safely revealed");
+	ExpectStatus(ApplyPreySpawnOutcome(revealed, true),
+				 TransitionStatus::Applied, "successful spawn activates prey");
+}
+
+void TestFinalKillRiftAndTurnInValidation() {
+	FinalKillContext finalKill{HuntState::PreyActive, true, true, true};
+	Check(CanCompleteFinalKill(finalKill) == GameplayDecision::Allowed,
+		  "correct final prey completes");
+	FinalKillContext wrongPrey = finalKill;
+	wrongPrey.CorrectCreature = false;
+	Check(CanCompleteFinalKill(wrongPrey) == GameplayDecision::WrongResource,
+		  "incorrect prey does not complete");
+
+	ReturnRiftUseContext rift{HuntState::ReadyToTurnIn, true, true, true,
+							  true, true, true};
+	Check(CanUseReturnRift(rift) == GameplayDecision::Allowed,
+		  "owner-bound rift accepted");
+	rift.CorrectPlayer = false;
+	Check(CanUseReturnRift(rift) == GameplayDecision::WrongOwner,
+		  "another player's rift rejected");
+
+	TurnInContext turnIn{HuntState::ReadyToTurnIn, true, true, true};
+	Check(CanTurnIn(turnIn) == GameplayDecision::Allowed,
+		  "valid physical Seal turn-in");
+	turnIn.HasInventorySpace = false;
+	Check(CanTurnIn(turnIn) == GameplayDecision::InventoryFull,
+		  "full inventory refuses turn-in");
+	turnIn.HasInventorySpace = true;
+	turnIn.SealResourceAvailable = false;
+	Check(CanTurnIn(turnIn) == GameplayDecision::WrongResource,
+		  "unavailable managed Seal refuses turn-in");
+}
+
+void TestAuthoredFinalSiteCatalog() {
+	auto const &sites = KnownFinalSites();
+	Check(sites.size() == 195, "complete authored final-site count");
+	std::size_t easternKingdoms = 0;
+	std::size_t kalimdor = 0;
+	std::size_t outland = 0;
+	std::size_t northrend = 0;
+	std::set<std::string> keys;
+	std::set<std::string> zones;
+	for (auto const &site : sites) {
+		keys.emplace(site.Key);
+		zones.emplace(site.ZoneKey);
+		switch (site.Region) {
+		case HuntRegion::EasternKingdoms: ++easternKingdoms; break;
+		case HuntRegion::Kalimdor: ++kalimdor; break;
+		case HuntRegion::Outland: ++outland; break;
+		case HuntRegion::Northrend: ++northrend; break;
+		}
+		Check(site.MinLevel > 0 && site.MinLevel <= site.MaxLevel,
+			  "site inherits valid zone-level applicability");
+	}
+	Check(keys.size() == sites.size(), "authored site keys are unique");
+	Check(easternKingdoms == 84 && kalimdor == 63 && outland == 21 &&
+			  northrend == 27,
+		  "authored regional site counts");
+	for (auto const &zone : zones)
+		Check(FinalSitesForZone(zone).size() >= 3,
+			  "every authored hunting zone has multiple final sites");
+}
 } // namespace
 
 int main(int argc, char **argv) {
@@ -223,6 +328,14 @@ int main(int argc, char **argv) {
 		TestRecovery();
 	if (selection == "all" || selection == "snapshots")
 		TestSnapshots();
+	if (selection == "all" || selection == "tracking")
+		TestTrackingEligibility();
+	if (selection == "all" || selection == "crystal")
+		TestCrystalAndSpawnValidation();
+	if (selection == "all" || selection == "completion")
+		TestFinalKillRiftAndTurnInValidation();
+	if (selection == "all" || selection == "sites")
+		TestAuthoredFinalSiteCatalog();
 	if (Failures != 0)
 		return EXIT_FAILURE;
 	return EXIT_SUCCESS;
