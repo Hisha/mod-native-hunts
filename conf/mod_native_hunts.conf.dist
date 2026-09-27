@@ -3,6 +3,8 @@
 NativeHunts.Enable = 1
 NativeHunts.Debug = 0
 NativeHunts.MinimumLevel = 10
+# Completion XP = current-level next-level XP * 0.08 * this value * prey multiplier.
+NativeHunts.XPMultiplier = 0.75
 
 # Assignment geography. Local uses the established per-Huntmaster authored
 # region allowlists. Continent uses the Huntmaster's gameplay continent. World
@@ -23,8 +25,28 @@ NativeHunts.Ambush.Count = 2
 NativeHunts.Ambush.HealthMultiplier = 4.0
 NativeHunts.Ambush.EscapeHealthPercent = 50.0
 
-# Physical Huntmaster's Seal items awarded at a successful turn-in.
-NativeHunts.Reward.Seals = 1
+# Elite Hunts unlock after this many completed Standard Hunts. Accepting an
+# Elite consumes the daily allowance immediately, preventing abandon/reroll.
+NativeHunts.Elite.RequiredStandardCompletions = 10
+NativeHunts.Elite.DailyLimit = 1
+NativeHunts.Elite.HealthMultiplier = 1.0
+NativeHunts.Elite.DamageMultiplier = 1.0
+NativeHunts.Elite.ArmorMultiplier = 1.0
+NativeHunts.Elite.XPMultiplier = 1.0
+NativeHunts.Elite.GoldMultiplier = 1.0
+NativeHunts.Elite.SealMinimumLevel = 80
+NativeHunts.Elite.SealsPerCompletion = 1
+NativeHunts.Elite.EndgameRewardLevel = 80
+NativeHunts.Elite.EndgameRewardMinItemLevel = 200
+NativeHunts.Elite.EndgameRewardMaxItemLevel = 200
+NativeHunts.Elite.RewardRequireUpgrade = 1
+NativeHunts.Elite.RewardUpgradePoolPct = 0.70
+NativeHunts.Elite.NoUpgradeBonusSeals = 1
+
+# Active-Hunt visual aura is intentionally absent: the installed generic
+# Content Manager supports Item, CurrencyTypes, CurrencyCategory, and
+# ItemExtendedCost DBC rows, but not Spell.dbc/SpellIcon.dbc managed content.
+# Native Hunts will not hijack an unrelated stock spell.
 
 NativeHunts.ReturnRift.Enable = 1
 # Clamped to 1-120 seconds.

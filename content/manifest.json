@@ -2,8 +2,8 @@
   "schema": 2,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "4",
-  "description": "Managed Huntmasters, standard prey, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
+  "version": "5",
+  "description": "Managed Huntmasters, Standard and Elite prey, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
   "content": [],
   "dbcRows": [
     {
@@ -73,7 +73,18 @@
     { "symbol": "prey-mirejaw", "copyFrom": 14233, "overrides": { "name": "Mirejaw", "subname": "The Ancient Maw", "faction": 14, "unitFlags": 0 } },
     { "symbol": "prey-razortalon", "copyFrom": 14232, "overrides": { "name": "Razortalon", "subname": "The Blood Raptor", "faction": 14, "unitFlags": 0 } },
     { "symbol": "prey-cliffhowl", "copyFrom": 8211, "overrides": { "name": "Cliffhowl", "subname": "The Ridge Hunter", "faction": 14, "unitFlags": 0 } },
-    { "symbol": "prey-grimmaw", "copyFrom": 8215, "overrides": { "name": "Grimmaw", "subname": "The Forest Breaker", "faction": 14, "unitFlags": 0 } }
+    { "symbol": "prey-grimmaw", "copyFrom": 8215, "overrides": { "name": "Grimmaw", "subname": "The Forest Breaker", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-oathbreaker", "copyFrom": 3976, "overrides": { "name": "The Oathbreaker", "subname": "Fallen Hand of the Light", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-winterborn", "copyFrom": 4275, "overrides": { "name": "The Winterborn", "subname": "Exiled Master of the Frozen Arts", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-headsman", "copyFrom": 3975, "overrides": { "name": "The Headsman", "subname": "Executioner Without a Banner", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-veiled-knife", "copyFrom": 639, "overrides": { "name": "The Veiled Knife", "subname": "Blade in the Dark", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-ashen-pact", "copyFrom": 16807, "overrides": { "name": "The Ashen Pact", "subname": "Bearer of the Black Covenant", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-wildclaw", "copyFrom": 3840, "overrides": { "name": "The Wildclaw", "subname": "Fang of the Untamed", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-stormcaller", "copyFrom": 17204, "overrides": { "name": "The Stormcaller", "subname": "Voice of the Broken Sky", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-dusk-confessor", "copyFrom": 4299, "overrides": { "name": "The Dusk Confessor", "subname": "Voice Beyond the Veil", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-gravebound", "copyFrom": 28912, "overrides": { "name": "The Gravebound", "subname": "Knight of the Black Earth", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-farstrider", "copyFrom": 16295, "overrides": { "name": "The Farstrider", "subname": "Hunter of the Long Trail", "faction": 14, "unitFlags": 0 } },
+    { "symbol": "elite-farstrider-wolf", "copyFrom": 299, "overrides": { "name": "Nightfang", "subname": "Farstrider Companion", "faction": 14, "unitFlags": 0 } }
   ],
   "gameobjectTemplates": [
     { "symbol": "prey-trail-crystal", "copyFrom": 19529, "overrides": { "name": "Prey Trail Crystal", "type": 1, "displayId": 7942, "size": 1.0, "scriptName": "mod_native_hunts_trail_crystal" } },

@@ -1,6 +1,8 @@
 #ifndef MOD_NATIVE_HUNTS_CATALOG_H
 #define MOD_NATIVE_HUNTS_CATALOG_H
 
+#include "HuntDomain.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -28,7 +30,17 @@ struct PreyDefinition {
 	char const *Key;
 	char const *Symbol;
 	char const *Name;
+	PreyTier Tier;
+	std::uint8_t MinLevel;
+	std::uint8_t MaxLevel;
+	float AmbushHealthMultiplier;
 	float FinalHealthMultiplier;
+	float RewardMultiplier;
+	float HealthModifier;
+	float ArmorModifier;
+	float DamageModifier;
+	bool Ranged;
+	float PreferredRange;
 };
 
 struct PreyAbilityDefinition {
@@ -40,6 +52,19 @@ struct PreyAbilityDefinition {
 	std::uint32_t CooldownMinMs;
 	std::uint32_t CooldownMaxMs;
 	std::uint8_t ChancePercent;
+	std::uint8_t EncounterMask = 3;
+	std::uint8_t MinHunterLevel = 1;
+	std::uint8_t MaxHunterLevel = 80;
+	std::uint8_t HealthBelowPercent = 0;
+	std::uint8_t VictimHealthBelowPercent = 0;
+	bool RequireMelee = false;
+	bool OncePerEncounter = false;
+	bool RequireAuraMissing = false;
+};
+
+struct GuardLocatorSeed {
+	std::uint32_t CreatureEntry;
+	char const *HuntmasterKey;
 };
 
 struct FinalSiteDefinition {
@@ -59,7 +84,10 @@ struct FinalSiteDefinition {
 
 std::vector<HuntmasterDefinition> const &Huntmasters();
 std::vector<PreyDefinition> const &StandardPrey();
+std::vector<PreyDefinition> const &ElitePrey();
 std::vector<PreyAbilityDefinition> const &StandardPreyAbilities();
+std::vector<PreyAbilityDefinition> const &ElitePreyAbilities();
+std::vector<GuardLocatorSeed> const &GuardLocatorSeeds();
 std::vector<FinalSiteDefinition> const &KnownFinalSites();
 
 HuntmasterDefinition const *FindHuntmaster(std::string const &key);

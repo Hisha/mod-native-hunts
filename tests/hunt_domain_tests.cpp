@@ -2,6 +2,7 @@
 #include "HuntCatalog.h"
 #include "HuntGameplay.h"
 #include "HuntSnapshot.h"
+#include "HuntRewards.h"
 
 #include <cstdlib>
 #include <set>
@@ -71,6 +72,36 @@ void TestLegalTransitions() {
 	Check(aggregate.State == HuntState::Idle && aggregate.Revision == 7,
 		  "turn-in clears at revision seven");
 	Check(HuntDomain::IsValid(aggregate), "turned-in aggregate is valid");
+}
+
+void TestRewardRules() {
+	Check(StandardRewardQuality(0,10)==RewardQuality::Epic &&
+		StandardRewardQuality(0,11)==RewardQuality::Rare &&
+		StandardRewardQuality(0,201)==RewardQuality::Uncommon, "first daily rarity");
+	Check(StandardRewardQuality(1,5)==RewardQuality::Epic &&
+		StandardRewardQuality(1,120)==RewardQuality::Rare &&
+		StandardRewardQuality(1,121)==RewardQuality::Uncommon, "second daily rarity");
+	Check(StandardRewardQuality(2,2)==RewardQuality::Epic &&
+		StandardRewardQuality(2,60)==RewardQuality::Rare, "third daily rarity");
+	Check(StandardRewardQuality(3,20)==RewardQuality::Rare &&
+		StandardRewardQuality(3,21)==RewardQuality::Uncommon, "fourth daily rarity");
+	Check(HuntXpReward(10000,false,.75f,1.0f)==600 &&
+		HuntXpReward(10000,true,.75f,1.0f)==0, "XP and level cap");
+	Check(HuntMoneyReward(80,1.0f)==128000, "gold formula");
+	Check(!EliteUnlocked(9,10) && EliteUnlocked(10,10), "elite threshold");
+	Check(EliteAvailable(0,1) && !EliteAvailable(1,1), "elite accepted daily limit");
+	Check(EliteSealReward(false,80,80,1,true,1)==0 &&
+		EliteSealReward(true,79,80,1,true,1)==0 &&
+		EliteSealReward(true,80,80,1,true,1)==2, "physical seal eligibility and fallback");
+	Check(ElitePrey().size()==10, "complete Elite roster");
+	Check(ElitePreyAbilities().size()>=65, "mature Elite ability profiles");
+	for (auto const &prey : ElitePrey()) {
+		Check(prey.Tier==PreyTier::Elite && prey.RewardMultiplier==2.5f,
+			"Elite tier and reward tuning");
+		Check(prey.AmbushHealthMultiplier>4.0f && prey.FinalHealthMultiplier>7.0f,
+			"Elite health tuning");
+	}
+	Check(GuardLocatorSeeds().size()==14, "ten-city authoritative guard seeds");
 }
 
 void TestInvalidAndDuplicateEvents() {
@@ -389,6 +420,8 @@ int main(int argc, char **argv) {
 	std::string const selection = argc > 1 ? argv[1] : "all";
 	if (selection == "all" || selection == "transitions")
 		TestLegalTransitions();
+	if (selection == "all" || selection == "rewards")
+		TestRewardRules();
 	if (selection == "all" || selection == "invalid")
 		TestInvalidAndDuplicateEvents();
 	if (selection == "all" || selection == "abandonment")

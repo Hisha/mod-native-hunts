@@ -7,7 +7,9 @@
 #include "GameObject.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
+#include "SpellAuras.h"
 
 #include <algorithm>
 #include <cctype>
@@ -26,10 +28,12 @@ Player *GetCommandPlayer(ChatHandler *handler) {
 
 enum GossipAction : std::uint32_t {
 	ActionRequest = GOSSIP_ACTION_INFO_DEF + 1,
+	ActionRequestElite,
 	ActionStatus,
 	ActionTurnIn,
 	ActionAbandon,
-	ActionStats
+	ActionStats,
+	ActionGuardHuntmaster
 };
 
 std::string StateText(native_hunts::HuntRuntime const &runtime) {
@@ -59,6 +63,8 @@ public:
 		Config.MinimumLevel = std::max<std::uint32_t>(
 			1, sConfigMgr->GetOption<std::uint32_t>(
 				   "NativeHunts.MinimumLevel", 10));
+		Config.XpMultiplier = std::max(0.0f, sConfigMgr->GetOption<float>(
+			"NativeHunts.XPMultiplier", 0.75f));
 		std::uint32_t const a = std::clamp<std::uint32_t>(
 			sConfigMgr->GetOption<std::uint32_t>(
 				"NativeHunts.Tracking.ProgressMin", 3),
@@ -95,10 +101,21 @@ public:
 			Config.AmbushEscapeHealthPercent = 50.0f;
 		Config.AmbushEscapeHealthPercent = std::clamp(
 			Config.AmbushEscapeHealthPercent, 1.0f, 99.0f);
-		Config.RewardSeals = std::clamp<std::uint32_t>(
-			sConfigMgr->GetOption<std::uint32_t>(
-				"NativeHunts.Reward.Seals", 1),
-			1, 200);
+		Config.EliteRequiredStandardCompletions = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.RequiredStandardCompletions", 10);
+		Config.EliteDailyLimit = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.DailyLimit", 1);
+		Config.EliteHealthMultiplier = std::max(0.1f, sConfigMgr->GetOption<float>("NativeHunts.Elite.HealthMultiplier", 1.0f));
+		Config.EliteDamageMultiplier = std::max(0.1f, sConfigMgr->GetOption<float>("NativeHunts.Elite.DamageMultiplier", 1.0f));
+		Config.EliteArmorMultiplier = std::max(0.1f, sConfigMgr->GetOption<float>("NativeHunts.Elite.ArmorMultiplier", 1.0f));
+		Config.EliteXpMultiplier = std::max(0.0f, sConfigMgr->GetOption<float>("NativeHunts.Elite.XPMultiplier", 1.0f));
+		Config.EliteGoldMultiplier = std::max(0.0f, sConfigMgr->GetOption<float>("NativeHunts.Elite.GoldMultiplier", 1.0f));
+		Config.EliteSealMinimumLevel = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.SealMinimumLevel", 80);
+		Config.EliteSealsPerCompletion = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.SealsPerCompletion", 1);
+		Config.EliteEndgameRewardLevel = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.EndgameRewardLevel", 80);
+		Config.EliteEndgameRewardMinItemLevel = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.EndgameRewardMinItemLevel", 200);
+		Config.EliteEndgameRewardMaxItemLevel = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.EndgameRewardMaxItemLevel", 200);
+		Config.EliteRewardRequireUpgrade = sConfigMgr->GetOption<bool>("NativeHunts.Elite.RewardRequireUpgrade", true);
+		Config.EliteRewardUpgradePoolPct = std::clamp(sConfigMgr->GetOption<float>("NativeHunts.Elite.RewardUpgradePoolPct", .70f), 0.0f, 1.0f);
+		Config.EliteNoUpgradeBonusSeals = sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Elite.NoUpgradeBonusSeals", 1);
 		Config.ReturnRiftEnabled = sConfigMgr->GetOption<bool>(
 			"NativeHunts.ReturnRift.Enable", true);
 		Config.ReturnRiftDurationSeconds = std::clamp<std::uint32_t>(
@@ -133,6 +150,7 @@ public:
 		std::string message;
 		switch (action) {
 		case ActionRequest: sNativeHunts.RequestHunt(player, creature, message); break;
+		case ActionRequestElite: sNativeHunts.RequestEliteHunt(player, creature, message); break;
 		case ActionTurnIn: sNativeHunts.TurnIn(player, creature, message); break;
 		case ActionAbandon: sNativeHunts.Abandon(player, message); break;
 		case ActionStats:
@@ -160,6 +178,10 @@ private:
 		if (!runtime)
 			AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I seek dangerous prey.",
 				GOSSIP_SENDER_MAIN, ActionRequest);
+		if (!runtime && sNativeHunts.IsEliteUnlocked(player) &&
+			sNativeHunts.IsEliteAvailableToday(player))
+			AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I seek an Elite Hunt.",
+				GOSSIP_SENDER_MAIN, ActionRequestElite);
 		else if (runtime->Aggregate.State == native_hunts::HuntState::ReadyToTurnIn)
 			AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I have slain my quarry.",
 				GOSSIP_SENDER_MAIN, ActionTurnIn);
@@ -217,6 +239,76 @@ public:
 	}
 };
 
+class NativeHuntGuardLocatorScript final : public AllCreatureScript {
+public:
+	NativeHuntGuardLocatorScript() :
+		AllCreatureScript("NativeHuntGuardLocatorScript") {}
+	bool CanCreatureGossipHello(Player *player, Creature *creature) override {
+		if (!sNativeHunts.IsEnabled() || !player || !creature ||
+			!sNativeHunts.IsGuardLocator(creature->GetEntry()))
+			return false;
+		player->PrepareGossipMenu(creature, creature->GetGossipMenuId(), true);
+		AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Where is the Huntmaster?",
+			GOSSIP_SENDER_MAIN, ActionGuardHuntmaster);
+		player->SendPreparedGossip(creature);
+		return true;
+	}
+	bool CanCreatureGossipSelect(Player *player, Creature *creature,
+			std::uint32_t, std::uint32_t action) override {
+		if (action != ActionGuardHuntmaster || !player || !creature ||
+			!sNativeHunts.IsGuardLocator(creature->GetEntry()))
+			return false;
+		std::string message;
+		sNativeHunts.SendHuntmasterLocation(player, creature->GetEntry(), message);
+		ChatHandler(player->GetSession()).PSendSysMessage(
+			"|cff33ccff[Native Hunts]|r {}", message);
+		CloseGossipMenuFor(player);
+		return true;
+	}
+};
+
+class NativeElitePreyAI final : public ScriptedAI {
+public:
+	explicit NativeElitePreyAI(Creature *creature):ScriptedAI(creature) {}
+	void Reset() override { ClearStunDiminishing(); }
+	void SpellHit(Unit *caster, SpellInfo const *spell) override {
+		if (!caster || !spell || !caster->GetCharmerOrOwnerPlayerOrPlayerItself() ||
+			!(spell->GetAllEffectsMechanicMask() & (1u << MECHANIC_STUN))) return;
+		Aura *aura=me->GetAura(spell->Id,caster->GetGUID());
+		if (!aura) return;
+		if (!_stunResetMs) _stunApplications=0;
+		++_stunApplications;
+		std::int32_t duration=aura->GetDuration();
+		if (_stunApplications==2) duration=std::max<std::int32_t>(1,duration/2);
+		else if (_stunApplications>=3) duration=std::max<std::int32_t>(1,duration/4);
+		aura->SetDuration(duration);
+		_stunResetMs=static_cast<std::uint32_t>(std::max<std::int32_t>(0,duration))+15000u;
+		if (_stunApplications>=3 && !_stunImmune) {
+			me->ApplySpellImmune(0,IMMUNITY_MECHANIC,MECHANIC_STUN,true);
+			_stunImmune=true;
+		}
+	}
+	void UpdateAI(std::uint32_t diff) override {
+		if (_stunResetMs) { if (_stunResetMs<=diff) ClearStunDiminishing(); else _stunResetMs-=diff; }
+		if (UpdateVictim()) DoMeleeAttackIfReady();
+	}
+private:
+	void ClearStunDiminishing() {
+		if (_stunImmune) me->ApplySpellImmune(0,IMMUNITY_MECHANIC,MECHANIC_STUN,false);
+		_stunApplications=0; _stunResetMs=0; _stunImmune=false;
+	}
+	std::uint8_t _stunApplications=0; std::uint32_t _stunResetMs=0; bool _stunImmune=false;
+};
+
+class NativeElitePreyScript final : public AllCreatureScript {
+public:
+	NativeElitePreyScript():AllCreatureScript("NativeElitePreyScript") {}
+	CreatureAI *GetCreatureAI(Creature *creature) const override {
+		return creature && sNativeHunts.IsEnabled() && sNativeHunts.IsElitePrey(creature->GetEntry())
+			? new NativeElitePreyAI(creature) : nullptr;
+	}
+};
+
 class NativeHuntsCommandScript final : public CommandScript {
 public:
 	NativeHuntsCommandScript() : CommandScript("NativeHuntsCommandScript") {}
@@ -258,5 +350,7 @@ void AddNativeHuntsModuleScripts() {
 	new NativeTrailCrystalScript();
 	new NativeReturnRiftScript();
 	new NativeHuntsPlayerScript();
+	new NativeHuntGuardLocatorScript();
+	new NativeElitePreyScript();
 	new NativeHuntsCommandScript();
 }

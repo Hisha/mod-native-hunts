@@ -34,7 +34,7 @@ def run_domain_tests() -> None:
         executable = Path(directory) / ("hunt_domain_tests.exe" if os.name == "nt" else "hunt_domain_tests")
         command = [compiler(), "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic", "-Isrc",
             "tests/hunt_domain_tests.cpp", "src/HuntDomain.cpp", "src/HuntGameplay.cpp",
-            "src/HuntSnapshot.cpp", "src/HuntCatalog.cpp", "-o", str(executable)]
+            "src/HuntSnapshot.cpp", "src/HuntCatalog.cpp", "src/HuntRewards.cpp", "-o", str(executable)]
         subprocess.run(command, cwd=ROOT, check=True)
         subprocess.run([str(executable)], cwd=ROOT, check=True)
         print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
@@ -47,7 +47,7 @@ def run_content_checks() -> None:
             raise AssertionError("EPF must contain only manifest.json")
         manifest = json.loads(archive.read("manifest.json"))
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 2 or manifest.get("version") != "4"):
+            manifest.get("schema") != 2 or manifest.get("version") != "5"):
         raise AssertionError("invalid Native Hunts EPF identity")
     creature_symbols = {row["symbol"] for row in manifest["creatureTemplates"]}
     expected_huntmasters = {
@@ -62,7 +62,12 @@ def run_content_checks() -> None:
         "prey-shadowclaw", "prey-dreadwing", "prey-venomtail", "prey-stormcoil",
         "prey-mirejaw", "prey-razortalon", "prey-cliffhowl", "prey-grimmaw",
     }
-    if not (expected_huntmasters | expected_prey) <= creature_symbols:
+
+    expected_elite = {"elite-oathbreaker", "elite-winterborn", "elite-headsman",
+        "elite-veiled-knife", "elite-ashen-pact", "elite-wildclaw",
+        "elite-stormcaller", "elite-dusk-confessor", "elite-gravebound",
+        "elite-farstrider"}
+    if not (expected_huntmasters | expected_prey | expected_elite) <= creature_symbols:
         raise AssertionError("missing managed Huntmaster or standard-prey template")
     spawn_symbols = {row["symbol"] for row in manifest["creatureSpawns"]}
     if spawn_symbols != {f"{symbol}-spawn" for symbol in expected_huntmasters}:
@@ -129,13 +134,17 @@ def run_source_safety_checks() -> None:
     for column in ("`ambushes_completed`", "`ambush_pending`"):
         if column not in assignment:
             raise AssertionError(f"persistent ambush column missing: {column}")
+    updates = "\n".join(path.read_text(encoding="utf-8") for path in
+        (ROOT / "data/sql/db-characters/updates").glob("*.sql"))
+    if "ADD COLUMN IF NOT EXISTS" in updates:
+        raise AssertionError("unsupported updater column syntax present")
     manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
     required_turn_in_safety = (
         "SaveInventoryAndGoldToDB(transaction)",
         "CommitCharacterTransactionAndWait(transaction)",
         "DestroyItemCount(_resources.SealItemEntry",
-        "repeat rewards are blocked until the result is readable",
-        "Removed the provisional Native Hunt Seal",
+        "duplicate rewards are blocked until recovery",
+        "provisional rewards were removed",
     )
     for token in required_turn_in_safety:
         if token not in manager:
@@ -150,7 +159,7 @@ def run_source_safety_checks() -> None:
         "NativeHunts.AssignmentScope = Local",
         "NativeHunts.GroupCreditRadius = 100.0",
         "NativeHunts.Ambush.Count = 2",
-        "NativeHunts.Ambush.HealthMultiplier = 4.0",
+        "NativeHunts.XPMultiplier = 0.75",
         "NativeHunts.Ambush.EscapeHealthPercent = 50.0",
         "NativeHunts.ReturnRift.ArrivalDistance = 3.0",
     )
@@ -172,6 +181,16 @@ def run_source_safety_checks() -> None:
                   "GO_FLAG_NOT_SELECTABLE"):
         if token not in module + manager:
             raise AssertionError(f"scripted GameObject interaction contract missing: {token}")
+    for token in ("Where is the Huntmaster?", "PrepareGossipMenu", "SMSG_GOSSIP_POI",
+                  "ResolveGuardLocators", "gossip_menu_id"):
+        if token not in module + manager:
+            raise AssertionError(f"guard locator behavior missing: {token}")
+    for token in ("StandardRewardQuality", "EliteSealReward", "EliteRewardRequireUpgrade",
+                  "SaveInventoryAndGoldToDB(transaction)"):
+        if token not in manager:
+            raise AssertionError(f"reward behavior missing: {token}")
+    if "AddAura(" in manager or ("CastSpell(player" in manager and "ActiveHunt" in manager):
+        raise AssertionError("stock spell was hijacked for active-Hunt aura")
     print("PASS native-only source and persistence safety checks", flush=True)
 
 
