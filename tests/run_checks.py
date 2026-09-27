@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import json
+import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +69,14 @@ def run_content_checks() -> None:
     objects = {row["symbol"] for row in manifest["gameobjectTemplates"]}
     if objects != {"prey-trail-crystal", "return-rift"}:
         raise AssertionError("runtime gameobject template set is incorrect")
+    scripted_objects = {row["symbol"]: row for row in manifest["gameobjectTemplates"]}
+    for symbol, display_id in (("prey-trail-crystal", 7942), ("return-rift", 1327)):
+        row = scripted_objects[symbol]
+        overrides = row["overrides"]
+        if (row["copyFrom"] != 19529 or overrides.get("type") != 10 or
+                overrides.get("displayId") != display_id or
+                not overrides.get("scriptName", "").startswith("mod_native_hunts_")):
+            raise AssertionError(f"{symbol} must use the clean scripted-goober contract")
     item_symbols = {row["symbol"] for row in manifest["dbcRows"]}
     if "huntmaster-seal" not in item_symbols:
         raise AssertionError("physical Huntmaster's Seal is not declared")
@@ -108,6 +117,14 @@ def run_source_safety_checks() -> None:
     }
     if not all(path.is_file() for path in required_schema):
         raise AssertionError("native persistence schema is incomplete")
+    world_sql = list((ROOT / "data" / "sql" / "db-world").glob("**/*"))
+    for path in world_sql:
+        if path.is_file() and "native_hunt_assignment" in path.read_text(encoding="utf-8"):
+            raise AssertionError("character assignment schema leaked into world SQL")
+    assignment = (ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql").read_text(encoding="utf-8")
+    for column in ("`ambushes_completed`", "`ambush_pending`"):
+        if column not in assignment:
+            raise AssertionError(f"persistent ambush column missing: {column}")
     manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
     required_turn_in_safety = (
         "SaveInventoryAndGoldToDB(transaction)",
@@ -119,6 +136,30 @@ def run_source_safety_checks() -> None:
     for token in required_turn_in_safety:
         if token not in manager:
             raise AssertionError(f"turn-in consistency safeguard missing: {token}")
+    module = (ROOT / "src" / "NativeHuntsModule.cpp").read_text(encoding="utf-8")
+    config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
+    config_reads = set(re.findall(r'"(NativeHunts\.[A-Za-z0-9.]+)"', module))
+    config_entries = set(re.findall(r'^(NativeHunts\.[A-Za-z0-9.]+)\s*=', config, re.MULTILINE))
+    if config_reads - config_entries:
+        raise AssertionError(f"undocumented config reads: {sorted(config_reads - config_entries)}")
+    expected_defaults = (
+        "NativeHunts.AssignmentScope = Local",
+        "NativeHunts.GroupCreditRadius = 100.0",
+        "NativeHunts.Ambush.Count = 2",
+        "NativeHunts.Ambush.HealthMultiplier = 4.0",
+        "NativeHunts.Ambush.EscapeHealthPercent = 50.0",
+        "NativeHunts.ReturnRift.ArrivalDistance = 3.0",
+    )
+    for line in expected_defaults:
+        if line not in config:
+            raise AssertionError(f"configuration default missing: {line}")
+    for token in ("SMSG_GOSSIP_POI", '"nativehunts"', '"status"', '"reset"'):
+        if token not in module + manager:
+            raise AssertionError(f"PTR feedback/diagnostic surface missing: {token}")
+    for token in ("Tracking complete.", "Prey Trail Crystal", "AmbushGuid.Clear()",
+                  "AmbushPending = false", "final_site="):
+        if token not in manager:
+            raise AssertionError(f"feedback/ambush/status behavior missing: {token}")
     print("PASS native-only source and persistence safety checks", flush=True)
 
 

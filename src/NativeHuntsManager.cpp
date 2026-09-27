@@ -6,6 +6,7 @@
 
 #include "Creature.h"
 #include "CreatureAI.h"
+#include "Chat.h"
 #include "DatabaseEnv.h"
 #include "Field.h"
 #include "Formulas.h"
@@ -17,18 +18,20 @@
 #include "MapMgr.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
+#include "Opcodes.h"
 #include "Player.h"
 #include "Random.h"
 #include "ScriptMgr.h"
 #include "TemporarySummon.h"
 #include "Transaction.h"
 #include "World.h"
+#include "WorldPacket.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <optional>
-#include <unordered_set>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -66,6 +69,18 @@ float FinalLevelScale(std::uint8_t level) {
 	return 1.0f;
 }
 
+float AmbushLevelScale(std::uint8_t level) {
+	if (level < 20)
+		return 0.375f;
+	if (level < 40)
+		return 0.625f;
+	if (level < 60)
+		return 0.750f;
+	if (level < 70)
+		return 0.875f;
+	return 1.0f;
+}
+
 Player *ConnectedPlayer(std::uint32_t guid) {
 	return ObjectAccessor::FindConnectedPlayer(
 		ObjectGuid::Create<HighGuid::Player>(guid));
@@ -91,6 +106,17 @@ std::optional<bool> AssignmentExists(std::uint32_t guid) {
 	if (!result)
 		return std::nullopt;
 	return result->Fetch()[0].Get<std::uint64_t>() != 0;
+}
+
+char const *StateName(HuntState state) {
+	switch (state) {
+	case HuntState::Idle: return "Idle";
+	case HuntState::Tracking: return "Tracking";
+	case HuntState::FinalRevealed: return "FinalRevealed";
+	case HuntState::PreyActive: return "PreyActive";
+	case HuntState::ReadyToTurnIn: return "ReadyToTurnIn";
+	}
+	return "Unknown";
 }
 } // namespace
 
@@ -153,11 +179,23 @@ bool NativeHuntsManager::ResolveManagedResources() {
 		!resolve("huntmaster-seal", "item.id", _resources.SealItemEntry))
 		return false;
 
-	if (!sObjectMgr->GetGameObjectTemplate(_resources.TrailCrystalEntry) ||
-		!sObjectMgr->GetGameObjectTemplate(_resources.ReturnRiftEntry) ||
+	auto const *crystal =
+		sObjectMgr->GetGameObjectTemplate(_resources.TrailCrystalEntry);
+	auto const *rift = sObjectMgr->GetGameObjectTemplate(_resources.ReturnRiftEntry);
+	auto const scriptedGoober = [](GameObjectTemplate const *value) {
+		return value && value->type == GAMEOBJECT_TYPE_GOOBER &&
+			value->goober.lockId == 0 && value->goober.questId == 0 &&
+			value->goober.eventId == 0 && value->goober.autoCloseTime == 0 &&
+			value->goober.customAnim == 0 && value->goober.consumable == 0 &&
+			value->goober.cooldown == 0 && value->goober.pageId == 0 &&
+			value->goober.spellId == 0 && value->goober.linkedTrapId == 0 &&
+			value->goober.gossipID == 0;
+	};
+	if (!scriptedGoober(crystal) || !scriptedGoober(rift) ||
 		!sObjectMgr->GetItemTemplate(_resources.SealItemEntry)) {
 		_resources.Reason =
-			"managed templates are applied but not loaded; restart worldserver";
+			"managed scripted goobers/items are missing, stale, or carry default "
+			"lock/quest/spell behavior; rebuild content and restart worldserver";
 		return false;
 	}
 	for (auto const &[symbol, entry] : _resources.CreatureEntries)
@@ -203,7 +241,8 @@ void NativeHuntsManager::LoadAssignments() {
 	QueryResult result = CharacterDatabase.Query(
 		"SELECT `character_guid`,`huntmaster_key`,`huntmaster_entry`,"
 		"`huntmaster_spawn_guid`,`prey_key`,`zone_key`,`zone_id`,`map_id`,"
-		"`state`,`tracking_progress`,`final_site_key`,`revision` "
+		"`state`,`tracking_progress`,`ambushes_completed`,`ambush_pending`,"
+		"`final_site_key`,`revision` "
 		"FROM `native_hunt_assignment`");
 	if (!result)
 		return;
@@ -220,8 +259,10 @@ void NativeHuntsManager::LoadAssignments() {
 		runtime.MapId = field[7].Get<std::uint32_t>();
 		runtime.Aggregate.State = static_cast<HuntState>(field[8].Get<std::uint8_t>());
 		runtime.Aggregate.Progress = field[9].Get<std::uint8_t>();
-		runtime.Aggregate.FinalLocationKey = field[10].Get<std::string>();
-		runtime.Aggregate.Revision = field[11].Get<std::uint64_t>();
+		runtime.AmbushesCompleted = field[10].Get<std::uint8_t>();
+		runtime.AmbushPending = field[11].Get<std::uint8_t>() != 0;
+		runtime.Aggregate.FinalLocationKey = field[12].Get<std::string>();
+		runtime.Aggregate.Revision = field[13].Get<std::uint64_t>();
 
 		auto const *huntmaster = FindHuntmaster(huntmasterKey);
 		auto const *prey = FindPrey(preyKey);
@@ -253,8 +294,9 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		"INSERT INTO `native_hunt_assignment` "
 		"(`character_guid`,`huntmaster_key`,`huntmaster_entry`,"
 		"`huntmaster_spawn_guid`,`prey_key`,`tier`,`zone_key`,`zone_id`,"
-		"`map_id`,`state`,`tracking_progress`,`final_site_key`,`revision`) "
-		"VALUES ({},'{}',{},{},'{}',{},'{}',{},{},{},{},'{}',{}) "
+		"`map_id`,`state`,`tracking_progress`,`ambushes_completed`,"
+		"`ambush_pending`,`final_site_key`,`revision`) "
+		"VALUES ({},'{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{}) "
 		"ON DUPLICATE KEY UPDATE `huntmaster_key`=VALUES(`huntmaster_key`),"
 		"`huntmaster_entry`=VALUES(`huntmaster_entry`),"
 		"`huntmaster_spawn_guid`=VALUES(`huntmaster_spawn_guid`),"
@@ -262,6 +304,8 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		"`zone_key`=VALUES(`zone_key`),`zone_id`=VALUES(`zone_id`),"
 		"`map_id`=VALUES(`map_id`),`state`=VALUES(`state`),"
 		"`tracking_progress`=VALUES(`tracking_progress`),"
+		"`ambushes_completed`=VALUES(`ambushes_completed`),"
+		"`ambush_pending`=VALUES(`ambush_pending`),"
 		"`final_site_key`=VALUES(`final_site_key`),"
 		"`revision`=VALUES(`revision`),`updated_at`=CURRENT_TIMESTAMP",
 		runtime.CharacterGuid, aggregate.Identity.HuntmasterKey,
@@ -271,6 +315,8 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		aggregate.Identity.ZoneKey, runtime.ZoneId, runtime.MapId,
 		static_cast<std::uint32_t>(aggregate.State),
 		static_cast<std::uint32_t>(aggregate.Progress),
+		static_cast<std::uint32_t>(runtime.AmbushesCompleted),
+		static_cast<std::uint32_t>(runtime.AmbushPending),
 		aggregate.FinalLocationKey, aggregate.Revision);
 }
 
@@ -284,6 +330,10 @@ void NativeHuntsManager::RemoveRuntimeObjects(Player *player,
 	};
 	remove(runtime.CrystalGuid);
 	remove(runtime.ReturnRiftGuid);
+	if (!runtime.AmbushGuid.IsEmpty() && player)
+		if (Creature *ambush = ObjectAccessor::GetCreature(*player, runtime.AmbushGuid))
+			ambush->DespawnOrUnsummon();
+	runtime.AmbushGuid.Clear();
 	if (!runtime.PreyGuid.IsEmpty() && player)
 		if (Creature *prey = ObjectAccessor::GetCreature(*player, runtime.PreyGuid))
 			prey->DespawnOrUnsummon();
@@ -353,15 +403,11 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 		return false;
 	}
 
-	std::vector<FinalSiteDefinition const *> eligibleZones;
-	std::unordered_set<std::string> seenZones;
-	for (auto const &site : KnownFinalSites())
-		if (player->GetLevel() >= site.MinLevel &&
-			player->GetLevel() <= site.MaxLevel &&
-			seenZones.emplace(site.ZoneKey).second)
-			eligibleZones.push_back(&site);
+	auto const eligibleZones = EligibleZonesForAssignment(
+		player->GetLevel(), _config.SearchScope, *huntmaster);
 	if (eligibleZones.empty()) {
-		message = "No authored hunting ground is suitable for your level.";
+		message = "No authored hunting ground is suitable for your level and "
+				  "the configured assignment scope.";
 		return false;
 	}
 	auto const &prey = StandardPrey()[urand(
@@ -407,6 +453,33 @@ bool NativeHuntsManager::Abandon(Player *player, std::string &message) {
 	return true;
 }
 
+void NativeHuntsManager::SendFinalLocationFeedback(Player *player,
+										HuntRuntime &runtime,
+										bool includeMessage) {
+	if (!player || runtime.Aggregate.State != HuntState::FinalRevealed)
+		return;
+	auto const *site = FindFinalSite(runtime.Aggregate.FinalLocationKey);
+	if (!site)
+		return;
+	bool const sameMap = player->GetMapId() == site->MapId;
+	if (sameMap) {
+		WorldPacket poi(SMSG_GOSSIP_POI, 64);
+		poi << std::uint32_t(6) << site->X << site->Y << std::uint32_t(7)
+			<< std::uint32_t(0) << std::string("Prey Trail - ") + site->ZoneName;
+		player->GetSession()->SendPacket(&poi);
+	}
+	if (includeMessage) {
+		ChatHandler(player->GetSession()).PSendSysMessage(
+			"|cff00ff00[Native Hunts]|r Tracking complete. {}'s trail has "
+			"been located in {}. {} Travel to the revealed location and use "
+			"the Prey Trail Crystal.",
+			runtime.Aggregate.Identity.PreyName, site->ZoneName,
+			sameMap ? "The location is marked on your map."
+					: "A stock-client map pin is unavailable until you reach its map.");
+		runtime.FinalRevealNotified = true;
+	}
+}
+
 bool NativeHuntsManager::EnsureCrystal(Player *player, HuntRuntime &runtime) {
 	if (!player || runtime.Aggregate.State != HuntState::FinalRevealed)
 		return false;
@@ -441,6 +514,83 @@ bool NativeHuntsManager::EnsureCrystal(Player *player, HuntRuntime &runtime) {
 	return true;
 }
 
+void NativeHuntsManager::InitializePreyCombat(Player *player,
+								   HuntRuntime &runtime, Creature *prey,
+								   bool finalEncounter) {
+	auto const *definition = FindPrey(runtime.Aggregate.Identity.PreyKey);
+	if (!player || !prey || !definition)
+		return;
+	prey->SetLevel(player->GetLevel());
+	prey->UpdateAllStats();
+	prey->SetFaction(14);
+	prey->RemoveFlag(UNIT_FIELD_FLAGS,
+		UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE |
+			UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+	prey->SetReactState(REACT_AGGRESSIVE);
+	float const multiplier = std::max(1.0f,
+		(finalEncounter ? definition->FinalHealthMultiplier *
+			FinalLevelScale(player->GetLevel())
+						: _config.AmbushHealthMultiplier *
+							  AmbushLevelScale(player->GetLevel())));
+	std::uint64_t const scaled = static_cast<std::uint64_t>(
+		multiplier * static_cast<float>(player->GetMaxHealth()));
+	std::uint32_t const health = static_cast<std::uint32_t>(
+		std::min<std::uint64_t>(std::numeric_limits<std::uint32_t>::max(),
+								 scaled));
+	prey->SetMaxHealth(health);
+	prey->SetFullHealth();
+	std::vector<PreyAbilityDefinition const *> abilities;
+	for (auto const &ability : StandardPreyAbilities())
+		if (runtime.Aggregate.Identity.PreyKey == ability.PreyKey)
+			abilities.push_back(&ability);
+	runtime.AbilityOneTimer = abilities.empty()
+		? 0
+		: urand(abilities[0]->InitialMinMs, abilities[0]->InitialMaxMs);
+	runtime.AbilityTwoTimer = abilities.size() < 2
+		? 0
+		: urand(abilities[1]->InitialMinMs, abilities[1]->InitialMaxMs);
+	prey->AI()->AttackStart(player);
+}
+
+bool NativeHuntsManager::SpawnAmbush(Player *player, HuntRuntime &runtime,
+								  std::string &message) {
+	if (!player || runtime.Aggregate.State != HuntState::Tracking ||
+		!runtime.AmbushPending || !runtime.AmbushGuid.IsEmpty() ||
+		player->GetZoneId() != runtime.ZoneId) {
+		message = "The pending ambush cannot begin here.";
+		return false;
+	}
+	auto const *definition = FindPrey(runtime.Aggregate.Identity.PreyKey);
+	auto const entry = definition
+		? _resources.CreatureEntries.find(definition->Symbol)
+		: _resources.CreatureEntries.end();
+	if (!definition || entry == _resources.CreatureEntries.end()) {
+		message = "The managed ambush creature is unavailable.";
+		return false;
+	}
+	float const angle = frand(0.0f, 6.2831853f);
+	float const distance = frand(7.0f, 11.0f);
+	float const x = player->GetPositionX() + std::cos(angle) * distance;
+	float const y = player->GetPositionY() + std::sin(angle) * distance;
+	float z = player->GetPositionZ();
+	if (Map *map = player->GetMap()) {
+		float const ground = map->GetHeight(x, y, z + 10.0f, true, 50.0f);
+		if (ground > INVALID_HEIGHT)
+			z = ground + 0.5f;
+	}
+	TempSummon *ambush = player->SummonCreature(entry->second, x, y, z,
+		player->GetOrientation(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 300000);
+	if (!ambush) {
+		message = "The ambush could not be spawned; tracking remains paused.";
+		return false;
+	}
+	runtime.AmbushGuid = ambush->GetGUID();
+	InitializePreyCombat(player, runtime, ambush, false);
+	message = runtime.Aggregate.Identity.PreyName +
+		" has found you! Drive it off to continue tracking.";
+	return true;
+}
+
 bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 										std::string &message) {
 	auto const *preyDefinition = FindPrey(runtime.Aggregate.Identity.PreyKey);
@@ -471,24 +621,6 @@ bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 		message = "The prey could not be spawned; the trail remains usable.";
 		return false;
 	}
-	prey->SetLevel(player->GetLevel());
-	prey->UpdateAllStats();
-	prey->SetFaction(14);
-	prey->RemoveFlag(UNIT_FIELD_FLAGS,
-		UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE |
-			UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
-	prey->SetReactState(REACT_AGGRESSIVE);
-	float const multiplier = std::max(
-		1.0f, preyDefinition->FinalHealthMultiplier *
-				  FinalLevelScale(player->GetLevel()));
-	std::uint64_t const scaled = static_cast<std::uint64_t>(
-		multiplier * static_cast<float>(player->GetMaxHealth()));
-	std::uint32_t const health = static_cast<std::uint32_t>(
-		std::min<std::uint64_t>(std::numeric_limits<std::uint32_t>::max(),
-								 scaled));
-	prey->SetMaxHealth(health);
-	prey->SetFullHealth();
-
 	auto const transition = ApplyPreySpawnOutcome(runtime.Aggregate, true);
 	if (transition.Status != TransitionStatus::Applied) {
 		prey->DespawnOrUnsummon();
@@ -496,18 +628,8 @@ bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 		return false;
 	}
 	runtime.PreyGuid = prey->GetGUID();
-	std::vector<PreyAbilityDefinition const *> abilities;
-	for (auto const &ability : StandardPreyAbilities())
-		if (runtime.Aggregate.Identity.PreyKey == ability.PreyKey)
-			abilities.push_back(&ability);
-	if (!abilities.empty())
-		runtime.AbilityOneTimer = urand(abilities[0]->InitialMinMs,
-										 abilities[0]->InitialMaxMs);
-	if (abilities.size() > 1)
-		runtime.AbilityTwoTimer = urand(abilities[1]->InitialMinMs,
-										 abilities[1]->InitialMaxMs);
+	InitializePreyCombat(player, runtime, prey, true);
 	SaveAssignment(runtime);
-	prey->AI()->AttackStart(player);
 	message = runtime.Aggregate.Identity.PreyName +
 			  " emerges for the final confrontation!";
 	return true;
@@ -575,6 +697,14 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 		Player *hunter = ConnectedPlayer(guid);
 		if (!hunter)
 			continue;
+		if (!runtime.AmbushGuid.IsEmpty() &&
+			runtime.AmbushGuid == killed->GetGUID()) {
+			// An ambush is completed only by driving it below the escape threshold.
+			// If it is killed, retain AmbushPending so Update recreates it.
+			runtime.AmbushGuid.Clear();
+			SaveAssignment(runtime);
+			continue;
+		}
 
 		if (runtime.Aggregate.State == HuntState::PreyActive) {
 			auto const *preyDefinition = FindPrey(runtime.Aggregate.Identity.PreyKey);
@@ -604,6 +734,7 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 		context.InAssignedZone = hunter->GetZoneId() == runtime.ZoneId;
 		context.WithinCreditRadius = hunter->GetDistance(killed) <= _config.GroupCreditRadius;
 		context.IsGrey = Acore::XP::GetColorCode(hunter->GetLevel(), killed->GetLevel()) == XP_GRAY;
+		context.AmbushPending = runtime.AmbushPending;
 		context.IsHuntPrey = false;
 		for (auto const &prey : StandardPrey()) {
 			auto found = _resources.CreatureEntries.find(prey.Symbol);
@@ -616,6 +747,7 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 			CanAdvanceTracking(context) != GameplayDecision::Allowed)
 			continue;
 
+		std::uint8_t const oldProgress = runtime.Aggregate.Progress;
 		std::uint8_t amount = static_cast<std::uint8_t>(urand(
 			_config.TrackingProgressMin, _config.TrackingProgressMax));
 		HuntDomain::Execute(runtime.Aggregate, AdvanceTracking{amount});
@@ -625,9 +757,19 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 			if (!sites.empty()) {
 				auto const *site = sites[urand(
 					0, static_cast<std::uint32_t>(sites.size() - 1))];
-				HuntDomain::Execute(runtime.Aggregate,
-					RevealFinal{site->Key, site->ZoneName});
+				if (HuntDomain::Execute(runtime.Aggregate,
+						RevealFinal{site->Key, site->ZoneName}).Status ==
+					TransitionStatus::Applied)
+					SendFinalLocationFeedback(hunter, runtime, true);
 			}
+		} else if (ShouldStartAmbush(oldProgress, runtime.Aggregate.Progress,
+				runtime.AmbushesCompleted, _config.AmbushCount,
+				runtime.AmbushPending)) {
+			runtime.AmbushPending = true;
+			std::string ambushMessage;
+			if (SpawnAmbush(hunter, runtime, ambushMessage))
+				ChatHandler(hunter->GetSession()).PSendSysMessage(
+					"|cffff8000[Native Hunts]|r {}", ambushMessage);
 		}
 		SaveAssignment(runtime);
 	}
@@ -665,17 +807,55 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 	if (!IsEnabled())
 		return;
 	_updateAccumulator += elapsedMs;
+	_poiAccumulator += elapsedMs;
 	if (_updateAccumulator < 500)
 		return;
 	std::uint32_t const tick = _updateAccumulator;
 	_updateAccumulator = 0;
+	bool const refreshPoi = _poiAccumulator >= 5000;
+	if (refreshPoi)
+		_poiAccumulator = 0;
 	for (auto &[guid, runtime] : _runtimes) {
 		Player *player = ConnectedPlayer(guid);
 		if (!player)
 			continue;
-		if (runtime.Aggregate.State == HuntState::FinalRevealed)
+		if (runtime.Aggregate.State == HuntState::Tracking &&
+			runtime.AmbushPending) {
+			Creature *ambush = runtime.AmbushGuid.IsEmpty()
+				? nullptr
+				: ObjectAccessor::GetCreature(*player, runtime.AmbushGuid);
+			if (player->GetZoneId() != runtime.ZoneId) {
+				if (ambush)
+					ambush->DespawnOrUnsummon();
+				runtime.AmbushGuid.Clear();
+			} else if (!ambush || !ambush->IsInWorld()) {
+				runtime.AmbushGuid.Clear();
+				std::string ignored;
+				SpawnAmbush(player, runtime, ignored);
+			} else if (ambush->GetHealthPct() <=
+					   _config.AmbushEscapeHealthPercent) {
+				ambush->CombatStop(true);
+				ambush->SetFlag(UNIT_FIELD_FLAGS,
+					UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC);
+				ChatHandler(player->GetSession()).PSendSysMessage(
+					"|cffffff00[Native Hunts]|r {} breaks away and disappears. "
+					"Continue tracking it.",
+					runtime.Aggregate.Identity.PreyName);
+				ambush->DespawnOrUnsummon(Milliseconds(1500));
+				runtime.AmbushGuid.Clear();
+				runtime.AmbushPending = false;
+				if (runtime.AmbushesCompleted < _config.AmbushCount)
+					++runtime.AmbushesCompleted;
+				SaveAssignment(runtime);
+			} else
+				UpdatePreyAbilities(player, runtime, ambush, tick);
+		}
+		if (runtime.Aggregate.State == HuntState::FinalRevealed) {
+			if (!runtime.FinalRevealNotified || refreshPoi)
+				SendFinalLocationFeedback(player, runtime,
+					!runtime.FinalRevealNotified);
 			EnsureCrystal(player, runtime);
-		else if (runtime.Aggregate.State == HuntState::PreyActive) {
+		} else if (runtime.Aggregate.State == HuntState::PreyActive) {
 			Creature *prey = runtime.PreyGuid.IsEmpty()
 				? nullptr
 				: ObjectAccessor::GetCreature(*player, runtime.PreyGuid);
@@ -907,6 +1087,37 @@ std::uint32_t NativeHuntsManager::LifetimeCompletions(Player const *player) cons
 	return 0;
 }
 
+std::string NativeHuntsManager::BuildStatus(Player const *player,
+										 bool includeCoordinates) const {
+	if (!player)
+		return "[Native Hunts] A logged-in player is required.";
+	std::ostringstream out;
+	out << "[Native Hunts] resources=" << (_resources.Ready ? "ready" : "unavailable")
+		<< " (" << _resources.Reason << ")";
+	auto const *runtime = GetRuntime(player);
+	if (!runtime)
+		return out.str() + " | no active Hunt";
+	auto const &hunt = runtime->Aggregate;
+	out << " | state=" << StateName(hunt.State)
+		<< " | huntmaster=" << hunt.Identity.HuntmasterName
+		<< " | prey=" << hunt.Identity.PreyName
+		<< " | tier=" << static_cast<std::uint32_t>(hunt.Identity.Tier)
+		<< " | zone=" << hunt.Identity.ZoneName << " (" << runtime->ZoneId << ")"
+		<< " | tracking=" << static_cast<std::uint32_t>(hunt.Progress) << "%"
+		<< " | ambushes=" << static_cast<std::uint32_t>(runtime->AmbushesCompleted)
+		<< "/" << static_cast<std::uint32_t>(_config.AmbushCount)
+		<< (runtime->AmbushPending ? " pending" : "")
+		<< " | revision=" << hunt.Revision;
+	if (!hunt.FinalLocationKey.empty()) {
+		out << " | final_site=" << hunt.FinalLocationKey;
+		if (includeCoordinates)
+			if (auto const *site = FindFinalSite(hunt.FinalLocationKey))
+				out << " | map=" << site->MapId << " xyz=" << site->X << ","
+					<< site->Y << "," << site->Z << " o=" << site->Orientation;
+	}
+	return out.str();
+}
+
 void NativeHuntsManager::OnLogout(Player *player) {
 	if (!player)
 		return;
@@ -949,6 +1160,11 @@ void NativeHuntsManager::OnLogout(Player *player) {
 				*player, it->second.ReturnRiftGuid))
 			rift->Delete();
 	it->second.ReturnRiftGuid.Clear();
+	if (!it->second.AmbushGuid.IsEmpty())
+		if (Creature *ambush = ObjectAccessor::GetCreature(
+				*player, it->second.AmbushGuid))
+			ambush->DespawnOrUnsummon();
+	it->second.AmbushGuid.Clear();
 	if (it->second.Aggregate.State == HuntState::PreyActive) {
 		if (!it->second.PreyGuid.IsEmpty())
 			if (Creature *prey = ObjectAccessor::GetCreature(

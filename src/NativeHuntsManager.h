@@ -2,6 +2,7 @@
 #define MOD_NATIVE_HUNTS_MANAGER_H
 
 #include "HuntDomain.h"
+#include "HuntCatalog.h"
 
 #include "ObjectGuid.h"
 
@@ -22,6 +23,10 @@ struct NativeHuntsConfig {
 	std::uint32_t TrackingProgressMin = 3;
 	std::uint32_t TrackingProgressMax = 7;
 	float GroupCreditRadius = 100.0f;
+	HuntSearchScope SearchScope = HuntSearchScope::Local;
+	std::uint8_t AmbushCount = 2;
+	float AmbushHealthMultiplier = 4.0f;
+	float AmbushEscapeHealthPercent = 50.0f;
 	std::uint32_t RewardSeals = 1;
 	bool ReturnRiftEnabled = true;
 	std::uint32_t ReturnRiftDurationSeconds = 120;
@@ -46,6 +51,7 @@ struct HuntRuntime {
 	std::uint32_t ZoneId = 0;
 	std::uint32_t MapId = 0;
 	ObjectGuid CrystalGuid;
+	ObjectGuid AmbushGuid;
 	ObjectGuid PreyGuid;
 	ObjectGuid ReturnRiftGuid;
 	std::uint32_t ReturnRiftMap = 0;
@@ -53,6 +59,9 @@ struct HuntRuntime {
 	std::chrono::steady_clock::time_point ReturnRiftExpires;
 	std::uint32_t AbilityOneTimer = 0;
 	std::uint32_t AbilityTwoTimer = 0;
+	std::uint8_t AmbushesCompleted = 0;
+	bool AmbushPending = false;
+	bool FinalRevealNotified = false;
 };
 
 class NativeHuntsManager {
@@ -79,6 +88,8 @@ public:
 	void OnCreatureKill(Player *killer, Creature *killed);
 	void OnLogout(Player *player);
 	std::uint32_t LifetimeCompletions(Player const *player) const;
+	std::string BuildStatus(Player const *player,
+						bool includeCoordinates) const;
 
 private:
 	NativeHuntsManager() = default;
@@ -90,6 +101,12 @@ private:
 	bool EnsureCrystal(Player *player, HuntRuntime &runtime);
 	bool SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 						std::string &message);
+	bool SpawnAmbush(Player *player, HuntRuntime &runtime,
+					 std::string &message);
+	void SendFinalLocationFeedback(Player *player, HuntRuntime &runtime,
+								  bool includeMessage);
+	void InitializePreyCombat(Player *player, HuntRuntime &runtime,
+							 Creature *prey, bool finalEncounter);
 	void CreateReturnRift(Player *player, Creature *prey, HuntRuntime &runtime);
 	void UpdatePreyAbilities(Player *player, HuntRuntime &runtime,
 							 Creature *prey, std::uint32_t elapsedMs);
@@ -99,6 +116,7 @@ private:
 	std::unordered_map<std::uint32_t, HuntRuntime> _runtimes;
 	std::unordered_map<std::uint32_t, std::uint32_t> _uncertainTurnIns;
 	std::uint32_t _updateAccumulator = 0;
+	std::uint32_t _poiAccumulator = 0;
 };
 } // namespace native_hunts
 

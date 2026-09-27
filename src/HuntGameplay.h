@@ -24,6 +24,7 @@ struct TrackingKillContext {
 	bool WithinCreditRadius = false;
 	bool IsGrey = true;
 	bool IsHuntPrey = false;
+	bool AmbushPending = false;
 };
 
 struct CrystalUseContext {
@@ -60,6 +61,11 @@ struct TurnInContext {
 };
 
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context);
+std::uint8_t NextAmbushThreshold(std::uint8_t completed,
+								 std::uint8_t count);
+bool ShouldStartAmbush(std::uint8_t oldProgress, std::uint8_t newProgress,
+					   std::uint8_t completed, std::uint8_t count,
+					   bool pending);
 GameplayDecision CanActivateCrystal(CrystalUseContext const &context);
 GameplayDecision CanCompleteFinalKill(FinalKillContext const &context);
 GameplayDecision CanUseReturnRift(ReturnRiftUseContext const &context);

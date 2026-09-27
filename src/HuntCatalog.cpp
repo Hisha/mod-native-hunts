@@ -1,20 +1,22 @@
 #include "HuntCatalog.h"
 
 #include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace native_hunts {
 std::vector<HuntmasterDefinition> const &Huntmasters() {
 	static std::vector<HuntmasterDefinition> const values = {
-		{"corvin", "huntmaster-corvin", "huntmaster-corvin-spawn", "Huntmaster Corvin", "Stormwind City"},
-		{"brannoc", "huntmaster-brannoc", "huntmaster-brannoc-spawn", "Huntmaster Brannoc", "Ironforge"},
-		{"shalara", "huntmaster-shalara", "huntmaster-shalara-spawn", "Huntmistress Shalara", "Darnassus"},
-		{"veylan", "huntmaster-veylan", "huntmaster-veylan-spawn", "Huntmaster Veylan", "The Exodar"},
-		{"gorrak", "huntmaster-gorrak", "huntmaster-gorrak-spawn", "Huntmaster Gorrak", "Orgrimmar"},
-		{"tahu", "huntmaster-tahu", "huntmaster-tahu-spawn", "Huntmaster Tahu", "Thunder Bluff"},
-		{"morcant", "huntmaster-morcant", "huntmaster-morcant-spawn", "Huntmaster Morcant", "Undercity"},
-		{"vaelith", "huntmaster-vaelith", "huntmaster-vaelith-spawn", "Huntmistress Vaelith", "Silvermoon City"},
-		{"raleth", "huntmaster-raleth", "huntmaster-raleth-spawn", "Huntmaster Raleth", "Shattrath City"},
-		{"varyn", "huntmaster-varyn", "huntmaster-varyn-spawn", "Huntmaster Varyn", "Dalaran"},
+		{"corvin", "huntmaster-corvin", "huntmaster-corvin-spawn", "Huntmaster Corvin", "Stormwind City", HuntRegion::EasternKingdoms},
+		{"brannoc", "huntmaster-brannoc", "huntmaster-brannoc-spawn", "Huntmaster Brannoc", "Ironforge", HuntRegion::EasternKingdoms},
+		{"shalara", "huntmaster-shalara", "huntmaster-shalara-spawn", "Huntmistress Shalara", "Darnassus", HuntRegion::Kalimdor},
+		{"veylan", "huntmaster-veylan", "huntmaster-veylan-spawn", "Huntmaster Veylan", "The Exodar", HuntRegion::Kalimdor},
+		{"gorrak", "huntmaster-gorrak", "huntmaster-gorrak-spawn", "Huntmaster Gorrak", "Orgrimmar", HuntRegion::Kalimdor},
+		{"tahu", "huntmaster-tahu", "huntmaster-tahu-spawn", "Huntmaster Tahu", "Thunder Bluff", HuntRegion::Kalimdor},
+		{"morcant", "huntmaster-morcant", "huntmaster-morcant-spawn", "Huntmaster Morcant", "Undercity", HuntRegion::EasternKingdoms},
+		{"vaelith", "huntmaster-vaelith", "huntmaster-vaelith-spawn", "Huntmistress Vaelith", "Silvermoon City", HuntRegion::EasternKingdoms},
+		{"raleth", "huntmaster-raleth", "huntmaster-raleth-spawn", "Huntmaster Raleth", "Shattrath City", HuntRegion::Outland},
+		{"varyn", "huntmaster-varyn", "huntmaster-varyn-spawn", "Huntmaster Varyn", "Dalaran", HuntRegion::Northrend},
 	};
 	return values;
 }
@@ -95,5 +97,43 @@ FinalSitesForZone(std::string const &zoneKey) {
 		if (site.ZoneKey == zoneKey)
 			matches.push_back(&site);
 	return matches;
+}
+
+bool IsZoneEligibleForScope(HuntSearchScope scope,
+							 HuntmasterDefinition const &huntmaster,
+							 FinalSiteDefinition const &zone) {
+	if (scope == HuntSearchScope::World)
+		return true;
+	if (scope == HuntSearchScope::Continent)
+		return huntmaster.Region == zone.Region;
+	static std::unordered_map<std::string, std::vector<std::uint32_t>> const local = {
+		{"corvin", {12, 40, 44, 10, 33, 41}},
+		{"brannoc", {1, 38, 11, 3, 51, 46}},
+		{"shalara", {141, 148, 331, 361, 618}},
+		{"veylan", {3524, 3525, 148, 331}},
+		{"gorrak", {14, 17, 406, 16, 15}},
+		{"tahu", {215, 17, 400, 406, 405, 357}},
+		{"morcant", {85, 130, 267, 36, 28, 139}},
+		{"vaelith", {3430, 3433, 47, 139, 4080}},
+		{"raleth", {3483, 3521, 3519, 3518, 3522, 3523, 3520}},
+		{"varyn", {3537, 495, 65, 394, 66, 3711, 2817, 67, 210}},
+	};
+	auto const found = local.find(huntmaster.Key);
+	return found != local.end() &&
+		std::find(found->second.begin(), found->second.end(), zone.ZoneId) !=
+			found->second.end();
+}
+
+std::vector<FinalSiteDefinition const *> EligibleZonesForAssignment(
+		std::uint8_t level, HuntSearchScope scope,
+		HuntmasterDefinition const &huntmaster) {
+	std::vector<FinalSiteDefinition const *> eligible;
+	std::unordered_set<std::string> seen;
+	for (auto const &site : KnownFinalSites())
+		if (level >= site.MinLevel && level <= site.MaxLevel &&
+			IsZoneEligibleForScope(scope, huntmaster, site) &&
+			seen.emplace(site.ZoneKey).second)
+			eligible.push_back(&site);
+	return eligible;
 }
 } // namespace native_hunts

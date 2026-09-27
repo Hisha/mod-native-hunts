@@ -6,12 +6,22 @@
 #include <vector>
 
 namespace native_hunts {
+enum class HuntRegion : std::uint8_t {
+	EasternKingdoms,
+	Kalimdor,
+	Outland,
+	Northrend
+};
+
+enum class HuntSearchScope : std::uint8_t { Local, Continent, World };
+
 struct HuntmasterDefinition {
 	char const *Key;
 	char const *Symbol;
 	char const *SpawnSymbol;
 	char const *Name;
 	char const *City;
+	HuntRegion Region;
 };
 
 struct PreyDefinition {
@@ -30,13 +40,6 @@ struct PreyAbilityDefinition {
 	std::uint32_t CooldownMinMs;
 	std::uint32_t CooldownMaxMs;
 	std::uint8_t ChancePercent;
-};
-
-enum class HuntRegion : std::uint8_t {
-	EasternKingdoms,
-	Kalimdor,
-	Outland,
-	Northrend
 };
 
 struct FinalSiteDefinition {
@@ -65,6 +68,12 @@ FinalSiteDefinition const *FindFinalSite(std::string const &key);
 FinalSiteDefinition const *FindZone(std::string const &zoneKey);
 std::vector<FinalSiteDefinition const *>
 FinalSitesForZone(std::string const &zoneKey);
+bool IsZoneEligibleForScope(HuntSearchScope scope,
+							 HuntmasterDefinition const &huntmaster,
+							 FinalSiteDefinition const &zone);
+std::vector<FinalSiteDefinition const *> EligibleZonesForAssignment(
+	std::uint8_t level, HuntSearchScope scope,
+	HuntmasterDefinition const &huntmaster);
 } // namespace native_hunts
 
 #endif

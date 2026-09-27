@@ -229,6 +229,50 @@ void TestTrackingEligibility() {
 	prey.IsHuntPrey = true;
 	Check(CanAdvanceTracking(prey) == GameplayDecision::IneligibleKill,
 		  "hunt prey cannot become ordinary progress");
+	TrackingKillContext pending = eligible;
+	pending.AmbushPending = true;
+	Check(CanAdvanceTracking(pending) == GameplayDecision::IneligibleKill,
+		  "pending ambush pauses ordinary tracking");
+}
+
+void TestAssignmentScopesAndAmbushes() {
+	auto const *corvin = FindHuntmaster("corvin");
+	auto const *varyn = FindHuntmaster("varyn");
+	Check(corvin && varyn, "scope fixtures resolve");
+	if (!corvin || !varyn)
+		return;
+	auto const local = EligibleZonesForAssignment(20, HuntSearchScope::Local,
+		*corvin);
+	Check(!local.empty(), "Corvin has local level-20 hunting grounds");
+	for (auto const *zone : local)
+		Check(IsZoneEligibleForScope(HuntSearchScope::Local, *corvin, *zone),
+			"Local uses the authored Huntmaster allowlist");
+	auto const continent = EligibleZonesForAssignment(
+		75, HuntSearchScope::Continent, *varyn);
+	Check(!continent.empty(), "Varyn has Northrend continent grounds");
+	for (auto const *zone : continent)
+		Check(zone->Region == HuntRegion::Northrend,
+			"Continent scope does not cross gameplay continents");
+	auto const world = EligibleZonesForAssignment(
+		80, HuntSearchScope::World, *corvin);
+	Check(!world.empty(), "World retains broad max-level assignments");
+	Check(EligibleZonesForAssignment(80, HuntSearchScope::Local, *corvin).empty(),
+		"no eligible local zone fails instead of widening scope");
+	std::set<std::string> uniqueZones;
+	for (auto const *zone : world)
+		uniqueZones.emplace(zone->ZoneKey);
+	Check(uniqueZones.size() == world.size(),
+		"assignment candidates contain each zone once regardless of site count");
+
+	Check(NextAmbushThreshold(0, 2) == 33 &&
+			  NextAmbushThreshold(1, 2) == 66,
+		"two ambushes use established one-third thresholds");
+	Check(ShouldStartAmbush(30, 35, 0, 2, false),
+		"crossing first threshold starts ambush");
+	Check(!ShouldStartAmbush(30, 35, 0, 2, true),
+		"pending ambush cannot duplicate");
+	Check(!ShouldStartAmbush(95, 100, 1, 2, false),
+		"final reveal is not replaced by an ambush");
 }
 
 void TestCrystalAndSpawnValidation() {
@@ -330,6 +374,8 @@ int main(int argc, char **argv) {
 		TestSnapshots();
 	if (selection == "all" || selection == "tracking")
 		TestTrackingEligibility();
+	if (selection == "all" || selection == "scope")
+		TestAssignmentScopesAndAmbushes();
 	if (selection == "all" || selection == "crystal")
 		TestCrystalAndSpawnValidation();
 	if (selection == "all" || selection == "completion")

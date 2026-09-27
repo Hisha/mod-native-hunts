@@ -9,16 +9,34 @@ not read, migrate, or preserve `mod-hunts` runtime or currency data.
 Ten managed capital-city Huntmasters issue a random standard-prey assignment
 and an authored, level-appropriate hunting zone. Non-grey ordinary creature
 kills made by the hunter, their pet, or a nearby party member advance tracking.
+Assignment geography is configurable as `Local`, `Continent`, or `World`.
+`Local` is the default and uses the established explicit Huntmaster-to-zone
+allowlists; `Continent` uses authored gameplay regions rather than raw map IDs;
+`World` retains unrestricted level-appropriate selection. Candidate zones are
+deduplicated before selection, so additional final sites never weight a zone.
 The catalog contains all 195 established authored sites (84 Eastern Kingdoms,
 63 Kalimdor, 21 Outland, and 27 Northrend). At 100%, one site is selected from
 the assigned zone's complete pool, persisted, and reconstructed as an
 owner-bound trail crystal when the hunter approaches it.
+
+Standard tracking includes two required ambushes by default, at approximately
+one-third and two-thirds progress. The assigned prey attacks as a temporary
+owner summon and must be driven below its escape-health threshold. While it is
+pending, ordinary kills cannot advance tracking. Pending state survives logout
+and restart, while temporary creature GUIDs do not.
 
 The crystal validates the player, assignment, state, managed object identity,
 map, zone, and persisted site before summoning the assigned managed prey. A
 successful summon changes the state to `PreyActive`; failure leaves the crystal
 encounter retryable. Standard prey use player-relative health scaling and the
 established two-ability profiles from the reference implementation.
+
+At final reveal the player receives an explicit server message. A stock-client
+`SMSG_GOSSIP_POI` marker is sent and periodically refreshed while the player is
+on the final site's map. The 3.3.5a protocol cannot reliably place a remote-map
+POI, so the message says when no pin is available until map arrival. No HuntsUI
+or other addon is required. `.nativehunts status` and `.nativehunts reset` are
+bounded GM diagnostics using the normal server-info RBAC permission.
 
 The correct final kill changes the assignment to `ReadyToTurnIn` and may create
 a temporary owner-bound Return Rift. The rift returns the player near the exact
@@ -71,17 +89,18 @@ the normal AzerothCore module SQL process. `native_hunt_assignment` persists the
 issuer, prey, tier, zone, domain state, progress, final site, timestamps, and
 revision. `native_hunt_stats` owns lifetime completion statistics.
 
-- `Tracking`, `FinalRevealed`, and `ReadyToTurnIn` remain unchanged.
+- `Tracking`, its completed/pending ambush state, `FinalRevealed`, and
+  `ReadyToTurnIn` remain unchanged.
 - `PreyActive` recovers to `FinalRevealed`; temporary creature/object GUIDs are
   never persisted.
 - an idle character has no assignment row.
 
 ## Deliberate boundaries
 
-This pass does not implement Elite/Epic assignments, ambushes during tracking,
-dynamic final-site generation, guard directions, a Seal equipment vendor, or a
-native client UI. The existing snapshot/domain boundary remains independent of
-HuntsUI and ready for a future UI adapter.
+This pass does not implement Elite/Epic assignments, dynamic final-site
+generation, guard directions, a Seal equipment vendor, or a native client UI.
+The existing snapshot/domain boundary remains independent of HuntsUI and ready
+for a future UI adapter.
 
 ## Checks
 

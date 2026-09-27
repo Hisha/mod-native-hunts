@@ -1,6 +1,7 @@
 #include "NativeHuntsManager.h"
 
 #include "Chat.h"
+#include "CommandScript.h"
 #include "Config.h"
 #include "Creature.h"
 #include "GameObject.h"
@@ -9,11 +10,19 @@
 #include "ScriptedGossip.h"
 
 #include <algorithm>
+#include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <string>
 
 namespace {
 native_hunts::NativeHuntsConfig Config;
+
+Player *GetCommandPlayer(ChatHandler *handler) {
+	return handler && handler->GetSession()
+		? handler->GetSession()->GetPlayer()
+		: nullptr;
+}
 
 enum GossipAction : std::uint32_t {
 	ActionRequest = GOSSIP_ACTION_INFO_DEF + 1,
@@ -63,6 +72,29 @@ public:
 		Config.GroupCreditRadius = std::clamp(
 			sConfigMgr->GetOption<float>("NativeHunts.GroupCreditRadius", 100.0f),
 			1.0f, 200.0f);
+		std::string scope = sConfigMgr->GetOption<std::string>(
+			"NativeHunts.AssignmentScope", "Local");
+		std::transform(scope.begin(), scope.end(), scope.begin(),
+			[](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		Config.SearchScope = scope == "world"
+			? native_hunts::HuntSearchScope::World
+			: scope == "continent" ? native_hunts::HuntSearchScope::Continent
+								 : native_hunts::HuntSearchScope::Local;
+		Config.AmbushCount = static_cast<std::uint8_t>(std::clamp<std::uint32_t>(
+			sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Ambush.Count", 2),
+			0, 5));
+		Config.AmbushHealthMultiplier = sConfigMgr->GetOption<float>(
+			"NativeHunts.Ambush.HealthMultiplier", 4.0f);
+		if (!std::isfinite(Config.AmbushHealthMultiplier))
+			Config.AmbushHealthMultiplier = 4.0f;
+		Config.AmbushHealthMultiplier = std::clamp(
+			Config.AmbushHealthMultiplier, 1.0f, 20.0f);
+		Config.AmbushEscapeHealthPercent = sConfigMgr->GetOption<float>(
+			"NativeHunts.Ambush.EscapeHealthPercent", 50.0f);
+		if (!std::isfinite(Config.AmbushEscapeHealthPercent))
+			Config.AmbushEscapeHealthPercent = 50.0f;
+		Config.AmbushEscapeHealthPercent = std::clamp(
+			Config.AmbushEscapeHealthPercent, 1.0f, 99.0f);
 		Config.RewardSeals = std::clamp<std::uint32_t>(
 			sConfigMgr->GetOption<std::uint32_t>(
 				"NativeHunts.Reward.Seals", 1),
@@ -184,6 +216,40 @@ public:
 		sNativeHunts.OnLogout(player);
 	}
 };
+
+class NativeHuntsCommandScript final : public CommandScript {
+public:
+	NativeHuntsCommandScript() : CommandScript("NativeHuntsCommandScript") {}
+
+	Acore::ChatCommands::ChatCommandTable GetCommands() const override {
+		using namespace Acore::ChatCommands;
+		static ChatCommandTable nativeHunts = {
+			{"status", HandleStatus, rbac::RBAC_PERM_COMMAND_SERVER_INFO,
+			 Console::No},
+			{"reset", HandleReset, rbac::RBAC_PERM_COMMAND_SERVER_INFO,
+			 Console::No},
+		};
+		static ChatCommandTable root = {{"nativehunts", nativeHunts}};
+		return root;
+	}
+
+private:
+	static bool HandleStatus(ChatHandler *handler) {
+		Player *player = GetCommandPlayer(handler);
+		handler->SendSysMessage(sNativeHunts.BuildStatus(player, true));
+		return true;
+	}
+
+	static bool HandleReset(ChatHandler *handler) {
+		Player *player = GetCommandPlayer(handler);
+		if (!player)
+			return false;
+		std::string message;
+		sNativeHunts.Abandon(player, message);
+		handler->PSendSysMessage("[Native Hunts] {}", message);
+		return true;
+	}
+};
 } // namespace
 
 void AddNativeHuntsModuleScripts() {
@@ -192,4 +258,5 @@ void AddNativeHuntsModuleScripts() {
 	new NativeTrailCrystalScript();
 	new NativeReturnRiftScript();
 	new NativeHuntsPlayerScript();
+	new NativeHuntsCommandScript();
 }

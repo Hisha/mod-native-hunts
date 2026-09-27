@@ -3,15 +3,18 @@
 `run_checks.py` performs three database-free checks:
 
 1. strict C++17 tests for domain transitions, restart recovery, tracking kill
-   eligibility, crystal ownership/location checks, failed-spawn recovery, final
+   eligibility, Local/Continent/World filtering, zone deduplication, ambush
+   thresholds/pending tracking exclusion, crystal ownership/location checks,
+   failed-spawn recovery, final
    prey identity, Return Rift ownership, turn-in bag-space refusal, managed
    resource unavailability, abandonment, snapshots, all 195 unique authored
    sites, regional counts, and per-zone site pools;
 2. the managed EPF contract: all ten Huntmasters and spawns, all sixteen
-   standard prey, both runtime object templates, the physical Seal declaration,
+   standard prey, both clean scripted-goober runtime templates, the physical Seal declaration,
    and removal of disposable validation symbols;
 3. native-only source/persistence safety checks that reject legacy package,
-   table, protocol, migration, and hard-coded allocated identities, and require
+   table, protocol, migration, world-database assignment placement, undocumented
+   configuration reads, and hard-coded allocated identities, and require
    the single-transaction inventory/statistics/assignment turn-in safeguards.
 
 Run from the repository root:

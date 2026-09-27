@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS `native_hunt_assignment` (
   `map_id` INT UNSIGNED NOT NULL,
   `state` TINYINT UNSIGNED NOT NULL COMMENT '1=Tracking,2=FinalRevealed,3=PreyActive,4=ReadyToTurnIn',
   `tracking_progress` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `ambushes_completed` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `ambush_pending` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `final_site_key` VARCHAR(64) NOT NULL DEFAULT '',
   `revision` BIGINT UNSIGNED NOT NULL DEFAULT 0,
   `accepted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

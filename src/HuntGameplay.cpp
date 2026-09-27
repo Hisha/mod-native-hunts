@@ -4,9 +4,27 @@ namespace native_hunts {
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context) {
 	if (!context.HunterIsKillerOrGrouped || !context.SameMap ||
 		!context.InAssignedZone || !context.WithinCreditRadius ||
-		context.IsGrey || context.IsHuntPrey)
+		context.IsGrey || context.IsHuntPrey || context.AmbushPending)
 		return GameplayDecision::IneligibleKill;
 	return GameplayDecision::Allowed;
+}
+
+std::uint8_t NextAmbushThreshold(std::uint8_t completed,
+								 std::uint8_t count) {
+	if (count == 0 || completed >= count)
+		return 100;
+	return static_cast<std::uint8_t>(
+		(100u * (static_cast<std::uint32_t>(completed) + 1u)) /
+		(static_cast<std::uint32_t>(count) + 1u));
+}
+
+bool ShouldStartAmbush(std::uint8_t oldProgress, std::uint8_t newProgress,
+					   std::uint8_t completed, std::uint8_t count,
+					   bool pending) {
+	if (pending || newProgress >= 100 || completed >= count)
+		return false;
+	std::uint8_t const threshold = NextAmbushThreshold(completed, count);
+	return oldProgress < threshold && newProgress >= threshold;
 }
 
 GameplayDecision CanActivateCrystal(CrystalUseContext const &context) {

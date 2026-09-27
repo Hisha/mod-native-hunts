@@ -4,13 +4,30 @@ NativeHunts.Enable = 1
 NativeHunts.Debug = 0
 NativeHunts.MinimumLevel = 10
 
+# Assignment geography. Local uses the established per-Huntmaster authored
+# region allowlists. Continent uses the Huntmaster's gameplay continent. World
+# permits every level-appropriate authored zone. Local is the normal default;
+# a Huntmaster with no eligible local ground for the player's level refuses the
+# assignment cleanly rather than widening the scope.
+NativeHunts.AssignmentScope = Local
+
 NativeHunts.Tracking.ProgressMin = 3
 NativeHunts.Tracking.ProgressMax = 7
+# Nearby members of the killer's group can receive independent tracking credit.
 NativeHunts.GroupCreditRadius = 100.0
+
+# Required Standard tracking ambushes are spaced evenly through progress.
+# Set Count to 0 to disable them. The assigned prey escapes at the configured
+# health percentage; killing or evading it does not skip the pending ambush.
+NativeHunts.Ambush.Count = 2
+NativeHunts.Ambush.HealthMultiplier = 4.0
+NativeHunts.Ambush.EscapeHealthPercent = 50.0
 
 # Physical Huntmaster's Seal items awarded at a successful turn-in.
 NativeHunts.Reward.Seals = 1
 
 NativeHunts.ReturnRift.Enable = 1
+# Clamped to 1-120 seconds.
 NativeHunts.ReturnRift.DurationSeconds = 120
+# Arrival distance from the exact issuing managed Huntmaster, clamped to 1-10.
 NativeHunts.ReturnRift.ArrivalDistance = 3.0
