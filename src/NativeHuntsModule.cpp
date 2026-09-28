@@ -173,32 +173,31 @@ public:
 
 private:
 	static void ShowMenu(Player *player, Creature *creature) {
-	    ClearGossipMenuFor(player);
-	    auto const *runtime = sNativeHunts.GetRuntime(player);
+		ClearGossipMenuFor(player);
+		auto const *runtime = sNativeHunts.GetRuntime(player);
 
-	    if (!runtime) {
-	        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I seek dangerous prey.",
-	            GOSSIP_SENDER_MAIN, ActionRequest);
+		if (!runtime) {
+			AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I seek dangerous prey.",
+				GOSSIP_SENDER_MAIN, ActionRequest);
 
-	        if (sNativeHunts.IsEliteUnlocked(player) &&
-	            sNativeHunts.IsEliteAvailableToday(player))
-	            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I seek an Elite Hunt.",
-	                GOSSIP_SENDER_MAIN, ActionRequestElite);
-	    }
-	    else if (runtime->Aggregate.State == native_hunts::HuntState::ReadyToTurnIn) {
-	        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I have slain my quarry.",
-	            GOSSIP_SENDER_MAIN, ActionTurnIn);
-	    }
-	    else {
-	        AddGossipItemFor(player, GOSSIP_ICON_CHAT,
-	            "Tell me about my current Hunt.", GOSSIP_SENDER_MAIN, ActionStatus);
-	        AddGossipItemFor(player, GOSSIP_ICON_CHAT,
-	            "I wish to abandon this Hunt.", GOSSIP_SENDER_MAIN, ActionAbandon);
-	    }
+			if (sNativeHunts.IsEliteUnlocked(player) &&
+				sNativeHunts.IsEliteAvailableToday(player))
+				AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I seek an Elite Hunt.",
+					GOSSIP_SENDER_MAIN, ActionRequestElite);
+		} else if (runtime->Aggregate.State ==
+			native_hunts::HuntState::ReadyToTurnIn) {
+			AddGossipItemFor(player, GOSSIP_ICON_CHAT, "I have slain my quarry.",
+				GOSSIP_SENDER_MAIN, ActionTurnIn);
+		} else {
+			AddGossipItemFor(player, GOSSIP_ICON_CHAT,
+				"Tell me about my current Hunt.", GOSSIP_SENDER_MAIN, ActionStatus);
+			AddGossipItemFor(player, GOSSIP_ICON_CHAT,
+				"I wish to abandon this Hunt.", GOSSIP_SENDER_MAIN, ActionAbandon);
+		}
 
-	    AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Show me my hunting record.",
-	        GOSSIP_SENDER_MAIN, ActionStats);
-	    SendGossipMenuFor(player, 1, creature->GetGUID());
+		AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Show me my hunting record.",
+			GOSSIP_SENDER_MAIN, ActionStats);
+		SendGossipMenuFor(player, 1, creature->GetGUID());
 	}
 };
 

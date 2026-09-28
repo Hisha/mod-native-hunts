@@ -108,6 +108,7 @@ def run_source_safety_checks() -> None:
         "hard-coded old crystal entry": "14999010",
         "hard-coded old rift entry": "14999011",
         "hard-coded old Huntmaster entry": "14999980",
+        "temporary Native Hunts debug log": "[Native Hunts DEBUG]",
     }
     production = list((ROOT / "src").glob("**/*")) + list((ROOT / "conf").glob("**/*"))
     for path in production:
@@ -138,6 +139,28 @@ def run_source_safety_checks() -> None:
         (ROOT / "data/sql/db-characters/updates").glob("*.sql"))
     if "ADD COLUMN IF NOT EXISTS" in updates:
         raise AssertionError("unsupported updater column syntax present")
+    backfill_path = (ROOT / "data/sql/db-characters/updates/"
+        "2026_09_27_01_native_hunt_standard_backfill.sql")
+    if not backfill_path.is_file():
+        raise AssertionError("convergent Standard-completion backfill is missing")
+    backfill = backfill_path.read_text(encoding="utf-8")
+    for token in ("UPDATE `native_hunt_stats`", "GREATEST(",
+                  "`lifetime_completed` - `elite_completed`",
+                  "WHERE `standard_completed` <"):
+        if token not in backfill:
+            raise AssertionError(f"Standard-completion backfill safeguard missing: {token}")
+    def migrated_standard(lifetime: int, elite: int, standard: int) -> int:
+        return max(standard, lifetime - elite if lifetime >= elite else 0)
+    migration_cases = (
+        (10, 0, 0, 10),
+        (11, 0, 1, 11),
+        (12, 2, 10, 10),
+        (12, 2, 11, 11),
+        (5, 7, 3, 3),
+    )
+    for lifetime, elite, standard, expected in migration_cases:
+        if migrated_standard(lifetime, elite, standard) != expected:
+            raise AssertionError("Standard-completion migration semantics regressed")
     manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
     required_turn_in_safety = (
         "SaveInventoryAndGoldToDB(transaction)",
@@ -150,6 +173,16 @@ def run_source_safety_checks() -> None:
         if token not in manager:
             raise AssertionError(f"turn-in consistency safeguard missing: {token}")
     module = (ROOT / "src" / "NativeHuntsModule.cpp").read_text(encoding="utf-8")
+    menu_start = module.index("static void ShowMenu(Player *player, Creature *creature)")
+    menu_end = module.index("\n\t}\n};", menu_start)
+    menu = module[menu_start:menu_end]
+    idle = menu.index("if (!runtime) {")
+    standard = menu.index("ActionRequest);", idle)
+    elite = menu.index("ActionRequestElite);", standard)
+    ready = menu.index("} else if (runtime->Aggregate.State", elite)
+    record = menu.index("ActionStats);", ready)
+    if not idle < standard < elite < ready < record or "if (!runtime &&" in menu:
+        raise AssertionError("Huntmaster idle/Elite gossip can dereference a null runtime")
     config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
     config_reads = set(re.findall(r'"(NativeHunts\.[A-Za-z0-9.]+)"', module))
     config_entries = set(re.findall(r'^(NativeHunts\.[A-Za-z0-9.]+)\s*=', config, re.MULTILINE))
