@@ -2,8 +2,8 @@
   "schema": 2,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "5",
-  "description": "Managed Huntmasters, Standard and Elite prey, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
+  "version": "6",
+  "description": "Managed Huntmasters, Standard and Elite prey, active Hunt indicators, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
   "content": [],
   "dbcRows": [
     {
@@ -45,6 +45,26 @@
   ],
   "currencyCategories": [
     { "symbol": "hunts", "name": { "enUS": "Hunts" } }
+  ],
+  "spells": [
+    {
+      "symbol": "active-standard-hunt",
+      "copyFrom": 1494,
+      "profile": "informational-self-aura-v1",
+      "name": { "enUS": "Standard Hunt" },
+      "description": { "enUS": "You are tracking a Standard Hunt target." },
+      "auraDescription": { "enUS": "A Standard Hunt is active." },
+      "iconCopyFromSpell": 1494
+    },
+    {
+      "symbol": "active-elite-hunt",
+      "copyFrom": 67823,
+      "profile": "informational-self-aura-v1",
+      "name": { "enUS": "Elite Hunt" },
+      "description": { "enUS": "You are tracking an Elite Hunt target." },
+      "auraDescription": { "enUS": "An Elite Hunt is active." },
+      "iconCopyFromSpell": 67823
+    }
   ],
   "creatureTemplates": [
     { "symbol": "huntmaster-corvin", "copyFrom": 68, "overrides": { "name": "Huntmaster Corvin", "subname": "Master of the Hunt", "minLevel": 60, "maxLevel": 60, "npcFlags": 1, "scriptName": "mod_native_hunts_huntmaster" } },

@@ -47,8 +47,31 @@ def run_content_checks() -> None:
             raise AssertionError("EPF must contain only manifest.json")
         manifest = json.loads(archive.read("manifest.json"))
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 2 or manifest.get("version") != "5"):
+            manifest.get("schema") != 2 or manifest.get("version") != "6"):
         raise AssertionError("invalid Native Hunts EPF identity")
+    spells = {row["symbol"]: row for row in manifest.get("spells", [])}
+    expected_spells = {
+        "active-standard-hunt": (1494, "Standard Hunt",
+            "You are tracking a Standard Hunt target.",
+            "A Standard Hunt is active."),
+        "active-elite-hunt": (67823, "Elite Hunt",
+            "You are tracking an Elite Hunt target.",
+            "An Elite Hunt is active."),
+    }
+    if set(spells) != set(expected_spells):
+        raise AssertionError("managed active-Hunt spell set is incorrect")
+    for symbol, (donor, name, description, aura_description) in expected_spells.items():
+        row = spells[symbol]
+        if (row != {
+                "symbol": symbol,
+                "copyFrom": donor,
+                "profile": "informational-self-aura-v1",
+                "name": {"enUS": name},
+                "description": {"enUS": description},
+                "auraDescription": {"enUS": aura_description},
+                "iconCopyFromSpell": donor,
+        }):
+            raise AssertionError(f"managed active-Hunt spell is incorrect: {symbol}")
     creature_symbols = {row["symbol"] for row in manifest["creatureTemplates"]}
     expected_huntmasters = {
         "huntmaster-corvin", "huntmaster-brannoc", "huntmaster-shalara",
