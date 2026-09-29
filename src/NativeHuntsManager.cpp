@@ -839,6 +839,23 @@ bool NativeHuntsManager::ResolveManagedResources() {
 		_resources.Reason = symbol + ": " + resourceReason;
 		return false;
 	};
+	auto resolveAura = [&](char const *symbol, std::uint32_t &value) {
+		std::string resourceReason;
+		std::uint32_t resolved = 0;
+		auto const result = provider->ResolveResource(
+			Package, symbol, "spell.id", resolved, resourceReason);
+		if (result == ContentResourcesV1::Result::Ready && resolved) {
+			value = resolved;
+			return;
+		}
+		LOG_ERROR("module.native_hunts",
+			"Native Hunts informational aura '{}' is unavailable: {}. Hunt "
+			"gameplay will continue without that aura.",
+			symbol, resourceReason.empty() ? "Content Manager did not return Ready"
+				: resourceReason);
+	};
+	resolveAura("active-standard-hunt", _resources.StandardHuntAuraSpell);
+	resolveAura("active-elite-hunt", _resources.EliteHuntAuraSpell);
 
 	for (auto const &huntmaster : Huntmasters()) {
 		std::uint32_t entry = 0;
@@ -1068,6 +1085,32 @@ void NativeHuntsManager::DeleteAssignment(HuntRuntime &runtime) {
 	CharacterDatabase.DirectExecute(
 		"DELETE FROM `native_hunt_assignment` WHERE `character_guid`={}",
 		runtime.CharacterGuid);
+	ReconcileHuntAura(player, nullptr);
+}
+
+void NativeHuntsManager::ReconcileHuntAura(Player *player,
+		HuntAggregate const *assignment) {
+	if (!player)
+		return;
+	HuntState const state = assignment ? assignment->State : HuntState::Idle;
+	PreyTier const tier = assignment ? assignment->Identity.Tier
+		: PreyTier::Standard;
+	bool const hasStandard = _resources.StandardHuntAuraSpell &&
+		player->HasAura(_resources.StandardHuntAuraSpell);
+	bool const hasElite = _resources.EliteHuntAuraSpell &&
+		player->HasAura(_resources.EliteHuntAuraSpell);
+	auto const decision = DecideHuntAura(state, tier,
+		_resources.StandardHuntAuraSpell, _resources.EliteHuntAuraSpell,
+		hasStandard, hasElite);
+	if (decision.RemoveStandard)
+		player->RemoveAurasDueToSpell(_resources.StandardHuntAuraSpell);
+	if (decision.RemoveElite)
+		player->RemoveAurasDueToSpell(_resources.EliteHuntAuraSpell);
+	if (decision.AddSpell && !player->AddAura(decision.AddSpell, player))
+		LOG_ERROR("module.native_hunts",
+			"Native Hunts could not apply managed informational aura {} to "
+			"character {}; authoritative Hunt state is unchanged.",
+			decision.AddSpell, player->GetGUID().GetCounter());
 }
 
 bool NativeHuntsManager::IsHuntmaster(std::uint32_t entry) const {
@@ -1161,6 +1204,7 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 	}
 	_runtimes.emplace(guid, runtime);
 	SaveAssignment(_runtimes.at(guid));
+	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	message = "Your quarry is " + std::string(prey.Name) + ". Travel to " +
 			  site->ZoneName + " and hunt suitable creatures to find its trail.";
 	return true;
@@ -1255,6 +1299,7 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 		"`elite_daily_accept_reset_date`=CURRENT_DATE()", guid);
 	_runtimes.emplace(guid, runtime);
 	SaveAssignment(_runtimes.at(guid));
+	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	message = "Elite quarry: " + std::string(chosen->Name) + ". Travel to " +
 		site->ZoneName + ". Abandoning forfeits today's Elite assignment.";
 	return true;
@@ -1295,6 +1340,7 @@ bool NativeHuntsManager::Abandon(Player *player, std::string &message) {
 	}
 	auto it = _runtimes.find(player->GetGUID().GetCounter());
 	if (it == _runtimes.end()) {
+		ReconcileHuntAura(player, nullptr);
 		message = "You do not have an active Hunt.";
 		return false;
 	}
@@ -1529,6 +1575,7 @@ bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 	runtime.PreyGuid = prey->GetGUID();
 	InitializePreyCombat(player, runtime, prey, true);
 	SaveAssignment(runtime);
+	ReconcileHuntAura(player, &runtime.Aggregate);
 	message = runtime.Aggregate.Identity.PreyName +
 			  " emerges for the final confrontation!";
 	return true;
@@ -1625,6 +1672,7 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 				runtime.PreyGuid.Clear();
 				CreateReturnRift(hunter, killed, runtime);
 				SaveAssignment(runtime);
+				ReconcileHuntAura(hunter, &runtime.Aggregate);
 			}
 			continue;
 		}
@@ -1650,6 +1698,7 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 			continue;
 
 		std::uint8_t const oldProgress = runtime.Aggregate.Progress;
+		HuntState const oldState = runtime.Aggregate.State;
 		std::uint8_t amount = static_cast<std::uint8_t>(urand(
 			_config.TrackingProgressMin, _config.TrackingProgressMax));
 		HuntDomain::Execute(runtime.Aggregate, AdvanceTracking{amount});
@@ -1674,6 +1723,8 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 					"|cffff8000[Native Hunts]|r {}", ambushMessage);
 		}
 		SaveAssignment(runtime);
+		if (runtime.Aggregate.State != oldState)
+			ReconcileHuntAura(hunter, &runtime.Aggregate);
 	}
 }
 
@@ -1830,6 +1881,7 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 				runtime.PreyGuid.Clear();
 				HuntDomain::Execute(runtime.Aggregate, RecoverAfterRestart{});
 				SaveAssignment(runtime);
+				ReconcileHuntAura(player, &runtime.Aggregate);
 			} else
 				UpdatePreyAbilities(player, runtime, prey, tick);
 		}
@@ -1927,6 +1979,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		if (!*assignment) {
 			_uncertainTurnIns.erase(uncertain);
 			HuntDomain::Execute(runtime.Aggregate,TurnInHunt{});
+			ReconcileHuntAura(player, nullptr);
 			RemoveRuntimeObjects(player,runtime); _runtimes.erase(it);
 			message = "The earlier Hunt completion is now confirmed.";
 			return true;
@@ -2089,6 +2142,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		prey->RewardMultiplier, elite ? _config.EliteXpMultiplier : 1.0f);
 	if (xp) player->GiveXP(xp,nullptr,1.0f);
 	HuntDomain::Execute(runtime.Aggregate,TurnInHunt{});
+	ReconcileHuntAura(player, nullptr);
 	RemoveRuntimeObjects(player,runtime);
 	_runtimes.erase(it);
 	std::ostringstream out;
@@ -2141,6 +2195,14 @@ std::string NativeHuntsManager::BuildStatus(Player const *player,
 	return out.str();
 }
 
+void NativeHuntsManager::OnLogin(Player *player) {
+	if (!player)
+		return;
+	auto const it = _runtimes.find(player->GetGUID().GetCounter());
+	ReconcileHuntAura(player,
+		it == _runtimes.end() ? nullptr : &it->second.Aggregate);
+}
+
 void NativeHuntsManager::OnLogout(Player *player) {
 	if (!player)
 		return;
@@ -2154,6 +2216,7 @@ void NativeHuntsManager::OnLogout(Player *player) {
 		if (assignment.has_value() && !*assignment) {
 			_uncertainTurnIns.erase(uncertain);
 			HuntDomain::Execute(it->second.Aggregate, TurnInHunt{});
+			ReconcileHuntAura(player, nullptr);
 			RemoveRuntimeObjects(player, it->second);
 			_runtimes.erase(it);
 			return;
@@ -2206,6 +2269,7 @@ void NativeHuntsManager::OnLogout(Player *player) {
 		it->second.PreyGuid.Clear();
 		HuntDomain::Execute(it->second.Aggregate, RecoverAfterRestart{});
 		SaveAssignment(it->second);
+		ReconcileHuntAura(player, &it->second.Aggregate);
 	}
 }
 } // namespace native_hunts

@@ -245,8 +245,20 @@ def run_source_safety_checks() -> None:
                   "SaveInventoryAndGoldToDB(transaction)"):
         if token not in manager:
             raise AssertionError(f"reward behavior missing: {token}")
-    if "AddAura(" in manager or ("CastSpell(player" in manager and "ActiveHunt" in manager):
-        raise AssertionError("stock spell was hijacked for active-Hunt aura")
+    aura_contract = (
+        'resolveAura("active-standard-hunt"',
+        'resolveAura("active-elite-hunt"',
+        'Package, symbol, "spell.id"',
+        "ReconcileHuntAura(player, nullptr)",
+        "player->AddAura(decision.AddSpell, player)",
+        "player->RemoveAurasDueToSpell(_resources.StandardHuntAuraSpell)",
+        "player->RemoveAurasDueToSpell(_resources.EliteHuntAuraSpell)",
+    )
+    for token in aura_contract:
+        if token not in manager:
+            raise AssertionError(f"managed active-Hunt aura contract missing: {token}")
+    if manager.count("player->AddAura(") != 1 or "OnPlayerLogin" not in module:
+        raise AssertionError("active-Hunt aura reconciliation is not centralized")
     print("PASS native-only source and persistence safety checks", flush=True)
 
 

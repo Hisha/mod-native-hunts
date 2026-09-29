@@ -60,6 +60,12 @@ struct TurnInContext {
 	bool HasInventorySpace = false;
 };
 
+struct HuntAuraDecision {
+	bool RemoveStandard = false;
+	bool RemoveElite = false;
+	std::uint32_t AddSpell = 0;
+};
+
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context);
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,
 								 std::uint8_t count);
@@ -70,6 +76,9 @@ GameplayDecision CanActivateCrystal(CrystalUseContext const &context);
 GameplayDecision CanCompleteFinalKill(FinalKillContext const &context);
 GameplayDecision CanUseReturnRift(ReturnRiftUseContext const &context);
 GameplayDecision CanTurnIn(TurnInContext const &context);
+HuntAuraDecision DecideHuntAura(HuntState state, PreyTier tier,
+	std::uint32_t standardSpell, std::uint32_t eliteSpell,
+	bool hasStandard, bool hasElite);
 
 // The state changes only after the caller has successfully created the prey.
 TransitionResult ApplyPreySpawnOutcome(HuntAggregate &aggregate,

@@ -74,6 +74,20 @@ GameplayDecision CanTurnIn(TurnInContext const &context) {
 	return GameplayDecision::Allowed;
 }
 
+HuntAuraDecision DecideHuntAura(HuntState state, PreyTier tier,
+		std::uint32_t standardSpell, std::uint32_t eliteSpell,
+		bool hasStandard, bool hasElite) {
+	bool const active = state != HuntState::Idle;
+	bool const wantsStandard = active && tier == PreyTier::Standard;
+	bool const wantsElite = active && tier == PreyTier::Elite;
+	return {
+		standardSpell && hasStandard && !wantsStandard,
+		eliteSpell && hasElite && !wantsElite,
+		wantsStandard && standardSpell && !hasStandard ? standardSpell
+			: wantsElite && eliteSpell && !hasElite ? eliteSpell : 0
+	};
+}
+
 TransitionResult ApplyPreySpawnOutcome(HuntAggregate &aggregate,
 									   bool spawnSucceeded) {
 	if (!spawnSucceeded)

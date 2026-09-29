@@ -232,6 +232,9 @@ public:
 class NativeHuntsPlayerScript final : public PlayerScript {
 public:
 	NativeHuntsPlayerScript() : PlayerScript("NativeHuntsPlayerScript") {}
+	void OnPlayerLogin(Player *player) override {
+		sNativeHunts.OnLogin(player);
+	}
 	void OnPlayerCreatureKill(Player *killer, Creature *killed) override {
 		sNativeHunts.OnCreatureKill(killer, killed);
 	}

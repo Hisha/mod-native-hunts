@@ -385,6 +385,73 @@ void TestFinalKillRiftAndTurnInValidation() {
 		  "unavailable managed Seal refuses turn-in");
 }
 
+void TestHuntAuraProjection() {
+	constexpr std::uint32_t standardSpell = 90001;
+	constexpr std::uint32_t eliteSpell = 90002;
+	auto idle = DecideHuntAura(HuntState::Idle, PreyTier::None,
+		standardSpell, eliteSpell, true, true);
+	Check(idle.RemoveStandard && idle.RemoveElite && !idle.AddSpell,
+		"Idle removes both Hunt auras");
+
+	auto standard = DecideHuntAura(HuntState::Tracking, PreyTier::Standard,
+		standardSpell, eliteSpell, false, true);
+	Check(!standard.RemoveStandard && standard.RemoveElite &&
+		standard.AddSpell == standardSpell,
+		"active Standard Hunt selects only Standard aura");
+	auto standardAlreadyPresent = DecideHuntAura(
+		HuntState::FinalRevealed, PreyTier::Standard, standardSpell,
+		eliteSpell, true, false);
+	Check(!standardAlreadyPresent.RemoveStandard &&
+		!standardAlreadyPresent.RemoveElite &&
+		!standardAlreadyPresent.AddSpell,
+		"correct Standard aura is not repeatedly applied");
+
+	auto elite = DecideHuntAura(HuntState::PreyActive, PreyTier::Elite,
+		standardSpell, eliteSpell, true, false);
+	Check(elite.RemoveStandard && !elite.RemoveElite &&
+		elite.AddSpell == eliteSpell,
+		"active Elite Hunt selects only Elite aura");
+	auto readyStandard = DecideHuntAura(HuntState::ReadyToTurnIn,
+		PreyTier::Standard, standardSpell, eliteSpell, false, false);
+	auto readyElite = DecideHuntAura(HuntState::ReadyToTurnIn,
+		PreyTier::Elite, standardSpell, eliteSpell, false, false);
+	Check(readyStandard.AddSpell == standardSpell &&
+		readyElite.AddSpell == eliteSpell,
+		"ReadyToTurnIn remains an active Hunt aura state");
+
+	HuntAggregate cleared = Revealed();
+	ExpectStatus(HuntDomain::Execute(cleared, ActivatePrey{}),
+		TransitionStatus::Applied, "activate aura projection prey");
+	ExpectStatus(HuntDomain::Execute(cleared, MarkPreyKilled{}),
+		TransitionStatus::Applied, "complete aura projection prey");
+	ExpectStatus(HuntDomain::Execute(cleared, TurnInHunt{}),
+		TransitionStatus::Applied, "clear completed aura projection assignment");
+	auto afterClear = DecideHuntAura(cleared.State, cleared.Identity.Tier,
+		standardSpell, eliteSpell, true, false);
+	Check(afterClear.RemoveStandard && !afterClear.AddSpell,
+		"successful assignment clear desires neither aura");
+
+	HuntAggregate restoredStandard = Accepted();
+	restoredStandard.State = HuntState::FinalRevealed;
+	auto loginStandard = DecideHuntAura(restoredStandard.State,
+		restoredStandard.Identity.Tier, standardSpell, eliteSpell, false, false);
+	HuntAggregate restoredElite = restoredStandard;
+	restoredElite.Identity.Tier = PreyTier::Elite;
+	auto loginElite = DecideHuntAura(restoredElite.State,
+		restoredElite.Identity.Tier, standardSpell, eliteSpell, false, false);
+	Check(loginStandard.AddSpell == standardSpell &&
+		loginElite.AddSpell == eliteSpell,
+		"persisted Standard and Elite assignments reconstruct on login");
+
+	auto missingStandard = DecideHuntAura(HuntState::Tracking,
+		PreyTier::Standard, 0, eliteSpell, false, true);
+	auto missingElite = DecideHuntAura(HuntState::Tracking,
+		PreyTier::Elite, standardSpell, 0, true, false);
+	Check(missingStandard.RemoveElite && !missingStandard.AddSpell &&
+		missingElite.RemoveStandard && !missingElite.AddSpell,
+		"missing desired CM resource fails safely and removes resolved wrong aura");
+}
+
 void TestAuthoredFinalSiteCatalog() {
 	auto const &sites = KnownFinalSites();
 	Check(sites.size() == 195, "complete authored final-site count");
@@ -438,6 +505,8 @@ int main(int argc, char **argv) {
 		TestCrystalAndSpawnValidation();
 	if (selection == "all" || selection == "completion")
 		TestFinalKillRiftAndTurnInValidation();
+	if (selection == "all" || selection == "auras")
+		TestHuntAuraProjection();
 	if (selection == "all" || selection == "sites")
 		TestAuthoredFinalSiteCatalog();
 	if (Failures != 0)

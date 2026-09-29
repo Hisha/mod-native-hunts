@@ -57,6 +57,8 @@ struct ManagedResources {
 	std::uint32_t TrailCrystalEntry = 0;
 	std::uint32_t ReturnRiftEntry = 0;
 	std::uint32_t SealItemEntry = 0;
+	std::uint32_t StandardHuntAuraSpell = 0;
+	std::uint32_t EliteHuntAuraSpell = 0;
 };
 
 struct HuntRuntime {
@@ -119,6 +121,7 @@ public:
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);
 	void OnCreatureKill(Player *killer, Creature *killed);
+	void OnLogin(Player *player);
 	void OnLogout(Player *player);
 	std::uint32_t LifetimeCompletions(Player const *player) const;
 	bool IsEliteUnlocked(Player const *player) const;
@@ -136,6 +139,7 @@ private:
 	void LoadAssignments();
 	void SaveAssignment(HuntRuntime const &runtime);
 	void DeleteAssignment(HuntRuntime &runtime);
+	void ReconcileHuntAura(Player *player, HuntAggregate const *assignment);
 	void RemoveRuntimeObjects(Player *player, HuntRuntime &runtime);
 	bool EnsureCrystal(Player *player, HuntRuntime &runtime);
 	bool SpawnFinalPrey(Player *player, HuntRuntime &runtime,
