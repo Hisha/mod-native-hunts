@@ -36,7 +36,7 @@ def run_domain_tests() -> None:
         executable = Path(directory) / ("hunt_domain_tests.exe" if os.name == "nt" else "hunt_domain_tests")
         command = [compiler(), "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic", "-Isrc",
             "tests/hunt_domain_tests.cpp", "src/HuntDomain.cpp", "src/HuntGameplay.cpp",
-            "src/HuntSnapshot.cpp", "src/HuntCatalog.cpp", "src/HuntRewards.cpp", "-o", str(executable)]
+            "src/HuntSnapshot.cpp", "src/HuntUiProtocol.cpp", "src/HuntCatalog.cpp", "src/HuntRewards.cpp", "-o", str(executable)]
         subprocess.run(command, cwd=ROOT, check=True)
         subprocess.run([str(executable)], cwd=ROOT, check=True)
         print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "9"):
+            manifest.get("schema") != 3 or manifest.get("version") != "10"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -110,11 +110,11 @@ def run_content_checks() -> None:
         'name="LFDParentFrameTab2"',
         'text="Dungeon Finder"',
         'text="Hunts"',
-        'text="Player vs Environment"',
+        'text="Player vs. Environment"',
         'name="$parentContentPanel"',
-        'text="No Active Hunt"',
-        'text="Speak with a Huntmaster to begin a Hunt."',
-        '<AbsDimension x="18" y="-29"/>',
+        'name="$parentProgress"',
+        'text="Retrieving Hunt information..."',
+        '<AbsDimension x="18" y="-27"/>',
     )
     for token in required_xml:
         if token not in ui_xml:
@@ -125,19 +125,26 @@ def run_content_checks() -> None:
         "NativeHuntsFrame:Hide()",
         "LFDQueueFrame:Show()",
         'hooksecurefunc("LFDFrame_OnEvent"',
-        'event == "LFG_OPEN_FROM_GOSSIP"',
-        'button.tooltipText = MicroButtonTooltipText("Player vs Environment"',
+        'event=="LFG_OPEN_FROM_GOSSIP"',
+        'button.tooltipText = MicroButtonTooltipText("Player vs. Environment"',
         'LFDMicroButton:HookScript("OnEvent"',
-        'event == "UPDATE_BINDINGS"',
-        'LFDQueueFrameTitleText:SetText("Player vs Environment")',
-        "PanelTemplates_SetNumTabs(LFDParentFrame, 2)",
+        'event=="UPDATE_BINDINGS"',
+        'LFDQueueFrameTitleText:SetText("Player vs. Environment")',
+        "PanelTemplates_SetNumTabs(LFDParentFrame,2)",
+        'RegisterAddonMessagePrefix(PREFIX)',
+        'SendAddonMessage(PREFIX,"1\\tQ\\t"..nonce,"WHISPER"',
+        'self:RegisterEvent("CHAT_MSG_ADDON")',
+        'sequence <= lastSequence',
+        'sender==UnitName("player")',
+        'Hunt information unavailable.',
+        'READY TO TURN IN',
+        'Prey Engaged',
     )
     for token in required_lua:
         if token not in ui_lua:
             raise AssertionError(f"Native Hunts passive UI behavior missing: {token}")
     forbidden_ui = (
-        "SendAddonMessage", "RegisterAddonMessagePrefix", "CHAT_MSG_ADDON",
-        "NHUNTS", "HuntsUI", '<Frame name="LFDParentFrame"',
+        "HuntsUI", '<Frame name="LFDParentFrame"',
         '<Frame name="LFDQueueFrame"', "function LFDFrame_OnEvent",
         "function ToggleLFDParentFrame",
     )
@@ -145,6 +152,13 @@ def run_content_checks() -> None:
     for token in forbidden_ui:
         if token in combined_ui:
             raise AssertionError(f"forbidden client replacement/protocol token found: {token}")
+    forbidden_mutations = (
+        "AcceptHunt", "AdvanceTracking", "MarkPreyKilled", "TurnInHunt",
+        "AbandonHunt", "UseCrystal", "UseReturnRift",
+    )
+    for token in forbidden_mutations:
+        if token in ui_lua:
+            raise AssertionError(f"client gameplay mutation path found: {token}")
     spells = {row["symbol"]: row for row in manifest.get("spells", [])}
     expected_spells = {
         "active-standard-hunt": (1494, "Standard Hunt",
@@ -292,6 +306,16 @@ def run_source_safety_checks() -> None:
         if token not in manager:
             raise AssertionError(f"turn-in consistency safeguard missing: {token}")
     module = (ROOT / "src" / "NativeHuntsModule.cpp").read_text(encoding="utf-8")
+    protocol = (ROOT / "src" / "HuntUiProtocol.cpp").read_text(encoding="utf-8")
+    protocol_header = (ROOT / "src" / "HuntUiProtocol.h").read_text(encoding="utf-8")
+    for token in ('Prefix[] = "NHUNTS"', "MaxWireBytes = 255", "MaxFragments = 8",
+                  "ParseSnapshotRequest", "SerializeSnapshot", "RequestAllowed"):
+        if token not in protocol + protocol_header:
+            raise AssertionError(f"bounded Native Hunts UI protocol missing: {token}")
+    for token in ("OnPlayerBeforeSendChatMessage", "LANG_ADDON", "CHAT_MSG_WHISPER",
+                  "HandleUiAddonMessage", "message.clear()"):
+        if token not in module:
+            raise AssertionError(f"addon-message transport hook missing: {token}")
     menu_start = module.index("static void ShowMenu(Player *player, Creature *creature)")
     menu_end = module.index("\n\t}\n};", menu_start)
     menu = module[menu_start:menu_end]

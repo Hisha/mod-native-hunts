@@ -15,9 +15,11 @@ NativeSealStatus NativeSealStatus::Unavailable(std::string reason) {
 
 HuntSnapshot BuildHuntSnapshot(HuntAggregate const &aggregate,
 							   NativeSealStatus const &seals,
-							   std::uint32_t lifetimeCompletions,
+							   HuntProgressionSnapshot progression,
 							   std::string idleReason) {
 	HuntSnapshot snapshot;
+	snapshot.ContentAvailable = seals.State == NativeContentState::Available;
+	snapshot.Active = HuntDomain::IsActive(aggregate);
 	snapshot.State = aggregate.State;
 	snapshot.Revision = aggregate.Revision;
 	snapshot.SealState = seals.State;
@@ -27,7 +29,8 @@ HuntSnapshot BuildHuntSnapshot(HuntAggregate const &aggregate,
 	snapshot.NativeContentReason =
 		seals.State == NativeContentState::Unavailable ? seals.UnavailableReason
 													   : std::string{};
-	snapshot.LifetimeCompletions = lifetimeCompletions;
+	snapshot.Progression = progression;
+	snapshot.ReadyToTurnIn = aggregate.State == HuntState::ReadyToTurnIn;
 	if (aggregate.State == HuntState::Idle) {
 		snapshot.StatusReason =
 			idleReason.empty() ? "No active Hunt." : std::move(idleReason);

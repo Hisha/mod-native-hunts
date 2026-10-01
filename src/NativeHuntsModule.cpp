@@ -232,6 +232,17 @@ public:
 class NativeHuntsPlayerScript final : public PlayerScript {
 public:
 	NativeHuntsPlayerScript() : PlayerScript("NativeHuntsPlayerScript") {}
+	void OnPlayerBeforeSendChatMessage(Player *player, std::uint32_t &type,
+			std::uint32_t &language, std::string &message) override {
+		if (!player || language != LANG_ADDON || type != CHAT_MSG_WHISPER)
+			return;
+		static std::string const prefix = "NHUNTS\t";
+		if (message.compare(0, prefix.size(), prefix) != 0)
+			return;
+		sNativeHunts.HandleUiAddonMessage(player,
+			message.substr(prefix.size()));
+		message.clear();
+	}
 	void OnPlayerLogin(Player *player) override {
 		sNativeHunts.OnLogin(player);
 	}

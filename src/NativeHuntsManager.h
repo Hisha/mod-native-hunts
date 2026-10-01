@@ -3,6 +3,7 @@
 
 #include "HuntDomain.h"
 #include "HuntCatalog.h"
+#include "HuntSnapshot.h"
 
 #include "ObjectGuid.h"
 
@@ -123,6 +124,7 @@ public:
 	void OnCreatureKill(Player *killer, Creature *killed);
 	void OnLogin(Player *player);
 	void OnLogout(Player *player);
+	void HandleUiAddonMessage(Player *player, std::string const &payload);
 	std::uint32_t LifetimeCompletions(Player const *player) const;
 	bool IsEliteUnlocked(Player const *player) const;
 	bool IsEliteAvailableToday(Player const *player) const;
@@ -153,12 +155,21 @@ private:
 	void CreateReturnRift(Player *player, Creature *prey, HuntRuntime &runtime);
 	void UpdatePreyAbilities(Player *player, HuntRuntime &runtime,
 							 Creature *prey, std::uint32_t elapsedMs);
+	HuntProgressionSnapshot ReadProgression(Player const *player) const;
+	HuntSnapshot BuildUiSnapshot(Player const *player) const;
+	void QueueUiState(Player *player);
+	void PublishUiState(Player *player, std::uint32_t nonce = 0,
+		bool force = false);
 
 	NativeHuntsConfig _config;
 	ManagedResources _resources;
 	std::unordered_map<std::uint32_t, HuntRuntime> _runtimes;
 	std::unordered_map<std::uint32_t, std::string> _guardLocators;
 	std::unordered_map<std::uint32_t, ProvisionalTurnIn> _uncertainTurnIns;
+	std::unordered_map<std::uint32_t, std::uint64_t> _uiLastRequestMs;
+	std::unordered_map<std::uint32_t, std::uint32_t> _uiSequences;
+	std::unordered_map<std::uint32_t, std::string> _uiLastProjection;
+	std::unordered_map<std::uint32_t, std::chrono::steady_clock::time_point> _uiPending;
 	std::uint32_t _updateAccumulator = 0;
 	std::uint32_t _poiAccumulator = 0;
 };

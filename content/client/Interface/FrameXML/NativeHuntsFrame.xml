@@ -1,109 +1,27 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
 	<Script file="NativeHuntsFrame.lua"/>
-
 	<Frame name="NativeHuntsFrame" parent="LFDParentFrame" hidden="true" setAllPoints="true">
 		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture file="Interface\LFGFrame\UI-LFG-BACKGROUND-QUESTPAPER">
-					<Size x="512" y="256"/>
-					<Anchors>
-						<Anchor point="LEFT">
-							<Offset x="21" y="-64"/>
-						</Anchor>
-					</Anchors>
-				</Texture>
-				<Texture file="Interface\LFGFrame\UI-LFG-FRAME">
-					<Size x="512" y="512"/>
-					<Anchors>
-						<Anchor point="TOPLEFT"/>
-					</Anchors>
-				</Texture>
-			</Layer>
-			<Layer level="ARTWORK">
-				<FontString inherits="GameFontNormal" text="Player vs Environment">
-					<Anchors>
-						<Anchor point="TOP">
-							<Offset><AbsDimension x="12" y="-17"/></Offset>
-						</Anchor>
-					</Anchors>
-				</FontString>
-			</Layer>
+			<Layer level="BACKGROUND"><Texture file="Interface\LFGFrame\UI-LFG-BACKGROUND-QUESTPAPER"><Size x="512" y="256"/><Anchors><Anchor point="LEFT"><Offset x="21" y="-64"/></Anchor></Anchors></Texture><Texture file="Interface\LFGFrame\UI-LFG-FRAME"><Size x="512" y="512"/><Anchors><Anchor point="TOPLEFT"/></Anchors></Texture></Layer>
+			<Layer level="ARTWORK"><FontString inherits="GameFontNormal" text="Player vs. Environment"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-17"/></Offset></Anchor></Anchors></FontString></Layer>
 		</Layers>
-		<Frames>
-			<Frame name="$parentContentPanel">
-				<Size x="296" y="220"/>
-				<Anchors>
-					<Anchor point="TOP">
-						<Offset><AbsDimension x="12" y="-76"/></Offset>
-					</Anchor>
-				</Anchors>
-				<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
-					<BackgroundInsets>
-						<AbsInset left="5" right="5" top="5" bottom="5"/>
-					</BackgroundInsets>
-					<TileSize><AbsValue val="16"/></TileSize>
-					<EdgeSize><AbsValue val="16"/></EdgeSize>
-				</Backdrop>
-				<Layers>
-					<Layer level="ARTWORK">
-						<FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Native Hunts">
-							<Anchors>
-								<Anchor point="TOP">
-									<Offset><AbsDimension x="0" y="-30"/></Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="$parentState" inherits="GameFontHighlightLarge" text="No Active Hunt">
-							<Anchors>
-								<Anchor point="TOP" relativeTo="$parentTitle" relativePoint="BOTTOM">
-									<Offset><AbsDimension x="0" y="-42"/></Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-						<FontString name="$parentDescription" inherits="GameFontHighlightSmall" text="Speak with a Huntmaster to begin a Hunt." justifyH="CENTER" justifyV="TOP">
-							<Size x="230" y="44"/>
-							<Anchors>
-								<Anchor point="TOP" relativeTo="$parentState" relativePoint="BOTTOM">
-									<Offset><AbsDimension x="0" y="-24"/></Offset>
-								</Anchor>
-							</Anchors>
-						</FontString>
-					</Layer>
-				</Layers>
-				<Scripts>
-					<OnLoad>
-						self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
-						self:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b, 0.85);
-					</OnLoad>
-				</Scripts>
-			</Frame>
-		</Frames>
+		<Frames><Frame name="$parentContentPanel">
+			<Size x="296" y="220"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-76"/></Offset></Anchor></Anchors>
+			<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true"><BackgroundInsets><AbsInset left="5" right="5" top="5" bottom="5"/></BackgroundInsets><TileSize><AbsValue val="16"/></TileSize><EdgeSize><AbsValue val="16"/></EdgeSize></Backdrop>
+			<Layers><Layer level="ARTWORK">
+				<FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Native Hunts"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-14"/></Offset></Anchor></Anchors></FontString>
+				<FontString name="$parentTier" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" relativeTo="$parentTitle" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString>
+				<FontString name="$parentState" inherits="GameFontHighlightLarge" text="Retrieving Hunt information..."><Anchors><Anchor point="TOP" relativeTo="$parentTier" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString>
+				<FontString name="$parentDescription" inherits="GameFontHighlightSmall" text="" justifyH="CENTER" justifyV="TOP"><Size x="254" y="48"/><Anchors><Anchor point="TOP" relativeTo="$parentState" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-5"/></Offset></Anchor></Anchors></FontString>
+				<FontString name="$parentProgressLabel" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" relativeTo="$parentDescription" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors></FontString>
+				<FontString name="$parentFinal" inherits="GameFontHighlightSmall" text="" justifyH="CENTER"><Size x="250" y="35"/><Anchors><Anchor point="TOP" relativeTo="$parentProgressLabel" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-21"/></Offset></Anchor></Anchors></FontString>
+				<FontString name="$parentStats" inherits="GameFontDisableSmall" text="" justifyH="CENTER"><Size x="260" y="28"/><Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="12"/></Offset></Anchor></Anchors></FontString>
+			</Layer></Layers>
+			<Frames><StatusBar name="$parentProgress" hidden="true" minValue="0" maxValue="100" defaultValue="0" drawLayer="ARTWORK"><Size x="210" y="12"/><Anchors><Anchor point="TOP" relativeTo="$parentProgressLabel" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors><BarTexture file="Interface\TargetingFrame\UI-StatusBar"/><BarColor r="0.65" g="0.42" b="0.12"/><Layers><Layer level="OVERLAY"><FontString name="$parentText" inherits="GameFontHighlightSmall" text="0%" setAllPoints="true"/></Layer></Layers></StatusBar></Frames>
+			<Scripts><OnLoad>self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b); self:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b, 0.85);</OnLoad></Scripts>
+		</Frame></Frames>
 	</Frame>
-
-	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder">
-		<Anchors>
-			<Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT">
-				<Offset><AbsDimension x="18" y="-29"/></Offset>
-			</Anchor>
-		</Anchors>
-		<Scripts>
-			<OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick>
-		</Scripts>
-	</Button>
-	<Button name="LFDParentFrameTab2" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="2" text="Hunts">
-		<Anchors>
-			<Anchor point="LEFT" relativeTo="LFDParentFrameTab1" relativePoint="RIGHT">
-				<Offset><AbsDimension x="-15" y="0"/></Offset>
-			</Anchor>
-		</Anchors>
-		<Scripts>
-			<OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick>
-		</Scripts>
-	</Button>
-
-	<Frame name="NativeHuntsFrameInitializer" parent="UIParent">
-		<Scripts>
-			<OnLoad function="NativeHuntsFrame_OnLoad"/>
-		</Scripts>
-	</Frame>
+	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder"><Anchors><Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="18" y="-27"/></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
+	<Button name="LFDParentFrameTab2" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="2" text="Hunts"><Anchors><Anchor point="LEFT" relativeTo="LFDParentFrameTab1" relativePoint="RIGHT"><Offset><AbsDimension x="-15" y="0"/></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
+	<Frame name="NativeHuntsFrameInitializer" parent="UIParent"><Scripts><OnLoad function="NativeHuntsFrame_OnLoad"/><OnEvent function="NativeHuntsFrame_OnEvent"/></Scripts></Frame>
 </Ui>

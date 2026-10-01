@@ -3,6 +3,8 @@
 #include "HuntCatalog.h"
 #include "HuntGameplay.h"
 #include "HuntRewards.h"
+#include "HuntSnapshot.h"
+#include "HuntUiProtocol.h"
 #include "api/ContentResourceApiV1.h"
 
 #include "Creature.h"
@@ -927,6 +929,10 @@ bool NativeHuntsManager::ResolveManagedResources() {
 void NativeHuntsManager::Initialize() {
 	_runtimes.clear();
 	_uncertainTurnIns.clear();
+	_uiLastRequestMs.clear();
+	_uiSequences.clear();
+	_uiLastProjection.clear();
+	_uiPending.clear();
 	if (!_config.Enabled) {
 		_resources.Reason = "Native Hunts is disabled by configuration";
 		return;
@@ -969,6 +975,10 @@ void NativeHuntsManager::Shutdown() {
 		RemoveRuntimeObjects(ConnectedPlayer(guid), runtime);
 	_runtimes.clear();
 	_uncertainTurnIns.clear();
+	_uiLastRequestMs.clear();
+	_uiSequences.clear();
+	_uiLastProjection.clear();
+	_uiPending.clear();
 }
 
 void NativeHuntsManager::LoadAssignments() {
@@ -1205,6 +1215,7 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 	_runtimes.emplace(guid, runtime);
 	SaveAssignment(_runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
+	QueueUiState(player);
 	message = "Your quarry is " + std::string(prey.Name) + ". Travel to " +
 			  site->ZoneName + " and hunt suitable creatures to find its trail.";
 	return true;
@@ -1300,6 +1311,7 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 	_runtimes.emplace(guid, runtime);
 	SaveAssignment(_runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
+	QueueUiState(player);
 	message = "Elite quarry: " + std::string(chosen->Name) + ". Travel to " +
 		site->ZoneName + ". Abandoning forfeits today's Elite assignment.";
 	return true;
@@ -1347,6 +1359,7 @@ bool NativeHuntsManager::Abandon(Player *player, std::string &message) {
 	HuntDomain::Execute(it->second.Aggregate, AbandonHunt{});
 	DeleteAssignment(it->second);
 	_runtimes.erase(it);
+	QueueUiState(player);
 	message = "Your Hunt has been abandoned.";
 	return true;
 }
@@ -1576,6 +1589,7 @@ bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 	InitializePreyCombat(player, runtime, prey, true);
 	SaveAssignment(runtime);
 	ReconcileHuntAura(player, &runtime.Aggregate);
+	QueueUiState(player);
 	message = runtime.Aggregate.Identity.PreyName +
 			  " emerges for the final confrontation!";
 	return true;
@@ -1673,6 +1687,7 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 				CreateReturnRift(hunter, killed, runtime);
 				SaveAssignment(runtime);
 				ReconcileHuntAura(hunter, &runtime.Aggregate);
+				QueueUiState(hunter);
 			}
 			continue;
 		}
@@ -1725,6 +1740,7 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 		SaveAssignment(runtime);
 		if (runtime.Aggregate.State != oldState)
 			ReconcileHuntAura(hunter, &runtime.Aggregate);
+		QueueUiState(hunter);
 	}
 }
 
@@ -1882,6 +1898,7 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 				HuntDomain::Execute(runtime.Aggregate, RecoverAfterRestart{});
 				SaveAssignment(runtime);
 				ReconcileHuntAura(player, &runtime.Aggregate);
+				QueueUiState(player);
 			} else
 				UpdatePreyAbilities(player, runtime, prey, tick);
 		}
@@ -1892,6 +1909,16 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 				rift->Delete();
 			runtime.ReturnRiftGuid.Clear();
 		}
+	}
+	for (auto it = _uiPending.begin(); it != _uiPending.end();) {
+		if (std::chrono::steady_clock::now() < it->second) {
+			++it;
+			continue;
+		}
+		std::uint32_t const guid = it->first;
+		it = _uiPending.erase(it);
+		if (Player *player = ConnectedPlayer(guid))
+			PublishUiState(player);
 	}
 }
 
@@ -1981,6 +2008,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 			HuntDomain::Execute(runtime.Aggregate,TurnInHunt{});
 			ReconcileHuntAura(player, nullptr);
 			RemoveRuntimeObjects(player,runtime); _runtimes.erase(it);
+			QueueUiState(player);
 			message = "The earlier Hunt completion is now confirmed.";
 			return true;
 		}
@@ -2145,6 +2173,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 	ReconcileHuntAura(player, nullptr);
 	RemoveRuntimeObjects(player,runtime);
 	_runtimes.erase(it);
+	QueueUiState(player);
 	std::ostringstream out;
 	out << "Hunt complete: " << xp << " XP, " << money/10000 << "g " << (money/100)%100 << "s " << money%100 << "c";
 	if (storedItem) if (auto const *t=sObjectMgr->GetItemTemplate(storedItem)) out << ", " << t->Name1;
@@ -2162,6 +2191,96 @@ std::uint32_t NativeHuntsManager::LifetimeCompletions(Player const *player) cons
 			player->GetGUID().GetCounter()))
 		return result->Fetch()[0].Get<std::uint32_t>();
 	return 0;
+}
+
+HuntProgressionSnapshot NativeHuntsManager::ReadProgression(
+		Player const *player) const {
+	HuntProgressionSnapshot progression;
+	progression.EliteDailyLimit = _config.EliteDailyLimit;
+	if (!player)
+		return progression;
+	if (QueryResult result = CharacterDatabase.Query(
+		"SELECT `standard_completed`,`elite_completed`,"
+		"IF(`elite_daily_accept_reset_date`=CURRENT_DATE(),"
+		"`elite_daily_accepted`,0) FROM `native_hunt_stats` WHERE "
+		"`character_guid`={}", player->GetGUID().GetCounter())) {
+		Field *fields = result->Fetch();
+		progression.StandardCompleted = fields[0].Get<std::uint32_t>();
+		progression.EliteCompleted = fields[1].Get<std::uint32_t>();
+		progression.EliteAcceptedToday = fields[2].Get<std::uint32_t>();
+	}
+	progression.EliteUnlocked = EliteUnlocked(progression.StandardCompleted,
+		_config.EliteRequiredStandardCompletions);
+	progression.EliteAvailableToday = progression.EliteUnlocked &&
+		EliteAvailable(progression.EliteAcceptedToday, _config.EliteDailyLimit);
+	return progression;
+}
+
+HuntSnapshot NativeHuntsManager::BuildUiSnapshot(Player const *player) const {
+	HuntAggregate aggregate;
+	if (auto const *runtime = GetRuntime(player))
+		aggregate = runtime->Aggregate;
+	NativeSealStatus seals = NativeSealStatus::Unavailable(_resources.Reason);
+	if (_resources.Ready && _resources.SealItemEntry && player)
+		// Physical Seals are spendable from carried inventory; banked items are
+		// intentionally excluded to match StoreNewItem/DestroyItemCount gameplay.
+		seals = NativeSealStatus::Available(
+			player->GetItemCount(_resources.SealItemEntry, false));
+	return BuildHuntSnapshot(aggregate, seals, ReadProgression(player),
+		"No active Hunt.");
+}
+
+void NativeHuntsManager::QueueUiState(Player *player) {
+	if (!player)
+		return;
+	_uiPending[player->GetGUID().GetCounter()] =
+		std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+}
+
+void NativeHuntsManager::PublishUiState(Player *player, std::uint32_t nonce,
+		bool force) {
+	if (!player)
+		return;
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	HuntSnapshot const snapshot = BuildUiSnapshot(player);
+	auto canonicalFrames = ui::SerializeSnapshot(snapshot, 0, 0);
+	if (canonicalFrames.empty())
+		return;
+	std::string canonical;
+	for (auto const &frame : canonicalFrames)
+		canonical.append(frame).push_back('\n');
+	if (!force) {
+		auto const previous = _uiLastProjection.find(guid);
+		if (previous != _uiLastProjection.end() && previous->second == canonical)
+			return;
+	}
+	std::uint32_t sequence = ++_uiSequences[guid];
+	if (!sequence)
+		sequence = ++_uiSequences[guid];
+	auto frames = ui::SerializeSnapshot(snapshot, sequence, nonce);
+	if (frames.empty())
+		return;
+	_uiLastProjection[guid] = std::move(canonical);
+	for (auto const &payload : frames)
+		player->Whisper(std::string(ui::Prefix) + "\t" + payload,
+			LANG_ADDON, player);
+}
+
+void NativeHuntsManager::HandleUiAddonMessage(Player *player,
+		std::string const &payload) {
+	if (!player)
+		return;
+	auto const request = ui::ParseSnapshotRequest(payload);
+	if (!request)
+		return;
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	auto const now = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now().time_since_epoch()).count();
+	std::uint64_t const previous = _uiLastRequestMs[guid];
+	if (!ui::RequestAllowed(previous, static_cast<std::uint64_t>(now)))
+		return;
+	_uiLastRequestMs[guid] = static_cast<std::uint64_t>(now);
+	PublishUiState(player, request->Nonce, true);
 }
 
 std::string NativeHuntsManager::BuildStatus(Player const *player,
@@ -2207,6 +2326,10 @@ void NativeHuntsManager::OnLogout(Player *player) {
 	if (!player)
 		return;
 	std::uint32_t const guid = player->GetGUID().GetCounter();
+	_uiLastRequestMs.erase(guid);
+	_uiSequences.erase(guid);
+	_uiLastProjection.erase(guid);
+	_uiPending.erase(guid);
 	auto it = _runtimes.find(guid);
 	if (it == _runtimes.end())
 		return;

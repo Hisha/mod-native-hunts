@@ -2,9 +2,11 @@
 #include "HuntCatalog.h"
 #include "HuntGameplay.h"
 #include "HuntSnapshot.h"
+#include "HuntUiProtocol.h"
 #include "HuntRewards.h"
 
 #include <cstdlib>
+#include <cstdio>
 #include <set>
 #include <string>
 
@@ -14,9 +16,9 @@ namespace {
 int Failures = 0;
 
 void Check(bool condition, std::string const &message) {
-	static_cast<void>(message);
 	if (condition)
 		return;
+	std::fprintf(stderr, "FAIL: %s\n", message.c_str());
 	++Failures;
 }
 
@@ -186,8 +188,9 @@ void TestRecovery() {
 
 void CheckSnapshotState(HuntAggregate const &aggregate, HuntState expected,
 						bool finalVisible) {
+	HuntProgressionSnapshot progression{12, 3, true, 1, 2, true};
 	HuntSnapshot const snapshot =
-		BuildHuntSnapshot(aggregate, NativeSealStatus::Available(9), 12);
+		BuildHuntSnapshot(aggregate, NativeSealStatus::Available(9), progression);
 	Check(snapshot.State == expected, "snapshot state");
 	Check(snapshot.Revision == aggregate.Revision, "snapshot revision");
 	Check(snapshot.FinalLocationVisible == finalVisible,
@@ -198,13 +201,21 @@ void CheckSnapshotState(HuntAggregate const &aggregate, HuntState expected,
 	Check(snapshot.SealState == NativeContentState::Available &&
 			  snapshot.PhysicalSealBalance == 9,
 		  "snapshot physical Seal balance");
-	Check(snapshot.LifetimeCompletions == 12, "snapshot lifetime completions");
+	Check(snapshot.Progression.StandardCompleted == 12 &&
+			snapshot.Progression.EliteCompleted == 3,
+		"snapshot Standard/Elite lifetime completions");
+	Check(snapshot.Progression.EliteUnlocked &&
+			snapshot.Progression.EliteAcceptedToday == 1 &&
+			snapshot.Progression.EliteDailyLimit == 2 &&
+			snapshot.Progression.EliteAvailableToday,
+		"snapshot Elite daily state");
 }
 
 void TestSnapshots() {
 	HuntAggregate idle;
+	HuntProgressionSnapshot progression{4, 1, false, 0, 1, false};
 	HuntSnapshot idleSnapshot = BuildHuntSnapshot(
-		idle, NativeSealStatus::Available(3), 4, "Seek a Huntmaster.");
+		idle, NativeSealStatus::Available(3), progression, "Seek a Huntmaster.");
 	Check(idleSnapshot.State == HuntState::Idle &&
 			  idleSnapshot.StatusReason == "Seek a Huntmaster.",
 		  "idle reason");
@@ -215,7 +226,7 @@ void TestSnapshots() {
 	HuntDomain::Execute(tracking, AdvanceTracking{55});
 	CheckSnapshotState(tracking, HuntState::Tracking, false);
 	HuntSnapshot trackingSnapshot =
-		BuildHuntSnapshot(tracking, NativeSealStatus::Available(2), 1);
+		BuildHuntSnapshot(tracking, NativeSealStatus::Available(2), progression);
 	Check(trackingSnapshot.HuntmasterName == "Huntmaster Corvin" &&
 			  trackingSnapshot.CityName == "Stormwind City",
 		  "tracking Huntmaster");
@@ -235,13 +246,54 @@ void TestSnapshots() {
 		BuildHuntSnapshot(tracking,
 						  NativeSealStatus::Unavailable(
 							  "Managed native content is not ACTIVE/APPLIED."),
-						  0);
+						  {});
 	Check(unavailable.SealState == NativeContentState::Unavailable &&
 			  unavailable.PhysicalSealBalance == 0,
 		  "unavailable content has no balance");
 	Check(unavailable.NativeContentReason ==
 			  "Managed native content is not ACTIVE/APPLIED.",
 		  "unavailable reason");
+}
+
+void TestUiProtocol() {
+	auto request = ui::ParseSnapshotRequest("1\tQ\t42");
+	Check(request && request->Nonce == 42, "valid snapshot request");
+	for (auto const malformed : {"", "1\tQ", "1\tQ\t0", "1\tX\t1",
+			"2\tQ\t1", "1\tQ\t1\textra", "1\tQ\t-1"})
+		Check(!ui::ParseSnapshotRequest(malformed), "malformed/unsupported request ignored");
+	Check(ui::RequestAllowed(0, 10) && !ui::RequestAllowed(10, 1009) &&
+		ui::RequestAllowed(10, 1010), "request rate limit boundary");
+	Check(ui::Escape("A%\t\n\xC3\xA9") == "A%25%09%0A%C3%A9",
+		"protocol string escaping");
+
+	HuntAggregate tracking = Accepted();
+	HuntDomain::Execute(tracking, AdvanceTracking{55});
+	tracking.Identity.Tier = PreyTier::Elite;
+	HuntProgressionSnapshot progression{12, 2, true, 1, 1, false};
+	auto snapshot = BuildHuntSnapshot(tracking,
+		NativeSealStatus::Available(7), progression);
+	auto messages = ui::SerializeSnapshot(snapshot, 9, 42);
+	Check(messages.size() == 2, "ordinary snapshot uses assignment and progression frames");
+	for (auto const &message : messages)
+		Check(message.size() <= ui::MaxPayloadBytes,
+			"ordinary protocol frame respects wire size");
+	Check(!messages.empty() &&
+		messages[0].find("\tE\t55\t0\t0\t") != std::string::npos,
+		"Elite tracking state serialized");
+
+	tracking.Identity.HuntmasterName = std::string(120, '\t');
+	tracking.Identity.CityName = std::string(120, '%');
+	snapshot = BuildHuntSnapshot(tracking, NativeSealStatus::Available(7), progression);
+	messages = ui::SerializeSnapshot(snapshot, 10, 0);
+	Check(messages.size() > 2 && messages.size() <= ui::MaxFragments + 1,
+		"oversized safe snapshot uses bounded fragmentation");
+	for (auto const &message : messages)
+		Check(message.size() <= ui::MaxPayloadBytes,
+			"fragment respects maximum payload size");
+	tracking.Identity.HuntmasterName = std::string(500, '\t');
+	snapshot = BuildHuntSnapshot(tracking, NativeSealStatus::Available(7), progression);
+	Check(ui::SerializeSnapshot(snapshot, 11, 0).empty(),
+		"oversized record fails instead of truncating");
 }
 
 void TestTrackingEligibility() {
@@ -497,6 +549,8 @@ int main(int argc, char **argv) {
 		TestRecovery();
 	if (selection == "all" || selection == "snapshots")
 		TestSnapshots();
+	if (selection == "all" || selection == "protocol")
+		TestUiProtocol();
 	if (selection == "all" || selection == "tracking")
 		TestTrackingEligibility();
 	if (selection == "all" || selection == "scope")
