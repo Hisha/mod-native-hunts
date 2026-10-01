@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "13"):
+            manifest.get("schema") != 3 or manifest.get("version") != "14"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -112,13 +112,45 @@ def run_content_checks() -> None:
         'text="Hunts"',
         'text="Player vs. Environment"',
         'name="$parentContentPanel"',
-        'name="$parentProgress"',
-        'text="Retrieving Hunt information..."',
+        '<Size x="296" y="346"/>',
+        'name="$parentIdentity" inherits="NativeHuntsInsetTemplate"',
+        'name="$parentHuntState" inherits="NativeHuntsInsetTemplate"',
+        'name="$parentIdle" inherits="NativeHuntsInsetTemplate"',
+        'name="$parentRecord" inherits="NativeHuntsInsetTemplate"',
+        'name="$parentProgress" hidden="true" minValue="0" maxValue="100"',
+        'file="Interface\\DialogFrame\\UI-DialogBox-Divider"',
+        'file="Interface\\Buttons\\UI-Quickslot2"',
+        'file="Interface\\TargetingFrame\\UI-StatusBar"',
+        'file="Interface\\Icons\\INV_Misc_Coin_01"',
+        'text="HUNT RECORD"',
+        'text="Standard Hunts"',
+        'text="Elite Hunts"',
+        'text="Elite Today"',
+        'text="Huntmaster\'s Seals"',
         '<AbsDimension x="18" y="-27"/>',
     )
     for token in required_xml:
         if token not in ui_xml:
             raise AssertionError(f"Native Hunts FrameXML behavior missing: {token}")
+    xml_root = ET.fromstring(ui_xml)
+    parent_by_child = {child: parent for parent in xml_root.iter() for child in parent}
+    named_frames = {element.get("name"): element for element in xml_root.iter()
+                    if element.tag.endswith("Frame") and element.get("name")}
+    content_panel = named_frames.get("$parentContentPanel")
+    if content_panel is None:
+        raise AssertionError("Native Hunts content panel hierarchy is missing")
+    for frame_name in ("$parentIdentity", "$parentHuntState", "$parentIdle", "$parentRecord"):
+        frame = named_frames.get(frame_name)
+        ancestor = frame
+        while ancestor is not None and ancestor is not content_panel:
+            ancestor = parent_by_child.get(ancestor)
+        if frame is None or ancestor is not content_panel:
+            raise AssertionError(f"Native Hunts region escaped the content panel: {frame_name}")
+    record = named_frames["$parentRecord"]
+    record_anchor = next((element for element in record.iter()
+                          if element.tag.endswith("Anchor") and element.get("point") == "BOTTOM"), None)
+    if record_anchor is None or record_anchor.get("relativeTo") is not None:
+        raise AssertionError("Hunt Record must anchor to the internal content panel bottom")
     required_lua = (
         "LFDQueueFrame:Hide()",
         "NativeHuntsFrame:Show()",
@@ -141,11 +173,14 @@ def run_content_checks() -> None:
         'READY TO TURN IN',
         'TRAIL LOCATED',
         'FINAL CONFRONTATION',
-        'Defeat your quarry.',
-        'Available Today',
-        'Unavailable Today',
-        'Hunts Completed',
-        "Huntmaster's Seals:",
+        'HUNT PROGRESS',
+        'HUNT COMPLETE',
+        'Defeat your prey.',
+        'NativeHuntsFrameContentPanelRecordStandard:SetText',
+        'NativeHuntsFrameContentPanelRecordAvailability:SetText',
+        'NativeHuntsFrameContentPanelRecordSeals:SetText',
+        r'Interface\\Icons\\Ability_Tracking',
+        r'Interface\\Icons\\Ability_Hunter_MasterMarksman',
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -189,21 +224,36 @@ def run_content_checks() -> None:
         lua.execute("""
             local function Control()
                 return {
-                    text="", value=0, visible=true,
+                    text="", value=0, texture=nil, visible=true,
                     SetText=function(self, value) self.text=value end,
                     SetValue=function(self, value) self.value=value end,
+                    SetTexture=function(self, value) self.texture=value end,
                     Hide=function(self) self.visible=false end,
                     Show=function(self) self.visible=true end
                 }
             end
-            NativeHuntsFrameContentPanelTier=Control()
-            NativeHuntsFrameContentPanelState=Control()
-            NativeHuntsFrameContentPanelDescription=Control()
-            NativeHuntsFrameContentPanelProgressLabel=Control()
-            NativeHuntsFrameContentPanelProgress=Control()
-            NativeHuntsFrameContentPanelProgressText=Control()
-            NativeHuntsFrameContentPanelFinal=Control()
-            NativeHuntsFrameContentPanelStats=Control()
+            NativeHuntsFrameContentPanelIdentity=Control()
+            NativeHuntsFrameContentPanelIdentityIcon=Control()
+            NativeHuntsFrameContentPanelIdentityTier=Control()
+            NativeHuntsFrameContentPanelIdentityPrey=Control()
+            NativeHuntsFrameContentPanelIdentityHuntmaster=Control()
+            NativeHuntsFrameContentPanelIdentityCity=Control()
+            NativeHuntsFrameContentPanelIdentityZone=Control()
+            NativeHuntsFrameContentPanelHuntState=Control()
+            NativeHuntsFrameContentPanelHuntStateHeader=Control()
+            NativeHuntsFrameContentPanelHuntStatePrimary=Control()
+            NativeHuntsFrameContentPanelHuntStateSecondary=Control()
+            NativeHuntsFrameContentPanelHuntStateProgress=Control()
+            NativeHuntsFrameContentPanelHuntStateProgressText=Control()
+            NativeHuntsFrameContentPanelIdle=Control()
+            NativeHuntsFrameContentPanelIdleState=Control()
+            NativeHuntsFrameContentPanelIdleDescription=Control()
+            NativeHuntsFrameContentPanelRecord=Control()
+            NativeHuntsFrameContentPanelRecordStandard=Control()
+            NativeHuntsFrameContentPanelRecordElite=Control()
+            NativeHuntsFrameContentPanelRecordAvailability=Control()
+            NativeHuntsFrameContentPanelRecordSealIcon=Control()
+            NativeHuntsFrameContentPanelRecordSeals=Control()
         """)
 
         def escape(value: str) -> str:
@@ -311,81 +361,119 @@ def run_content_checks() -> None:
             return controls
 
         idle = rendered({"active": False, "state": "I", "tier": "N", "progress": 0})
-        if (idle.NativeHuntsFrameContentPanelState.text != "No Active Hunt" or
-                idle.NativeHuntsFrameContentPanelDescription.text !=
-                "Speak with a Huntmaster to begin a Hunt." or
-                idle.NativeHuntsFrameContentPanelTier.text != "" or
-                idle.NativeHuntsFrameContentPanelProgress.visible or
-                idle.NativeHuntsFrameContentPanelFinal.text != ""):
+        if (not idle.NativeHuntsFrameContentPanelIdle.visible or
+                idle.NativeHuntsFrameContentPanelIdentity.visible or
+                idle.NativeHuntsFrameContentPanelHuntState.visible or
+                not idle.NativeHuntsFrameContentPanelRecord.visible or
+                idle.NativeHuntsFrameContentPanelIdleState.text != "NO ACTIVE HUNT" or
+                idle.NativeHuntsFrameContentPanelIdleDescription.text !=
+                "Speak with a Huntmaster\nto begin a Hunt."):
             raise AssertionError("Native Hunts idle rendering regressed")
 
         standard = rendered()
-        if (standard.NativeHuntsFrameContentPanelTier.text != "STANDARD HUNT" or
-                standard.NativeHuntsFrameContentPanelProgressLabel.text != "Tracking" or
-                not standard.NativeHuntsFrameContentPanelProgress.visible or
-                standard.NativeHuntsFrameContentPanelProgress.value != 54 or
-                standard.NativeHuntsFrameContentPanelProgressText.text != "54%" or
-                standard.NativeHuntsFrameContentPanelFinal.text !=
-                "Follow the trail through the hunting ground."):
+        if (not standard.NativeHuntsFrameContentPanelIdentity.visible or
+                not standard.NativeHuntsFrameContentPanelHuntState.visible or
+                standard.NativeHuntsFrameContentPanelIdle.visible or
+                standard.NativeHuntsFrameContentPanelIdentityTier.text != "STANDARD HUNT" or
+                standard.NativeHuntsFrameContentPanelIdentityIcon.texture !=
+                "Interface\\Icons\\Ability_Tracking" or
+                standard.NativeHuntsFrameContentPanelIdentityPrey.text != "The Headsman" or
+                standard.NativeHuntsFrameContentPanelIdentityHuntmaster.text != "Huntmaster Varyn" or
+                standard.NativeHuntsFrameContentPanelIdentityCity.text != "Dalaran" or
+                standard.NativeHuntsFrameContentPanelIdentityZone.text !=
+                "Hunting Ground: Crystalsong Forest" or
+                standard.NativeHuntsFrameContentPanelHuntStateHeader.text != "HUNT PROGRESS" or
+                standard.NativeHuntsFrameContentPanelHuntStatePrimary.text != "Tracking" or
+                not standard.NativeHuntsFrameContentPanelHuntStateProgress.visible or
+                standard.NativeHuntsFrameContentPanelHuntStateProgress.value != 54 or
+                standard.NativeHuntsFrameContentPanelHuntStateProgressText.text != "54%" or
+                standard.NativeHuntsFrameContentPanelHuntStateSecondary.text !=
+                "Follow the trail through\nthe hunting ground."):
             raise AssertionError("Standard Hunt tracking rendering regressed")
         elite = rendered({"tier": "E"})
-        if elite.NativeHuntsFrameContentPanelTier.text != "ELITE HUNT":
+        if (elite.NativeHuntsFrameContentPanelIdentityTier.text != "ELITE HUNT" or
+                elite.NativeHuntsFrameContentPanelIdentityIcon.texture !=
+                "Interface\\Icons\\Ability_Hunter_MasterMarksman"):
             raise AssertionError("Elite Hunt tracking rendering regressed")
 
         low = rendered({"progress": -1})
-        if low.NativeHuntsFrameContentPanelProgress.value != 0 or low.NativeHuntsFrameContentPanelProgressText.text != "0%":
+        if (low.NativeHuntsFrameContentPanelHuntStateProgress.value != 0 or
+                low.NativeHuntsFrameContentPanelHuntStateProgressText.text != "0%"):
             raise AssertionError("tracking progress lower clamp regressed")
         high = rendered({"progress": 101})
-        if high.NativeHuntsFrameContentPanelProgress.value != 100 or high.NativeHuntsFrameContentPanelProgressText.text != "100%":
+        if (high.NativeHuntsFrameContentPanelHuntStateProgress.value != 100 or
+                high.NativeHuntsFrameContentPanelHuntStateProgressText.text != "100%"):
             raise AssertionError("tracking progress upper clamp regressed")
 
         revealed = rendered({"state": "F", "progress": 100, "finalVisible": True})
-        if ("TRAIL LOCATED" not in revealed.NativeHuntsFrameContentPanelProgressLabel.text or
-                "Final Location: Crystalsong Forest" not in revealed.NativeHuntsFrameContentPanelFinal.text or
-                "Prey Trail Crystal" not in revealed.NativeHuntsFrameContentPanelFinal.text or
-                revealed.NativeHuntsFrameContentPanelProgress.visible or
-                revealed.NativeHuntsFrameContentPanelProgressText.text != ""):
+        if (revealed.NativeHuntsFrameContentPanelHuntStateHeader.text != "TRAIL LOCATED" or
+                "Final Location" not in revealed.NativeHuntsFrameContentPanelHuntStatePrimary.text or
+                "Crystalsong Forest" not in revealed.NativeHuntsFrameContentPanelHuntStatePrimary.text or
+                "Prey Trail Crystal" not in revealed.NativeHuntsFrameContentPanelHuntStateSecondary.text or
+                not revealed.NativeHuntsFrameContentPanelHuntStateProgress.visible or
+                revealed.NativeHuntsFrameContentPanelHuntStateProgress.value != 100 or
+                revealed.NativeHuntsFrameContentPanelHuntStateProgressText.text != "100%"):
             raise AssertionError("FinalRevealed rendering regressed")
         confrontation = rendered({"state": "P", "progress": 100, "finalVisible": True})
-        if ("FINAL CONFRONTATION" not in confrontation.NativeHuntsFrameContentPanelProgressLabel.text or
-                confrontation.NativeHuntsFrameContentPanelFinal.text != "Defeat your quarry." or
-                confrontation.NativeHuntsFrameContentPanelProgress.visible):
+        if (confrontation.NativeHuntsFrameContentPanelHuntStateHeader.text !=
+                "FINAL CONFRONTATION" or
+                "The Headsman" not in confrontation.NativeHuntsFrameContentPanelHuntStatePrimary.text or
+                confrontation.NativeHuntsFrameContentPanelHuntStateSecondary.text != "Defeat your prey." or
+                confrontation.NativeHuntsFrameContentPanelHuntStateProgress.visible):
             raise AssertionError("PreyActive rendering regressed")
         ready = rendered({"state": "R", "progress": 100, "finalVisible": True, "ready": True})
-        if ("READY TO TURN IN" not in ready.NativeHuntsFrameContentPanelProgressLabel.text or
-                ready.NativeHuntsFrameContentPanelFinal.text !=
-                "Return to Huntmaster Varyn\nDalaran" or
-                ready.NativeHuntsFrameContentPanelProgress.visible):
+        if (ready.NativeHuntsFrameContentPanelHuntStateHeader.text != "HUNT COMPLETE" or
+                "READY TO TURN IN" not in ready.NativeHuntsFrameContentPanelHuntStatePrimary.text or
+                ready.NativeHuntsFrameContentPanelHuntStateSecondary.text !=
+                "Return to Huntmaster Varyn\nin Dalaran." or
+                ready.NativeHuntsFrameContentPanelHuntStateProgress.visible):
             raise AssertionError("ReadyToTurnIn rendering regressed")
 
         returned_idle = rendered({"active": False, "state": "I", "tier": "N", "progress": 0})
-        if (returned_idle.NativeHuntsFrameContentPanelTier.text != "" or
-                returned_idle.NativeHuntsFrameContentPanelProgressLabel.text != "" or
-                returned_idle.NativeHuntsFrameContentPanelProgressText.text != "" or
-                returned_idle.NativeHuntsFrameContentPanelFinal.text != "" or
-                returned_idle.NativeHuntsFrameContentPanelProgress.visible or
-                returned_idle.NativeHuntsFrameContentPanelProgress.value != 0):
+        if (returned_idle.NativeHuntsFrameContentPanelIdentity.visible or
+                returned_idle.NativeHuntsFrameContentPanelHuntState.visible or
+                not returned_idle.NativeHuntsFrameContentPanelIdle.visible or
+                returned_idle.NativeHuntsFrameContentPanelIdentityTier.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateHeader.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelHuntStatePrimary.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateSecondary.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateProgress.visible or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateProgress.value != 0 or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateProgressText.text != ""):
             raise AssertionError("return to Idle retained stale active-Hunt presentation")
 
-        expected_stats = ("Hunts Completed   Standard: 11   Elite: 3\n"
-                          "Elite: Unavailable Today\nHuntmaster's Seals: 7")
-        if returned_idle.NativeHuntsFrameContentPanelStats.text != expected_stats:
+        if (returned_idle.NativeHuntsFrameContentPanelRecordStandard.text != "11" or
+                returned_idle.NativeHuntsFrameContentPanelRecordElite.text != "3" or
+                "Unavailable" not in
+                returned_idle.NativeHuntsFrameContentPanelRecordAvailability.text or
+                returned_idle.NativeHuntsFrameContentPanelRecordSeals.text != "7" or
+                not returned_idle.NativeHuntsFrameContentPanelRecordSealIcon.visible):
             raise AssertionError("lifetime Hunt or physical Seal rendering regressed")
         available = rendered(stats_overrides={"eliteAvailable": True})
-        if "Elite: Available Today" not in available.NativeHuntsFrameContentPanelStats.text:
+        if "Available" not in available.NativeHuntsFrameContentPanelRecordAvailability.text:
             raise AssertionError("daily Elite availability rendering regressed")
+        unavailable_seals = rendered(stats_overrides={"sealState": "U"})
+        if (unavailable_seals.NativeHuntsFrameContentPanelRecordSealIcon.visible or
+                unavailable_seals.NativeHuntsFrameContentPanelRecordSeals.text != "Unavailable"):
+            raise AssertionError("unavailable physical Seal rendering regressed")
 
         fallback = rendered({"state": "F", "huntmaster": "", "city": "", "prey": "",
                              "zone": "", "finalLocation": ""})
-        if (fallback.NativeHuntsFrameContentPanelState.text != "Unknown Quarry" or
-                "Unknown Huntmaster" not in fallback.NativeHuntsFrameContentPanelDescription.text or
-                "Final Location: Unknown Hunting Ground" not in
-                fallback.NativeHuntsFrameContentPanelFinal.text):
+        if (fallback.NativeHuntsFrameContentPanelIdentityPrey.text != "Unknown Quarry" or
+                fallback.NativeHuntsFrameContentPanelIdentityHuntmaster.text != "Unknown Huntmaster" or
+                "Unknown Hunting Ground" not in fallback.NativeHuntsFrameContentPanelIdentityZone.text or
+                "Unknown Hunting Ground" not in
+                fallback.NativeHuntsFrameContentPanelHuntStatePrimary.text):
             raise AssertionError("missing optional display fields did not degrade safely")
         try:
             render(lua.table_from({}))
         except LuaError as error:
             raise AssertionError("incomplete snapshot raised a Lua rendering error") from error
+        if (not controls.NativeHuntsFrameContentPanelIdle.visible or
+                controls.NativeHuntsFrameContentPanelRecord.visible or
+                controls.NativeHuntsFrameContentPanelIdleState.text !=
+                "Hunt information unavailable."):
+            raise AssertionError("incomplete snapshot did not use the bounded idle region")
         print("PASS direct Lua 5.1 NHUNTS codec, renderer, and malformed-input vectors", flush=True)
     forbidden_ui = (
         "HuntsUI", '<Frame name="LFDParentFrame"',

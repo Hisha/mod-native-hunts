@@ -1,5 +1,7 @@
 local NATIVE_HUNTS_DUNGEON_TAB, NATIVE_HUNTS_HUNTS_TAB = 1, 2;
 local PREFIX, VERSION, MAX_MESSAGE, MAX_FRAGMENTS, MAX_RECORD = "NHUNTS", "1", 248, 8, 1024;
+local STANDARD_ICON = "Interface\\Icons\\Ability_Tracking";
+local ELITE_ICON = "Interface\\Icons\\Ability_Hunter_MasterMarksman";
 local nonce, pendingNonce, lastSequence = 0, nil, 0;
 local assembly, hasSnapshot, timeoutGroup = nil, false, nil;
 local lastRequestAt = -100;
@@ -48,20 +50,30 @@ local function NativeHuntsFrame_UpdateMicroButtonTooltip(button)
 end
 
 local function ClearActivePresentation()
-	NativeHuntsFrameContentPanelTier:SetText("");
-	NativeHuntsFrameContentPanelState:SetText("");
-	NativeHuntsFrameContentPanelDescription:SetText("");
-	NativeHuntsFrameContentPanelProgressLabel:SetText("");
-	NativeHuntsFrameContentPanelProgress:SetValue(0);
-	NativeHuntsFrameContentPanelProgressText:SetText("");
-	NativeHuntsFrameContentPanelProgress:Hide();
-	NativeHuntsFrameContentPanelFinal:SetText("");
+	NativeHuntsFrameContentPanelIdentity:Hide();
+	NativeHuntsFrameContentPanelHuntState:Hide();
+	NativeHuntsFrameContentPanelIdle:Hide();
+	NativeHuntsFrameContentPanelIdentityIcon:SetTexture(nil);
+	NativeHuntsFrameContentPanelIdentityTier:SetText("");
+	NativeHuntsFrameContentPanelIdentityPrey:SetText("");
+	NativeHuntsFrameContentPanelIdentityHuntmaster:SetText("");
+	NativeHuntsFrameContentPanelIdentityCity:SetText("");
+	NativeHuntsFrameContentPanelIdentityZone:SetText("");
+	NativeHuntsFrameContentPanelHuntStateHeader:SetText("");
+	NativeHuntsFrameContentPanelHuntStatePrimary:SetText("");
+	NativeHuntsFrameContentPanelHuntStateSecondary:SetText("");
+	NativeHuntsFrameContentPanelHuntStateProgress:SetValue(0);
+	NativeHuntsFrameContentPanelHuntStateProgress:Hide();
+	NativeHuntsFrameContentPanelHuntStateProgressText:SetText("");
+	NativeHuntsFrameContentPanelIdleState:SetText("");
+	NativeHuntsFrameContentPanelIdleDescription:SetText("");
 end
 
 local function RenderWaiting(text)
 	ClearActivePresentation();
-	NativeHuntsFrameContentPanelState:SetText(text);
-	NativeHuntsFrameContentPanelStats:SetText("");
+	NativeHuntsFrameContentPanelRecord:Hide();
+	NativeHuntsFrameContentPanelIdle:Show();
+	NativeHuntsFrameContentPanelIdleState:SetText(text);
 end
 
 local function Display(value, fallback)
@@ -69,22 +81,44 @@ local function Display(value, fallback)
 	return value;
 end
 
+local function Progress(value)
+	local progress = tonumber(value) or 0;
+	if progress < 0 then return 0; end
+	if progress > 100 then return 100; end
+	return progress;
+end
+
+local function RenderRecord(stats)
+	local availability = "|cff888888Locked|r";
+	if stats.eliteUnlocked then
+		availability = stats.eliteAvailable and "|cff20ff20Available|r" or "|cff888888Unavailable|r";
+	end
+	NativeHuntsFrameContentPanelRecordStandard:SetText(tostring(stats.standard or 0));
+	NativeHuntsFrameContentPanelRecordElite:SetText(tostring(stats.elite or 0));
+	NativeHuntsFrameContentPanelRecordAvailability:SetText(availability);
+	if stats.sealState == "A" then
+		NativeHuntsFrameContentPanelRecordSealIcon:Show();
+		NativeHuntsFrameContentPanelRecordSeals:SetText(tostring(stats.seals or 0));
+	else
+		NativeHuntsFrameContentPanelRecordSealIcon:Hide();
+		NativeHuntsFrameContentPanelRecordSeals:SetText("Unavailable");
+	end
+	NativeHuntsFrameContentPanelRecord:Show();
+end
+
 local function Render(snapshot)
 	if not snapshot or not snapshot.stats then RenderWaiting("Hunt information unavailable."); return; end
-	local stats, eliteStatus = snapshot.stats, "Locked";
-	if stats.eliteUnlocked then eliteStatus = stats.eliteAvailable and "Available Today" or "Unavailable Today"; end
-	local seals = stats.sealState == "A" and tostring(stats.seals) or "Unavailable";
-	NativeHuntsFrameContentPanelStats:SetText("Hunts Completed   Standard: " .. tostring(stats.standard or 0) ..
-		"   Elite: " .. tostring(stats.elite or 0) .. "\nElite: " .. eliteStatus ..
-		"\nHuntmaster's Seals: " .. seals);
 	ClearActivePresentation();
+	RenderRecord(snapshot.stats);
 	if not snapshot.contentAvailable then
-		NativeHuntsFrameContentPanelState:SetText("Hunt information unavailable.");
-		NativeHuntsFrameContentPanelDescription:SetText(snapshot.reason or ""); return;
+		NativeHuntsFrameContentPanelIdle:Show();
+		NativeHuntsFrameContentPanelIdleState:SetText("Hunt information unavailable.");
+		NativeHuntsFrameContentPanelIdleDescription:SetText(snapshot.reason or ""); return;
 	end
 	if not snapshot.active then
-		NativeHuntsFrameContentPanelState:SetText("No Active Hunt");
-		NativeHuntsFrameContentPanelDescription:SetText("Speak with a Huntmaster to begin a Hunt.");
+		NativeHuntsFrameContentPanelIdle:Show();
+		NativeHuntsFrameContentPanelIdleState:SetText("NO ACTIVE HUNT");
+		NativeHuntsFrameContentPanelIdleDescription:SetText("Speak with a Huntmaster\nto begin a Hunt.");
 		return;
 	end
 	local huntmaster = Display(snapshot.huntmaster, "Unknown Huntmaster");
@@ -92,32 +126,47 @@ local function Render(snapshot)
 	local prey = Display(snapshot.prey, "Unknown Quarry");
 	local zone = Display(snapshot.zone, "Unknown Hunting Ground");
 	local finalLocation = Display(snapshot.finalLocation, zone);
-	if snapshot.tier == "E" then NativeHuntsFrameContentPanelTier:SetText("ELITE HUNT");
-	elseif snapshot.tier == "S" then NativeHuntsFrameContentPanelTier:SetText("STANDARD HUNT"); end
-	NativeHuntsFrameContentPanelState:SetText(prey);
-	NativeHuntsFrameContentPanelDescription:SetText("Huntmaster: " .. huntmaster .. "\n" .. city ..
-		"\nHunting Ground: " .. zone);
+	NativeHuntsFrameContentPanelIdentity:Show();
+	NativeHuntsFrameContentPanelHuntState:Show();
+	if snapshot.tier == "E" then
+		NativeHuntsFrameContentPanelIdentityIcon:SetTexture(ELITE_ICON);
+		NativeHuntsFrameContentPanelIdentityTier:SetText("ELITE HUNT");
+	elseif snapshot.tier == "S" then
+		NativeHuntsFrameContentPanelIdentityIcon:SetTexture(STANDARD_ICON);
+		NativeHuntsFrameContentPanelIdentityTier:SetText("STANDARD HUNT");
+	end
+	NativeHuntsFrameContentPanelIdentityPrey:SetText(prey);
+	NativeHuntsFrameContentPanelIdentityHuntmaster:SetText(huntmaster);
+	NativeHuntsFrameContentPanelIdentityCity:SetText(city);
+	NativeHuntsFrameContentPanelIdentityZone:SetText("Hunting Ground: " .. zone);
 	if snapshot.state == "T" then
-		local progress = tonumber(snapshot.progress) or 0;
-		if progress < 0 then progress = 0; elseif progress > 100 then progress = 100; end
-		NativeHuntsFrameContentPanelProgressLabel:SetText("Tracking");
-		NativeHuntsFrameContentPanelProgress:SetValue(progress);
-		NativeHuntsFrameContentPanelProgressText:SetText(progress .. "%");
-		NativeHuntsFrameContentPanelProgress:Show();
-		NativeHuntsFrameContentPanelFinal:SetText("Follow the trail through the hunting ground.");
+		local progress = Progress(snapshot.progress);
+		NativeHuntsFrameContentPanelHuntStateHeader:SetText("HUNT PROGRESS");
+		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("Tracking");
+		NativeHuntsFrameContentPanelHuntStateProgress:SetValue(progress);
+		NativeHuntsFrameContentPanelHuntStateProgressText:SetText(progress .. "%");
+		NativeHuntsFrameContentPanelHuntStateProgress:Show();
+		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Follow the trail through\nthe hunting ground.");
 	elseif snapshot.state == "F" then
-		NativeHuntsFrameContentPanelProgressLabel:SetText("|cffffd200TRAIL LOCATED|r");
-		NativeHuntsFrameContentPanelFinal:SetText("Final Location: " .. finalLocation ..
-			"\nTravel to the revealed location and use the\nPrey Trail Crystal.");
+		local progress = Progress(snapshot.progress);
+		NativeHuntsFrameContentPanelHuntStateHeader:SetText("TRAIL LOCATED");
+		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("Final Location\n|cffffd200" .. finalLocation .. "|r");
+		NativeHuntsFrameContentPanelHuntStateProgress:SetValue(progress);
+		NativeHuntsFrameContentPanelHuntStateProgressText:SetText(progress .. "%");
+		NativeHuntsFrameContentPanelHuntStateProgress:Show();
+		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Travel to the marked location and use\nthe Prey Trail Crystal.");
 	elseif snapshot.state == "P" then
-		NativeHuntsFrameContentPanelProgressLabel:SetText("|cffff7f3fFINAL CONFRONTATION|r");
-		NativeHuntsFrameContentPanelFinal:SetText("Defeat your quarry.");
+		NativeHuntsFrameContentPanelHuntStateHeader:SetText("FINAL CONFRONTATION");
+		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("|cffffd200" .. prey .. "|r");
+		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Defeat your prey.");
 	elseif snapshot.state == "R" then
-		NativeHuntsFrameContentPanelProgressLabel:SetText("|cff20ff20READY TO TURN IN|r");
-		NativeHuntsFrameContentPanelFinal:SetText("Return to " .. huntmaster .. "\n" .. city);
+		NativeHuntsFrameContentPanelHuntStateHeader:SetText("HUNT COMPLETE");
+		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("|cffffd200READY TO TURN IN|r");
+		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Return to " .. huntmaster .. "\nin " .. city .. ".");
 	else
-		NativeHuntsFrameContentPanelState:SetText("Hunt information unavailable.");
-		NativeHuntsFrameContentPanelDescription:SetText("The authoritative Hunt state could not be displayed.");
+		NativeHuntsFrameContentPanelHuntStateHeader:SetText("HUNT STATUS");
+		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("Hunt information unavailable.");
+		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("The authoritative Hunt state could not be displayed.");
 	end
 end
 

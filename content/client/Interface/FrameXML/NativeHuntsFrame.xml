@@ -1,25 +1,81 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
 	<Script file="NativeHuntsFrame.lua"/>
+	<Frame name="NativeHuntsInsetTemplate" virtual="true">
+		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+			<BackgroundInsets><AbsInset left="5" right="5" top="5" bottom="5"/></BackgroundInsets>
+			<TileSize><AbsValue val="16"/></TileSize><EdgeSize><AbsValue val="16"/></EdgeSize>
+		</Backdrop>
+		<Scripts><OnLoad>self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b); self:SetBackdropColor(0.03, 0.04, 0.05, 0.92);</OnLoad></Scripts>
+	</Frame>
 	<Frame name="NativeHuntsFrame" parent="LFDParentFrame" hidden="true" setAllPoints="true">
 		<Layers>
 			<Layer level="BACKGROUND"><Texture file="Interface\LFGFrame\UI-LFG-BACKGROUND-QUESTPAPER"><Size x="512" y="256"/><Anchors><Anchor point="LEFT"><Offset x="21" y="-64"/></Anchor></Anchors></Texture><Texture file="Interface\LFGFrame\UI-LFG-FRAME"><Size x="512" y="512"/><Anchors><Anchor point="TOPLEFT"/></Anchors></Texture></Layer>
 			<Layer level="ARTWORK"><FontString inherits="GameFontNormal" text="Player vs. Environment"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-17"/></Offset></Anchor></Anchors></FontString></Layer>
 		</Layers>
-		<Frames><Frame name="$parentContentPanel">
-			<Size x="296" y="220"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-76"/></Offset></Anchor></Anchors>
-			<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true"><BackgroundInsets><AbsInset left="5" right="5" top="5" bottom="5"/></BackgroundInsets><TileSize><AbsValue val="16"/></TileSize><EdgeSize><AbsValue val="16"/></EdgeSize></Backdrop>
-			<Layers><Layer level="ARTWORK">
-				<FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Native Hunts"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-14"/></Offset></Anchor></Anchors></FontString>
-				<FontString name="$parentTier" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" relativeTo="$parentTitle" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString>
-				<FontString name="$parentState" inherits="GameFontHighlightLarge" text="Retrieving Hunt information..."><Anchors><Anchor point="TOP" relativeTo="$parentTier" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString>
-				<FontString name="$parentDescription" inherits="GameFontHighlightSmall" text="" justifyH="CENTER" justifyV="TOP"><Size x="254" y="40"/><Anchors><Anchor point="TOP" relativeTo="$parentState" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-5"/></Offset></Anchor></Anchors></FontString>
-				<FontString name="$parentProgressLabel" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" relativeTo="$parentDescription" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors></FontString>
-				<FontString name="$parentFinal" inherits="GameFontHighlightSmall" text="" justifyH="CENTER" justifyV="TOP"><Size x="260" y="38"/><Anchors><Anchor point="TOP" relativeTo="$parentProgressLabel" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-19"/></Offset></Anchor></Anchors></FontString>
-				<FontString name="$parentStats" inherits="GameFontDisableSmall" text="" justifyH="CENTER"><Size x="270" y="34"/><Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="8"/></Offset></Anchor></Anchors></FontString>
-			</Layer></Layers>
-			<Frames><StatusBar name="$parentProgress" hidden="true" minValue="0" maxValue="100" defaultValue="0" drawLayer="ARTWORK"><Size x="210" y="12"/><Anchors><Anchor point="TOP" relativeTo="$parentProgressLabel" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors><BarTexture file="Interface\TargetingFrame\UI-StatusBar"/><BarColor r="0.65" g="0.42" b="0.12"/><Layers><Layer level="OVERLAY"><FontString name="$parentText" inherits="GameFontHighlightSmall" text="0%" setAllPoints="true"/></Layer></Layers></StatusBar></Frames>
-			<Scripts><OnLoad>self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b); self:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b, 0.85);</OnLoad></Scripts>
-		</Frame></Frames>
+		<Frames>
+			<Frame name="$parentContentPanel">
+				<Size x="296" y="346"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-44"/></Offset></Anchor></Anchors>
+				<Layers><Layer level="ARTWORK"><FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Native Hunts"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors></FontString></Layer></Layers>
+				<Frames>
+					<Frame name="$parentIdentity" inherits="NativeHuntsInsetTemplate" hidden="true">
+						<Size x="280" y="88"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-26"/></Offset></Anchor></Anchors>
+						<Layers><Layer level="ARTWORK">
+							<Texture name="$parentIcon"><Size x="54" y="54"/><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="11" y="-16"/></Offset></Anchor></Anchors></Texture>
+							<Texture file="Interface\Buttons\UI-Quickslot2"><Size x="64" y="64"/><Anchors><Anchor point="CENTER" relativeTo="$parentIcon"/></Anchors></Texture>
+							<FontString name="$parentTier" inherits="GameFontNormalSmall" justifyH="LEFT"><Size x="188" y="12"/><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="76" y="-11"/></Offset></Anchor></Anchors></FontString>
+							<FontString name="$parentPrey" inherits="GameFontHighlightLarge" justifyH="LEFT"><Size x="188" y="18"/><Anchors><Anchor point="TOPLEFT" relativeTo="$parentTier" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="0" y="-1"/></Offset></Anchor></Anchors></FontString>
+							<FontString name="$parentHuntmaster" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size x="188" y="12"/><Anchors><Anchor point="TOPLEFT" relativeTo="$parentPrey" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="0" y="-1"/></Offset></Anchor></Anchors></FontString>
+							<FontString name="$parentCity" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size x="188" y="12"/><Anchors><Anchor point="TOPLEFT" relativeTo="$parentHuntmaster" relativePoint="BOTTOMLEFT"/></Anchors></FontString>
+							<FontString name="$parentZone" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size x="188" y="18"/><Anchors><Anchor point="TOPLEFT" relativeTo="$parentCity" relativePoint="BOTTOMLEFT"/></Anchors></FontString>
+						</Layer></Layers>
+					</Frame>
+					<Frame name="$parentHuntState" inherits="NativeHuntsInsetTemplate" hidden="true">
+						<Size x="280" y="118"/><Anchors><Anchor point="TOP" relativeTo="$parentIdentity" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-6"/></Offset></Anchor></Anchors>
+						<Layers>
+							<Layer level="BORDER"><Texture file="Interface\DialogFrame\UI-DialogBox-Divider"><Size x="270" y="20"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="5"/></Offset></Anchor></Anchors></Texture></Layer>
+							<Layer level="ARTWORK">
+								<FontString name="$parentHeader" inherits="GameFontNormalSmall" justifyH="CENTER"><Size x="220" y="12"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors></FontString>
+								<FontString name="$parentPrimary" inherits="GameFontHighlight" justifyH="LEFT" justifyV="TOP"><Size x="250" y="30"/><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-26"/></Offset></Anchor></Anchors></FontString>
+								<FontString name="$parentSecondary" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size x="250" y="38"/><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-76"/></Offset></Anchor></Anchors></FontString>
+								<FontString name="$parentProgressText" inherits="GameFontHighlight" justifyH="RIGHT"><Size x="34" y="14"/><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-52"/></Offset></Anchor></Anchors></FontString>
+							</Layer>
+						</Layers>
+						<Frames><StatusBar name="$parentProgress" hidden="true" minValue="0" maxValue="100" defaultValue="0" drawLayer="ARTWORK">
+							<Size x="218" y="14"/><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-52"/></Offset></Anchor></Anchors>
+							<Layers><Layer level="BACKGROUND"><Texture file="Interface\TargetingFrame\UI-StatusBar" setAllPoints="true"><Color r="0.08" g="0.08" b="0.08" a="0.9"/></Texture></Layer></Layers>
+							<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/><BarColor r="0.1" g="0.75" b="0.15"/>
+						</StatusBar></Frames>
+					</Frame>
+					<Frame name="$parentIdle" inherits="NativeHuntsInsetTemplate" hidden="true">
+						<Size x="280" y="212"/><Anchors><Anchor point="TOP" relativeTo="$parentIdentity" relativePoint="TOP"/></Anchors>
+						<Layers><Layer level="ARTWORK">
+							<Texture name="$parentIcon" file="Interface\Icons\Ability_Tracking"><Size x="64" y="64"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-35"/></Offset></Anchor></Anchors><Color r="0.65" g="0.7" b="0.75" a="0.8"/></Texture>
+							<Texture file="Interface\Buttons\UI-Quickslot2"><Size x="74" y="74"/><Anchors><Anchor point="CENTER" relativeTo="$parentIcon"/></Anchors></Texture>
+							<FontString name="$parentState" inherits="GameFontNormalLarge" justifyH="CENTER"><Size x="240" y="20"/><Anchors><Anchor point="TOP" relativeTo="$parentIcon" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-18"/></Offset></Anchor></Anchors></FontString>
+							<FontString name="$parentDescription" inherits="GameFontHighlight" justifyH="CENTER" justifyV="TOP"><Size x="240" y="42"/><Anchors><Anchor point="TOP" relativeTo="$parentState" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-8"/></Offset></Anchor></Anchors></FontString>
+						</Layer></Layers>
+					</Frame>
+					<Frame name="$parentRecord" inherits="NativeHuntsInsetTemplate" hidden="true">
+						<Size x="280" y="86"/><Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="8"/></Offset></Anchor></Anchors>
+						<Layers>
+							<Layer level="BORDER"><Texture file="Interface\DialogFrame\UI-DialogBox-Divider"><Size x="270" y="20"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="5"/></Offset></Anchor></Anchors></Texture></Layer>
+							<Layer level="ARTWORK">
+								<FontString inherits="GameFontNormalSmall" text="HUNT RECORD"><Size x="220" y="12"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors></FontString>
+								<FontString inherits="GameFontHighlightSmall" text="Standard Hunts"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-24"/></Offset></Anchor></Anchors></FontString>
+								<FontString name="$parentStandard" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size x="60" y="12"/><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-24"/></Offset></Anchor></Anchors></FontString>
+								<FontString inherits="GameFontHighlightSmall" text="Elite Hunts"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-39"/></Offset></Anchor></Anchors></FontString>
+								<FontString name="$parentElite" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size x="60" y="12"/><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-39"/></Offset></Anchor></Anchors></FontString>
+								<FontString inherits="GameFontHighlightSmall" text="Elite Today"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-54"/></Offset></Anchor></Anchors></FontString>
+								<FontString name="$parentAvailability" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size x="100" y="12"/><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-54"/></Offset></Anchor></Anchors></FontString>
+								<FontString inherits="GameFontHighlightSmall" text="Huntmaster's Seals"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-69"/></Offset></Anchor></Anchors></FontString>
+								<Texture name="$parentSealIcon" file="Interface\Icons\INV_Misc_Coin_01"><Size x="14" y="14"/><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-39" y="-67"/></Offset></Anchor></Anchors></Texture>
+								<FontString name="$parentSeals" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size x="28" y="12"/><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-69"/></Offset></Anchor></Anchors></FontString>
+							</Layer>
+						</Layers>
+					</Frame>
+				</Frames>
+			</Frame>
+		</Frames>
 	</Frame>
 	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder"><Anchors><Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="18" y="-27"/></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
 	<Button name="LFDParentFrameTab2" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="2" text="Hunts"><Anchors><Anchor point="LEFT" relativeTo="LFDParentFrameTab1" relativePoint="RIGHT"><Offset><AbsDimension x="-15" y="0"/></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
