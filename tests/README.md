@@ -9,9 +9,11 @@
    prey identity, Return Rift ownership, turn-in bag-space refusal, managed
    resource unavailability, abandonment, snapshots, all 195 unique authored
    sites, regional counts, and per-zone site pools;
-2. the managed EPF contract: all ten Huntmasters and spawns, all sixteen
-   standard prey, both clean scripted-button runtime templates, the physical
-   Seal declaration, and removal of disposable validation symbols;
+2. the managed EPF contract: synchronized package sources, the exact pinned
+   build-12340 FrameXML baseline, additive LFD-shell load ordering, passive UI
+   safety, all ten Huntmasters and spawns, all sixteen standard prey, both clean
+   scripted-button runtime templates, the physical Seal declaration, and
+   removal of disposable validation symbols;
 3. native-only source/persistence safety checks that reject legacy package,
    table, protocol, migration, world-database assignment placement, undocumented
    configuration reads, and hard-coded allocated identities, and require

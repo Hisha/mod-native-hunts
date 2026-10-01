@@ -9,8 +9,10 @@ import shutil
 import subprocess
 import tempfile
 import json
+import hashlib
 import re
 import zipfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,13 +44,103 @@ def run_domain_tests() -> None:
 
 def run_content_checks() -> None:
     epf = ROOT / "content" / "mod-native-hunts.epf"
+    expected_members = [
+        "manifest.json",
+        "client/Interface/FrameXML/NativeHuntsFrame.xml",
+        "client/Interface/FrameXML/NativeHuntsFrame.lua",
+        "upstream/FrameXML.toc",
+    ]
     with zipfile.ZipFile(epf) as archive:
-        if archive.namelist() != ["manifest.json"]:
-            raise AssertionError("EPF must contain only manifest.json")
-        manifest = json.loads(archive.read("manifest.json"))
+        if archive.namelist() != expected_members:
+            raise AssertionError("EPF member set or deterministic order is incorrect")
+        packaged = {member: archive.read(member) for member in expected_members}
+    manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
+    if packaged["manifest.json"] != manifest_source:
+        raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
+    manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 2 or manifest.get("version") != "6"):
+            manifest.get("schema") != 3 or manifest.get("version") != "7"):
         raise AssertionError("invalid Native Hunts EPF identity")
+    expected_content = [
+        {
+            "type": "file",
+            "source": "client/Interface/FrameXML/NativeHuntsFrame.xml",
+            "target": "Interface/FrameXML/NativeHuntsFrame.xml",
+        },
+        {
+            "type": "file",
+            "source": "client/Interface/FrameXML/NativeHuntsFrame.lua",
+            "target": "Interface/FrameXML/NativeHuntsFrame.lua",
+        },
+    ]
+    if manifest.get("content") != expected_content:
+        raise AssertionError("Native Hunts raw client content declaration is incorrect")
+    expected_frame_xml = {
+        "stockTocSource": "upstream/FrameXML.toc",
+        "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
+        "loadEntries": [{
+            "target": "Interface/FrameXML/NativeHuntsFrame.xml",
+            "after": "Interface/FrameXML/LFDFrame.xml",
+        }],
+    }
+    if manifest.get("clientFrameXml") != expected_frame_xml:
+        raise AssertionError("additive FrameXML declaration is incorrect")
+    if "clientRequirements" in manifest:
+        raise AssertionError("protected-framexml must be inferred from clientFrameXml")
+    stock_toc = packaged["upstream/FrameXML.toc"]
+    if (len(stock_toc) != 2820 or
+            hashlib.sha256(stock_toc).hexdigest() != expected_frame_xml["stockTocSha256"]):
+        raise AssertionError("packaged build-12340 FrameXML.toc baseline is incorrect")
+    if b"NativeHuntsFrame" in stock_toc:
+        raise AssertionError("stock FrameXML.toc input must remain byte-identical")
+
+    xml_member = expected_content[0]["source"]
+    lua_member = expected_content[1]["source"]
+    for member in (xml_member, lua_member):
+        source = (ROOT / "content" / member).read_bytes()
+        if packaged[member] != source:
+            raise AssertionError(f"EPF client asset is stale: {member}")
+    ui_xml = packaged[xml_member].decode("utf-8")
+    ui_lua = packaged[lua_member].decode("utf-8")
+    ET.fromstring(ui_xml)
+    required_xml = (
+        '<Script file="NativeHuntsFrame.lua"/>',
+        'name="NativeHuntsFrame" parent="LFDParentFrame"',
+        'name="LFDParentFrameTab1"',
+        'name="LFDParentFrameTab2"',
+        'text="Dungeon Finder"',
+        'text="Hunts"',
+        'text="Player vs Environment"',
+        'text="No Active Hunt"',
+        'text="Speak with a Huntmaster to begin a Hunt."',
+    )
+    for token in required_xml:
+        if token not in ui_xml:
+            raise AssertionError(f"Native Hunts FrameXML behavior missing: {token}")
+    required_lua = (
+        "LFDQueueFrame:Hide()",
+        "NativeHuntsFrame:Show()",
+        "NativeHuntsFrame:Hide()",
+        "LFDQueueFrame:Show()",
+        'hooksecurefunc("LFDFrame_OnEvent"',
+        'event == "LFG_OPEN_FROM_GOSSIP"',
+        'LFDMicroButton.tooltipText = MicroButtonTooltipText("Player vs Environment"',
+        'LFDQueueFrameTitleText:SetText("Player vs Environment")',
+        "PanelTemplates_SetNumTabs(LFDParentFrame, 2)",
+    )
+    for token in required_lua:
+        if token not in ui_lua:
+            raise AssertionError(f"Native Hunts passive UI behavior missing: {token}")
+    forbidden_ui = (
+        "SendAddonMessage", "RegisterAddonMessagePrefix", "CHAT_MSG_ADDON",
+        "NHUNTS", "HuntsUI", '<Frame name="LFDParentFrame"',
+        '<Frame name="LFDQueueFrame"', "function LFDFrame_OnEvent",
+        "function ToggleLFDParentFrame",
+    )
+    combined_ui = json.dumps(manifest) + ui_xml + ui_lua
+    for token in forbidden_ui:
+        if token in combined_ui:
+            raise AssertionError(f"forbidden client replacement/protocol token found: {token}")
     spells = {row["symbol"]: row for row in manifest.get("spells", [])}
     expected_spells = {
         "active-standard-hunt": (1494, "Standard Hunt",
@@ -116,7 +208,7 @@ def run_content_checks() -> None:
     for disposable in ("test-creature", "test-creature-spawn", "test-object"):
         if disposable in serialized:
             raise AssertionError(f"disposable resource remains: {disposable}")
-    print("PASS managed Native Hunts EPF contract", flush=True)
+    print("PASS managed Native Hunts EPF and passive FrameXML contract", flush=True)
 
 
 def run_source_safety_checks() -> None:

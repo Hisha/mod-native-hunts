@@ -70,6 +70,8 @@ runtime objects.
 
 `content/mod-native-hunts.epf` declares, without authored allocated IDs:
 
+- a passive Native Hunts view loaded additively after stock `LFDFrame.xml`, with
+  Dungeon Finder and Hunts tabs inside the unchanged `LFDParentFrame` shell;
 - ten Huntmaster templates and permanent managed spawns;
 - sixteen standard-prey templates copied from established stock donors;
 - permanent trail-crystal and Return Rift templates (runtime instances remain
@@ -98,9 +100,11 @@ revision. `native_hunt_stats` owns lifetime completion statistics.
 ## Deliberate boundaries
 
 This pass does not implement Elite/Epic assignments, dynamic final-site
-generation, guard directions, a Seal equipment vendor, or a native client UI.
-The existing snapshot/domain boundary remains independent of HuntsUI and ready
-for a future UI adapter.
+generation, guard directions, a Seal equipment vendor, or live client/server
+Hunt-state transport. The native client surface is intentionally passive: it
+shows placeholder copy only and neither sends addon messages nor invents a
+protocol. The existing snapshot/domain boundary remains independent of HuntsUI
+and ready for a future native state adapter.
 
 ## Checks
 

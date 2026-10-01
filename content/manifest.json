@@ -1,10 +1,31 @@
 {
-  "schema": 2,
+  "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "6",
-  "description": "Managed Huntmasters, Standard and Elite prey, active Hunt indicators, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
-  "content": [],
+  "version": "7",
+  "description": "Managed Huntmasters, Standard and Elite prey, active Hunt indicators, a passive stock-FrameXML Native Hunts view, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
+  "content": [
+    {
+      "type": "file",
+      "source": "client/Interface/FrameXML/NativeHuntsFrame.xml",
+      "target": "Interface/FrameXML/NativeHuntsFrame.xml"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameXML/NativeHuntsFrame.lua",
+      "target": "Interface/FrameXML/NativeHuntsFrame.lua"
+    }
+  ],
+  "clientFrameXml": {
+    "stockTocSource": "upstream/FrameXML.toc",
+    "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
+    "loadEntries": [
+      {
+        "target": "Interface/FrameXML/NativeHuntsFrame.xml",
+        "after": "Interface/FrameXML/LFDFrame.xml"
+      }
+    ]
+  },
   "dbcRows": [
     {
       "op": "add",

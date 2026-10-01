@@ -1,0 +1,82 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<Script file="NativeHuntsFrame.lua"/>
+
+	<Frame name="NativeHuntsFrame" parent="LFDParentFrame" hidden="true" setAllPoints="true">
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture file="Interface\LFGFrame\UI-LFG-BACKGROUND-QUESTPAPER">
+					<Size x="512" y="256"/>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset x="21" y="-64"/>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture file="Interface\LFGFrame\UI-LFG-FRAME">
+					<Size x="512" y="512"/>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<FontString inherits="GameFontNormal" text="Player vs Environment">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset><AbsDimension x="12" y="-17"/></Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString inherits="GameFontNormalLarge" text="Native Hunts">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset><AbsDimension x="12" y="-88"/></Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString inherits="GameFontHighlightLarge" text="No Active Hunt">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset><AbsDimension x="12" y="-145"/></Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString inherits="GameFontHighlightSmall" text="Speak with a Huntmaster to begin a Hunt." justifyH="CENTER">
+					<Size x="260" y="40"/>
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset><AbsDimension x="12" y="-178"/></Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+	</Frame>
+
+	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder">
+		<Anchors>
+			<Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT">
+				<Offset><AbsDimension x="18" y="-25"/></Offset>
+			</Anchor>
+		</Anchors>
+		<Scripts>
+			<OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick>
+		</Scripts>
+	</Button>
+	<Button name="LFDParentFrameTab2" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="2" text="Hunts">
+		<Anchors>
+			<Anchor point="LEFT" relativeTo="LFDParentFrameTab1" relativePoint="RIGHT">
+				<Offset><AbsDimension x="-15" y="0"/></Offset>
+			</Anchor>
+		</Anchors>
+		<Scripts>
+			<OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick>
+		</Scripts>
+	</Button>
+
+	<Frame name="NativeHuntsFrameInitializer" parent="UIParent">
+		<Scripts>
+			<OnLoad function="NativeHuntsFrame_OnLoad"/>
+		</Scripts>
+	</Frame>
+</Ui>
