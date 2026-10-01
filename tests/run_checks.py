@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "11"):
+            manifest.get("schema") != 3 or manifest.get("version") != "12"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -146,6 +146,106 @@ def run_content_checks() -> None:
             raise AssertionError(f"Native Hunts passive UI behavior missing: {token}")
     if "math.mod" in ui_lua:
         raise AssertionError("unsupported WoW 3.3.5a Lua math.mod call found")
+    malformed_control_pattern = 'string.find(decoded, "[\\000-\\008\\011\\012\\014-\\031]")'
+    if malformed_control_pattern in ui_lua:
+        raise AssertionError("build-12340-incompatible NUL-containing Lua pattern found")
+    required_decoder = (
+        "local decoded, index = {}, 1",
+        "local byte = string.byte(value, index)",
+        'local hex = string.sub(value, index + 1, index + 2)',
+        'string.find(hex, "^%x%x$")',
+        "byte = tonumber(hex, 16)",
+        "byte < 9 or byte == 11 or byte == 12 or (byte >= 14 and byte <= 31)",
+        "return table.concat(decoded)",
+        "if not assembly.fragments then assembly.fragments={}; end",
+    )
+    for token in required_decoder:
+        if token not in ui_lua:
+            raise AssertionError(f"Native Hunts fail-closed decoder behavior missing: {token}")
+
+    try:
+        from lupa.lua51 import LuaError, LuaRuntime
+    except ImportError:
+        print("SKIP direct Lua 5.1 client-codec vectors (lupa.lua51 unavailable)", flush=True)
+    else:
+        lua = LuaRuntime()
+        decode, split, number, handle_message = lua.execute(
+            ui_lua + "\nreturn Decode, Split, Number, HandleMessage")
+
+        def escape(value: str) -> str:
+            safe = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.'"
+            return "".join(chr(byte) if byte in safe else f"%{byte:02X}"
+                           for byte in value.encode("utf-8"))
+
+        legal_fields = (
+            "", "Stormwind", "The Oathbreaker", "Player's Hunt",
+            "[test]", "]", "[", "%", "\\", "\t", "\n", "\r",
+            "field\twith%delimiter\\escapes",
+        )
+        for value in legal_fields:
+            encoded = escape(value)
+            if decode(encoded) != value:
+                raise AssertionError(f"Lua client codec round trip failed: {value!r} -> {encoded!r}")
+
+        malformed_fields = (
+            "%", "%0", "%GG", "%0G", "%G0", "abc%", "abc%2", "%%25",
+            "%00", "%08", "%0B", "%0C", "%0E", "%1F",
+        )
+        for value in malformed_fields:
+            if decode(value) is not None:
+                raise AssertionError(f"Lua client decoder accepted malformed field: {value!r}")
+        if decode("a" * 1024) != "a" * 1024 or decode("a" * 1025) is not None:
+            raise AssertionError("Lua client decoder field-length boundary regressed")
+
+        fields = split("alpha\t\tomega\t")
+        if (len(fields) != 4 or fields[1] != "alpha" or fields[2] != "" or
+                fields[3] != "omega" or fields[4] != ""):
+            raise AssertionError("Lua client splitter lost an empty or trailing field")
+        limited = split("1\tF\t2\t0\tA\t1\t1\tbody\twith\ttabs", 8)
+        if len(limited) != 8 or limited[8] != "body\twith\ttabs":
+            raise AssertionError("Lua client splitter did not preserve the limited remainder")
+
+        if (number("0", 4294967295) != 0 or
+                number("4294967295", 4294967295) != 4294967295):
+            raise AssertionError("Lua client unsigned-number boundary regressed")
+        for value in ("", "-1", "+1", "1.0", " 1", "1 ", "4294967296", "x", "1\t2"):
+            if number(value, 4294967295) is not None:
+                raise AssertionError(f"Lua client number parser accepted malformed value: {value!r}")
+
+        malformed_messages = (
+            None, "", "x", "2\tA\t1\t0\t", "1\tX\t1\t0\t",
+            "1\tA", "1\tA\t0\t0\t", "1\tA\t1\t-1\t",
+            "1\tA\t4294967296\t0\t", "1\tA\t1\t4294967296\t",
+            "1\tP\t1\t0\t0\t0\t0\t0\t0\t0\tX\t0",
+            "1\tF\t1\t0\tX\t1\t1\tbody",
+            "1\tF\t1\t0\tA\t0\t1\tbody",
+            "1\tF\t1\t0\tA\t2\t1\tbody",
+            "1\tF\t1\t0\tA\t1\t9\tbody",
+            "1\tF\t1\t0\tA\t1\t1\tbody\textra",
+            "1\tA\t1\t0\t1\t1\t1\tT\tS\t50\t0\t0\t%\tStormwind\tPrey\tZone\t\t",
+            "1\tA\t1\t0\t1\t1\t1\tT\tS\t50\t0\t0\t%00\tStormwind\tPrey\tZone\t\t",
+            "1\tA\t1\t0\t1\t1\t1\tT\tS\t101\t0\t0\tName\tCity\tPrey\tZone\t\t",
+            "1\tA\t1\t0\t1\t1\t1\tX\tS\t50\t0\t0\tName\tCity\tPrey\tZone\t\t",
+            "a" * 249,
+        )
+        for message in malformed_messages:
+            try:
+                handle_message(message)
+            except LuaError as error:
+                raise AssertionError(
+                    f"malformed NHUNTS message raised a Lua error: {message!r}") from error
+
+        old_pattern = "[\x00-\x08\x0b\x0c\x0e-\x1f]"
+        try:
+            lua.globals().string.find("", old_pattern)
+        except LuaError as error:
+            if "malformed pattern (missing ']')" not in str(error):
+                raise
+        else:
+            raise AssertionError("Lua 5.1 did not reproduce the PTR malformed-pattern failure")
+        if decode("") != "":
+            raise AssertionError("empty-field regression for PTR malformed-pattern failure")
+        print("PASS direct Lua 5.1 NHUNTS codec and malformed-input vectors", flush=True)
     forbidden_ui = (
         "HuntsUI", '<Frame name="LFDParentFrame"',
         '<Frame name="LFDQueueFrame"', "function LFDFrame_OnEvent",

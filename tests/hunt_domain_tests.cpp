@@ -263,8 +263,25 @@ void TestUiProtocol() {
 		Check(!ui::ParseSnapshotRequest(malformed), "malformed/unsupported request ignored");
 	Check(ui::RequestAllowed(0, 10) && !ui::RequestAllowed(10, 1009) &&
 		ui::RequestAllowed(10, 1010), "request rate limit boundary");
-	Check(ui::Escape("A%\t\n\xC3\xA9") == "A%25%09%0A%C3%A9",
-		"protocol string escaping");
+	struct CodecVector { std::string Plain; std::string Encoded; };
+	CodecVector const codecVectors[] = {
+		CodecVector{"", ""},
+		CodecVector{"Stormwind", "Stormwind"},
+		CodecVector{"The Oathbreaker", "The Oathbreaker"},
+		CodecVector{"Player's Hunt", "Player's Hunt"},
+		CodecVector{"[test]", "%5Btest%5D"},
+		CodecVector{"]", "%5D"},
+		CodecVector{"[", "%5B"},
+		CodecVector{"%", "%25"},
+		CodecVector{"\\", "%5C"},
+		CodecVector{"\t", "%09"},
+		CodecVector{"\n", "%0A"},
+		CodecVector{"\r", "%0D"},
+		CodecVector{"A%\t\n\xC3\xA9", "A%25%09%0A%C3%A9"},
+	};
+	for (CodecVector const &vector : codecVectors)
+		Check(ui::Escape(vector.Plain) == vector.Encoded,
+			"protocol string escaping vector: " + vector.Encoded);
 
 	HuntAggregate tracking = Accepted();
 	HuntDomain::Execute(tracking, AdvanceTracking{55});

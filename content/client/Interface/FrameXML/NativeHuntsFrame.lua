@@ -16,10 +16,18 @@ end
 
 local function Decode(value)
 	if string.len(value) > MAX_RECORD then return nil; end
-	if string.find(string.gsub(value, "%%[%x][%x]", ""), "%%") then return nil; end
-	local decoded = string.gsub(value, "%%(%x%x)", function(hex) return string.char(tonumber(hex, 16)); end);
-	if string.find(decoded, "[\000-\008\011\012\014-\031]") then return nil; end
-	return decoded;
+	local decoded, index = {}, 1;
+	while index <= string.len(value) do
+		local byte = string.byte(value, index);
+		if byte == 37 then
+			local hex = string.sub(value, index + 1, index + 2);
+			if string.len(hex) ~= 2 or not string.find(hex, "^%x%x$") then return nil; end
+			byte = tonumber(hex, 16); index = index + 3;
+		else index = index + 1; end
+		if byte < 9 or byte == 11 or byte == 12 or (byte >= 14 and byte <= 31) then return nil; end
+		table.insert(decoded, string.char(byte));
+	end
+	return table.concat(decoded);
 end
 
 local function Number(value, maximum)
@@ -124,6 +132,7 @@ local function HandleMessage(message)
 	if not part or not count or part<1 or count<1 or part>count or sequence<=lastSequence then return; end
 	if responseNonce~=0 and responseNonce~=pendingNonce then return; end
 	if not assembly or assembly.sequence~=sequence or assembly.nonce~=responseNonce then assembly={sequence=sequence,nonce=responseNonce,fragments={}}; end
+	if not assembly.fragments then assembly.fragments={}; end
 	local key=f[5]; local group=assembly.fragments[key];
 	if not group or group.count~=count then group={count=count,parts={}}; assembly.fragments[key]=group; end
 	group.parts[part]=f[8]; local pieces={};
