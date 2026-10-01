@@ -137,7 +137,7 @@ local function RequestSnapshot()
 	local now = GetTime and GetTime() or 0;
 	if now - lastRequestAt < 1 then return; end
 	lastRequestAt = now;
-	nonce=math.mod(nonce,2147483646)+1; pendingNonce=nonce;
+	nonce=nonce%2147483646+1; pendingNonce=nonce;
 	SendAddonMessage(PREFIX,"1\tQ\t"..nonce,"WHISPER",UnitName("player"));
 	if not hasSnapshot then RenderWaiting("Retrieving Hunt information..."); end
 	if timeoutGroup then timeoutGroup:Stop(); timeoutGroup:Play(); end

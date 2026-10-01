@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "10"):
+            manifest.get("schema") != 3 or manifest.get("version") != "11"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -132,6 +132,7 @@ def run_content_checks() -> None:
         'LFDQueueFrameTitleText:SetText("Player vs. Environment")',
         "PanelTemplates_SetNumTabs(LFDParentFrame,2)",
         'RegisterAddonMessagePrefix(PREFIX)',
+        'nonce=nonce%2147483646+1',
         'SendAddonMessage(PREFIX,"1\\tQ\\t"..nonce,"WHISPER"',
         'self:RegisterEvent("CHAT_MSG_ADDON")',
         'sequence <= lastSequence',
@@ -143,6 +144,8 @@ def run_content_checks() -> None:
     for token in required_lua:
         if token not in ui_lua:
             raise AssertionError(f"Native Hunts passive UI behavior missing: {token}")
+    if "math.mod" in ui_lua:
+        raise AssertionError("unsupported WoW 3.3.5a Lua math.mod call found")
     forbidden_ui = (
         "HuntsUI", '<Frame name="LFDParentFrame"',
         '<Frame name="LFDQueueFrame"', "function LFDFrame_OnEvent",

@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "10",
+  "version": "11",
   "description": "Managed Huntmasters, Standard and Elite prey, active Hunt indicators, a passive stock-FrameXML Native Hunts view, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
   "content": [
     {
