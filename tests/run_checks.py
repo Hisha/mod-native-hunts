@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "12"):
+            manifest.get("schema") != 3 or manifest.get("version") != "13"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -139,13 +139,27 @@ def run_content_checks() -> None:
         'sender==UnitName("player")',
         'Hunt information unavailable.',
         'READY TO TURN IN',
-        'Prey Engaged',
+        'TRAIL LOCATED',
+        'FINAL CONFRONTATION',
+        'Defeat your quarry.',
+        'Available Today',
+        'Unavailable Today',
+        'Hunts Completed',
+        "Huntmaster's Seals:",
     )
     for token in required_lua:
         if token not in ui_lua:
             raise AssertionError(f"Native Hunts passive UI behavior missing: {token}")
     if "math.mod" in ui_lua:
         raise AssertionError("unsupported WoW 3.3.5a Lua math.mod call found")
+    if "Player vs Environment" in ui_xml + ui_lua:
+        raise AssertionError("unpunctuated Player vs. Environment presentation text found")
+    for token in ("C_ChatInfo", "table.unpack", "bit32.", "utf8.", "goto ", "//"):
+        if token in ui_lua:
+            raise AssertionError(f"modern Lua/WoW API token found in build-12340 UI: {token}")
+    for resource_id in ("14999010", "14999011", "14999980"):
+        if resource_id in ui_lua:
+            raise AssertionError(f"hard-coded managed resource ID found in client UI: {resource_id}")
     malformed_control_pattern = 'string.find(decoded, "[\\000-\\008\\011\\012\\014-\\031]")'
     if malformed_control_pattern in ui_lua:
         raise AssertionError("build-12340-incompatible NUL-containing Lua pattern found")
@@ -169,8 +183,28 @@ def run_content_checks() -> None:
         print("SKIP direct Lua 5.1 client-codec vectors (lupa.lua51 unavailable)", flush=True)
     else:
         lua = LuaRuntime()
-        decode, split, number, handle_message = lua.execute(
-            ui_lua + "\nreturn Decode, Split, Number, HandleMessage")
+        decode, split, number, handle_message, render = lua.execute(
+            ui_lua + "\nreturn Decode, Split, Number, HandleMessage, Render")
+
+        lua.execute("""
+            local function Control()
+                return {
+                    text="", value=0, visible=true,
+                    SetText=function(self, value) self.text=value end,
+                    SetValue=function(self, value) self.value=value end,
+                    Hide=function(self) self.visible=false end,
+                    Show=function(self) self.visible=true end
+                }
+            end
+            NativeHuntsFrameContentPanelTier=Control()
+            NativeHuntsFrameContentPanelState=Control()
+            NativeHuntsFrameContentPanelDescription=Control()
+            NativeHuntsFrameContentPanelProgressLabel=Control()
+            NativeHuntsFrameContentPanelProgress=Control()
+            NativeHuntsFrameContentPanelProgressText=Control()
+            NativeHuntsFrameContentPanelFinal=Control()
+            NativeHuntsFrameContentPanelStats=Control()
+        """)
 
         def escape(value: str) -> str:
             safe = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.'"
@@ -245,7 +279,114 @@ def run_content_checks() -> None:
             raise AssertionError("Lua 5.1 did not reproduce the PTR malformed-pattern failure")
         if decode("") != "":
             raise AssertionError("empty-field regression for PTR malformed-pattern failure")
-        print("PASS direct Lua 5.1 NHUNTS codec and malformed-input vectors", flush=True)
+
+        def lua_table(value):
+            if isinstance(value, dict):
+                return lua.table_from({key: lua_table(item) for key, item in value.items()})
+            return value
+
+        stats = {
+            "standard": 11, "elite": 3, "eliteUnlocked": True,
+            "accepted": 1, "limit": 1, "eliteAvailable": False,
+            "sealState": "A", "seals": 7,
+        }
+        active = {
+            "revision": 1, "contentAvailable": True, "active": True,
+            "state": "T", "tier": "S", "progress": 54,
+            "finalVisible": False, "ready": False,
+            "huntmaster": "Huntmaster Varyn", "city": "Dalaran",
+            "prey": "The Headsman", "zone": "Crystalsong Forest",
+            "finalLocation": "Crystalsong Forest", "reason": "", "stats": stats,
+        }
+        controls = lua.globals()
+
+        def rendered(overrides=None, stats_overrides=None):
+            snapshot = dict(active)
+            snapshot["stats"] = dict(stats)
+            if overrides:
+                snapshot.update(overrides)
+            if stats_overrides:
+                snapshot["stats"].update(stats_overrides)
+            render(lua_table(snapshot))
+            return controls
+
+        idle = rendered({"active": False, "state": "I", "tier": "N", "progress": 0})
+        if (idle.NativeHuntsFrameContentPanelState.text != "No Active Hunt" or
+                idle.NativeHuntsFrameContentPanelDescription.text !=
+                "Speak with a Huntmaster to begin a Hunt." or
+                idle.NativeHuntsFrameContentPanelTier.text != "" or
+                idle.NativeHuntsFrameContentPanelProgress.visible or
+                idle.NativeHuntsFrameContentPanelFinal.text != ""):
+            raise AssertionError("Native Hunts idle rendering regressed")
+
+        standard = rendered()
+        if (standard.NativeHuntsFrameContentPanelTier.text != "STANDARD HUNT" or
+                standard.NativeHuntsFrameContentPanelProgressLabel.text != "Tracking" or
+                not standard.NativeHuntsFrameContentPanelProgress.visible or
+                standard.NativeHuntsFrameContentPanelProgress.value != 54 or
+                standard.NativeHuntsFrameContentPanelProgressText.text != "54%" or
+                standard.NativeHuntsFrameContentPanelFinal.text !=
+                "Follow the trail through the hunting ground."):
+            raise AssertionError("Standard Hunt tracking rendering regressed")
+        elite = rendered({"tier": "E"})
+        if elite.NativeHuntsFrameContentPanelTier.text != "ELITE HUNT":
+            raise AssertionError("Elite Hunt tracking rendering regressed")
+
+        low = rendered({"progress": -1})
+        if low.NativeHuntsFrameContentPanelProgress.value != 0 or low.NativeHuntsFrameContentPanelProgressText.text != "0%":
+            raise AssertionError("tracking progress lower clamp regressed")
+        high = rendered({"progress": 101})
+        if high.NativeHuntsFrameContentPanelProgress.value != 100 or high.NativeHuntsFrameContentPanelProgressText.text != "100%":
+            raise AssertionError("tracking progress upper clamp regressed")
+
+        revealed = rendered({"state": "F", "progress": 100, "finalVisible": True})
+        if ("TRAIL LOCATED" not in revealed.NativeHuntsFrameContentPanelProgressLabel.text or
+                "Final Location: Crystalsong Forest" not in revealed.NativeHuntsFrameContentPanelFinal.text or
+                "Prey Trail Crystal" not in revealed.NativeHuntsFrameContentPanelFinal.text or
+                revealed.NativeHuntsFrameContentPanelProgress.visible or
+                revealed.NativeHuntsFrameContentPanelProgressText.text != ""):
+            raise AssertionError("FinalRevealed rendering regressed")
+        confrontation = rendered({"state": "P", "progress": 100, "finalVisible": True})
+        if ("FINAL CONFRONTATION" not in confrontation.NativeHuntsFrameContentPanelProgressLabel.text or
+                confrontation.NativeHuntsFrameContentPanelFinal.text != "Defeat your quarry." or
+                confrontation.NativeHuntsFrameContentPanelProgress.visible):
+            raise AssertionError("PreyActive rendering regressed")
+        ready = rendered({"state": "R", "progress": 100, "finalVisible": True, "ready": True})
+        if ("READY TO TURN IN" not in ready.NativeHuntsFrameContentPanelProgressLabel.text or
+                ready.NativeHuntsFrameContentPanelFinal.text !=
+                "Return to Huntmaster Varyn\nDalaran" or
+                ready.NativeHuntsFrameContentPanelProgress.visible):
+            raise AssertionError("ReadyToTurnIn rendering regressed")
+
+        returned_idle = rendered({"active": False, "state": "I", "tier": "N", "progress": 0})
+        if (returned_idle.NativeHuntsFrameContentPanelTier.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelProgressLabel.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelProgressText.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelFinal.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelProgress.visible or
+                returned_idle.NativeHuntsFrameContentPanelProgress.value != 0):
+            raise AssertionError("return to Idle retained stale active-Hunt presentation")
+
+        expected_stats = ("Hunts Completed   Standard: 11   Elite: 3\n"
+                          "Elite: Unavailable Today\nHuntmaster's Seals: 7")
+        if returned_idle.NativeHuntsFrameContentPanelStats.text != expected_stats:
+            raise AssertionError("lifetime Hunt or physical Seal rendering regressed")
+        available = rendered(stats_overrides={"eliteAvailable": True})
+        if "Elite: Available Today" not in available.NativeHuntsFrameContentPanelStats.text:
+            raise AssertionError("daily Elite availability rendering regressed")
+
+        fallback = rendered({"state": "F", "huntmaster": "", "city": "", "prey": "",
+                             "zone": "", "finalLocation": ""})
+        if (fallback.NativeHuntsFrameContentPanelState.text != "Unknown Quarry" or
+                "Unknown Huntmaster" not in fallback.NativeHuntsFrameContentPanelDescription.text or
+                "Final Location: Unknown Hunting Ground" not in
+                fallback.NativeHuntsFrameContentPanelFinal.text):
+            raise AssertionError("missing optional display fields did not degrade safely")
+        try:
+            render(lua.table_from({}))
+        except LuaError as error:
+            raise AssertionError("incomplete snapshot raised a Lua rendering error") from error
+        print("PASS direct Lua 5.1 NHUNTS codec, renderer, and malformed-input vectors", flush=True)
     forbidden_ui = (
         "HuntsUI", '<Frame name="LFDParentFrame"',
         '<Frame name="LFDQueueFrame"', "function LFDFrame_OnEvent",
