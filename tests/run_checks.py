@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "8"):
+            manifest.get("schema") != 3 or manifest.get("version") != "9"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -114,7 +114,7 @@ def run_content_checks() -> None:
         'name="$parentContentPanel"',
         'text="No Active Hunt"',
         'text="Speak with a Huntmaster to begin a Hunt."',
-        '<AbsDimension x="18" y="-32"/>',
+        '<AbsDimension x="18" y="-29"/>',
     )
     for token in required_xml:
         if token not in ui_xml:

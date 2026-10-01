@@ -83,7 +83,7 @@
 	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder">
 		<Anchors>
 			<Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT">
-				<Offset><AbsDimension x="18" y="-32"/></Offset>
+				<Offset><AbsDimension x="18" y="-29"/></Offset>
 			</Anchor>
 		</Anchors>
 		<Scripts>
