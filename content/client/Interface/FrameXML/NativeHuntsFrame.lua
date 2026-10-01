@@ -7,6 +7,15 @@ local function NativeHuntsFrame_SetTitle()
 	end
 end
 
+local function NativeHuntsFrame_UpdateMicroButtonTooltip(button)
+	if ( not button or not MicroButtonTooltipText ) then
+		return;
+	end
+
+	button.tooltipText = MicroButtonTooltipText("Player vs Environment", "TOGGLELFGPARENT");
+	button.newbieText = "Find a dungeon group or review your Native Hunts.";
+end
+
 function NativeHuntsFrame_SelectTab(tab)
 	if ( not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame ) then
 		return;
@@ -40,9 +49,15 @@ function NativeHuntsFrame_OnLoad(self)
 	end
 	NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB);
 
-	if ( LFDMicroButton and MicroButtonTooltipText ) then
-		LFDMicroButton.tooltipText = MicroButtonTooltipText("Player vs Environment", "TOGGLELFGPARENT");
-		LFDMicroButton.newbieText = "Find a dungeon group or review your Native Hunts.";
+	if ( LFDMicroButton ) then
+		NativeHuntsFrame_UpdateMicroButtonTooltip(LFDMicroButton);
+		if ( LFDMicroButton.HookScript ) then
+			LFDMicroButton:HookScript("OnEvent", function(button, event)
+				if ( event == "UPDATE_BINDINGS" ) then
+					NativeHuntsFrame_UpdateMicroButtonTooltip(button);
+				end
+			end);
+		end
 	end
 
 	if ( hooksecurefunc and type(LFDFrame_OnEvent) == "function" ) then

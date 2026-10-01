@@ -59,7 +59,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "7"):
+            manifest.get("schema") != 3 or manifest.get("version") != "8"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_content = [
         {
@@ -111,8 +111,10 @@ def run_content_checks() -> None:
         'text="Dungeon Finder"',
         'text="Hunts"',
         'text="Player vs Environment"',
+        'name="$parentContentPanel"',
         'text="No Active Hunt"',
         'text="Speak with a Huntmaster to begin a Hunt."',
+        '<AbsDimension x="18" y="-32"/>',
     )
     for token in required_xml:
         if token not in ui_xml:
@@ -124,7 +126,9 @@ def run_content_checks() -> None:
         "LFDQueueFrame:Show()",
         'hooksecurefunc("LFDFrame_OnEvent"',
         'event == "LFG_OPEN_FROM_GOSSIP"',
-        'LFDMicroButton.tooltipText = MicroButtonTooltipText("Player vs Environment"',
+        'button.tooltipText = MicroButtonTooltipText("Player vs Environment"',
+        'LFDMicroButton:HookScript("OnEvent"',
+        'event == "UPDATE_BINDINGS"',
         'LFDQueueFrameTitleText:SetText("Player vs Environment")',
         "PanelTemplates_SetNumTabs(LFDParentFrame, 2)",
     )
