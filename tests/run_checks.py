@@ -11,6 +11,7 @@ import tempfile
 import json
 import hashlib
 import re
+import struct
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -44,24 +45,22 @@ def run_domain_tests() -> None:
 
 def run_content_checks() -> None:
     epf = ROOT / "content" / "mod-native-hunts.epf"
-    expected_members = [
-        "manifest.json",
-        "client/Interface/FrameXML/NativeHuntsFrame.xml",
-        "client/Interface/FrameXML/NativeHuntsFrame.lua",
-        "upstream/FrameXML.toc",
-    ]
+    manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
+    source_manifest = json.loads(manifest_source)
+    expected_members = ["manifest.json", *(
+        entry["source"] for entry in source_manifest["content"]),
+        source_manifest["clientFrameXml"]["stockTocSource"]]
     with zipfile.ZipFile(epf) as archive:
         if archive.namelist() != expected_members:
             raise AssertionError("EPF member set or deterministic order is incorrect")
         packaged = {member: archive.read(member) for member in expected_members}
-    manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
     if packaged["manifest.json"] != manifest_source:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "14"):
+            manifest.get("schema") != 3 or manifest.get("version") != "15"):
         raise AssertionError("invalid Native Hunts EPF identity")
-    expected_content = [
+    expected_core_content = [
         {
             "type": "file",
             "source": "client/Interface/FrameXML/NativeHuntsFrame.xml",
@@ -73,8 +72,24 @@ def run_content_checks() -> None:
             "target": "Interface/FrameXML/NativeHuntsFrame.lua",
         },
     ]
-    if manifest.get("content") != expected_content:
-        raise AssertionError("Native Hunts raw client content declaration is incorrect")
+    expected_texture_names = {
+        "hunt_divider.tga",
+        "hunt_icon_elite.tga", "hunt_icon_seal.tga", "hunt_icon_standard.tga",
+        "hunt_icon_turnin.tga", "hunt_panel_identity.tga", "hunt_panel_idle.tga",
+        "hunt_panel_record.tga", "hunt_panel_state.tga",
+        "hunt_trail_prints.tga",
+    }
+    content = manifest.get("content", [])
+    if content[:2] != expected_core_content:
+        raise AssertionError("Native Hunts FrameXML content declaration is incorrect")
+    texture_entries = content[2:]
+    if ({Path(entry.get("source", "")).name for entry in texture_entries} !=
+            expected_texture_names or
+            any(entry.get("type") != "file" or
+                not entry.get("source", "").startswith("client/Interface/NativeHunts/") or
+                not entry.get("target", "").startswith("Interface/NativeHunts/")
+                for entry in texture_entries)):
+        raise AssertionError("Native Hunts runtime texture declarations are incorrect")
     expected_frame_xml = {
         "stockTocSource": "upstream/FrameXML.toc",
         "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
@@ -94,15 +109,28 @@ def run_content_checks() -> None:
     if b"NativeHuntsFrame" in stock_toc:
         raise AssertionError("stock FrameXML.toc input must remain byte-identical")
 
-    xml_member = expected_content[0]["source"]
-    lua_member = expected_content[1]["source"]
-    for member in (xml_member, lua_member):
+    xml_member = expected_core_content[0]["source"]
+    lua_member = expected_core_content[1]["source"]
+    for member in (entry["source"] for entry in content):
         source = (ROOT / "content" / member).read_bytes()
         if packaged[member] != source:
             raise AssertionError(f"EPF client asset is stale: {member}")
+    for entry in texture_entries:
+        data = packaged[entry["source"]]
+        if len(data) < 18 or data[2] != 2 or data[16] != 32 or data[17] != 0x28:
+            raise AssertionError(f"runtime texture is not a 32-bit top-origin TGA: {entry['source']}")
+        width, height = struct.unpack_from("<HH", data, 12)
+        if (width & (width - 1)) or (height & (height - 1)):
+            raise AssertionError(f"runtime texture canvas is not power-of-two: {entry['source']}")
     ui_xml = packaged[xml_member].decode("utf-8")
     ui_lua = packaged[lua_member].decode("utf-8")
     ET.fromstring(ui_xml)
+    declared_targets = {entry["target"].replace("/", "\\").lower() for entry in content}
+    artwork_references = set(re.findall(
+        r'Interface\\NativeHunts\\[A-Za-z0-9_]+\.tga', ui_xml + ui_lua))
+    for reference in artwork_references:
+        if reference.lower() not in declared_targets:
+            raise AssertionError(f"unpackaged Native Hunts artwork reference: {reference}")
     required_xml = (
         '<Script file="NativeHuntsFrame.lua"/>',
         'name="NativeHuntsFrame" parent="LFDParentFrame"',
@@ -113,15 +141,20 @@ def run_content_checks() -> None:
         'text="Player vs. Environment"',
         'name="$parentContentPanel"',
         '<Size x="296" y="346"/>',
-        'name="$parentIdentity" inherits="NativeHuntsInsetTemplate"',
-        'name="$parentHuntState" inherits="NativeHuntsInsetTemplate"',
-        'name="$parentIdle" inherits="NativeHuntsInsetTemplate"',
-        'name="$parentRecord" inherits="NativeHuntsInsetTemplate"',
+        'name="$parentIdentity" hidden="true"',
+        'name="$parentHuntState" hidden="true"',
+        'name="$parentIdle" hidden="true"',
+        'name="$parentRecord" hidden="true"',
         'name="$parentProgress" hidden="true" minValue="0" maxValue="100"',
-        'file="Interface\\DialogFrame\\UI-DialogBox-Divider"',
-        'file="Interface\\Buttons\\UI-Quickslot2"',
+        'file="Interface\\NativeHunts\\hunt_panel_identity.tga"',
+        'file="Interface\\NativeHunts\\hunt_panel_state.tga"',
+        'file="Interface\\NativeHunts\\hunt_panel_idle.tga"',
+        'file="Interface\\NativeHunts\\hunt_panel_record.tga"',
+        'file="Interface\\NativeHunts\\hunt_divider.tga"',
+        'file="Interface\\NativeHunts\\hunt_icon_turnin.tga"',
+        'file="Interface\\NativeHunts\\hunt_icon_seal.tga"',
+        'file="Interface\\NativeHunts\\hunt_trail_prints.tga"',
         'file="Interface\\TargetingFrame\\UI-StatusBar"',
-        'file="Interface\\Icons\\INV_Misc_Coin_01"',
         'text="HUNT RECORD"',
         'text="Standard Hunts"',
         'text="Elite Hunts"',
@@ -179,8 +212,8 @@ def run_content_checks() -> None:
         'NativeHuntsFrameContentPanelRecordStandard:SetText',
         'NativeHuntsFrameContentPanelRecordAvailability:SetText',
         'NativeHuntsFrameContentPanelRecordSeals:SetText',
-        r'Interface\\Icons\\Ability_Tracking',
-        r'Interface\\Icons\\Ability_Hunter_MasterMarksman',
+        r'Interface\\NativeHunts\\hunt_icon_standard.tga',
+        r'Interface\\NativeHunts\\hunt_icon_elite.tga',
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -228,6 +261,10 @@ def run_content_checks() -> None:
                     SetText=function(self, value) self.text=value end,
                     SetValue=function(self, value) self.value=value end,
                     SetTexture=function(self, value) self.texture=value end,
+                    ClearAllPoints=function(self) self.point=nil end,
+                    SetPoint=function(self, point, relative, relativePoint, x, y)
+                        self.point={point, relative, relativePoint, x, y}
+                    end,
                     Hide=function(self) self.visible=false end,
                     Show=function(self) self.visible=true end
                 }
@@ -245,6 +282,8 @@ def run_content_checks() -> None:
             NativeHuntsFrameContentPanelHuntStateSecondary=Control()
             NativeHuntsFrameContentPanelHuntStateProgress=Control()
             NativeHuntsFrameContentPanelHuntStateProgressText=Control()
+            NativeHuntsFrameContentPanelHuntStateDecoration=Control()
+            NativeHuntsFrameContentPanelHuntStateReadyIcon=Control()
             NativeHuntsFrameContentPanelIdle=Control()
             NativeHuntsFrameContentPanelIdleState=Control()
             NativeHuntsFrameContentPanelIdleDescription=Control()
@@ -376,7 +415,7 @@ def run_content_checks() -> None:
                 standard.NativeHuntsFrameContentPanelIdle.visible or
                 standard.NativeHuntsFrameContentPanelIdentityTier.text != "STANDARD HUNT" or
                 standard.NativeHuntsFrameContentPanelIdentityIcon.texture !=
-                "Interface\\Icons\\Ability_Tracking" or
+                "Interface\\NativeHunts\\hunt_icon_standard.tga" or
                 standard.NativeHuntsFrameContentPanelIdentityPrey.text != "The Headsman" or
                 standard.NativeHuntsFrameContentPanelIdentityHuntmaster.text != "Huntmaster Varyn" or
                 standard.NativeHuntsFrameContentPanelIdentityCity.text != "Dalaran" or
@@ -387,13 +426,15 @@ def run_content_checks() -> None:
                 not standard.NativeHuntsFrameContentPanelHuntStateProgress.visible or
                 standard.NativeHuntsFrameContentPanelHuntStateProgress.value != 54 or
                 standard.NativeHuntsFrameContentPanelHuntStateProgressText.text != "54%" or
+                not standard.NativeHuntsFrameContentPanelHuntStateDecoration.visible or
+                standard.NativeHuntsFrameContentPanelHuntStateReadyIcon.visible or
                 standard.NativeHuntsFrameContentPanelHuntStateSecondary.text !=
                 "Follow the trail through\nthe hunting ground."):
             raise AssertionError("Standard Hunt tracking rendering regressed")
         elite = rendered({"tier": "E"})
         if (elite.NativeHuntsFrameContentPanelIdentityTier.text != "ELITE HUNT" or
                 elite.NativeHuntsFrameContentPanelIdentityIcon.texture !=
-                "Interface\\Icons\\Ability_Hunter_MasterMarksman"):
+                "Interface\\NativeHunts\\hunt_icon_elite.tga"):
             raise AssertionError("Elite Hunt tracking rendering regressed")
 
         low = rendered({"progress": -1})
@@ -412,7 +453,9 @@ def run_content_checks() -> None:
                 "Prey Trail Crystal" not in revealed.NativeHuntsFrameContentPanelHuntStateSecondary.text or
                 not revealed.NativeHuntsFrameContentPanelHuntStateProgress.visible or
                 revealed.NativeHuntsFrameContentPanelHuntStateProgress.value != 100 or
-                revealed.NativeHuntsFrameContentPanelHuntStateProgressText.text != "100%"):
+                revealed.NativeHuntsFrameContentPanelHuntStateProgressText.text != "100%" or
+                revealed.NativeHuntsFrameContentPanelHuntStateDecoration.visible or
+                revealed.NativeHuntsFrameContentPanelHuntStateReadyIcon.visible):
             raise AssertionError("FinalRevealed rendering regressed")
         confrontation = rendered({"state": "P", "progress": 100, "finalVisible": True})
         if (confrontation.NativeHuntsFrameContentPanelHuntStateHeader.text !=
@@ -426,7 +469,8 @@ def run_content_checks() -> None:
                 "READY TO TURN IN" not in ready.NativeHuntsFrameContentPanelHuntStatePrimary.text or
                 ready.NativeHuntsFrameContentPanelHuntStateSecondary.text !=
                 "Return to Huntmaster Varyn\nin Dalaran." or
-                ready.NativeHuntsFrameContentPanelHuntStateProgress.visible):
+                ready.NativeHuntsFrameContentPanelHuntStateProgress.visible or
+                not ready.NativeHuntsFrameContentPanelHuntStateReadyIcon.visible):
             raise AssertionError("ReadyToTurnIn rendering regressed")
 
         returned_idle = rendered({"active": False, "state": "I", "tier": "N", "progress": 0})
@@ -439,7 +483,9 @@ def run_content_checks() -> None:
                 returned_idle.NativeHuntsFrameContentPanelHuntStateSecondary.text != "" or
                 returned_idle.NativeHuntsFrameContentPanelHuntStateProgress.visible or
                 returned_idle.NativeHuntsFrameContentPanelHuntStateProgress.value != 0 or
-                returned_idle.NativeHuntsFrameContentPanelHuntStateProgressText.text != ""):
+                returned_idle.NativeHuntsFrameContentPanelHuntStateProgressText.text != "" or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateDecoration.visible or
+                returned_idle.NativeHuntsFrameContentPanelHuntStateReadyIcon.visible):
             raise AssertionError("return to Idle retained stale active-Hunt presentation")
 
         if (returned_idle.NativeHuntsFrameContentPanelRecordStandard.text != "11" or

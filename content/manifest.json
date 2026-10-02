@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "14",
+  "version": "15",
   "description": "Managed Huntmasters, Standard and Elite prey, active Hunt indicators, a passive stock-FrameXML Native Hunts view, runtime object templates, and the physical Huntmaster's Seal economy for Native Hunts.",
   "content": [
     {
@@ -14,6 +14,56 @@
       "type": "file",
       "source": "client/Interface/FrameXML/NativeHuntsFrame.lua",
       "target": "Interface/FrameXML/NativeHuntsFrame.lua"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_divider.tga",
+      "target": "Interface/NativeHunts/hunt_divider.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_elite.tga",
+      "target": "Interface/NativeHunts/hunt_icon_elite.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_seal.tga",
+      "target": "Interface/NativeHunts/hunt_icon_seal.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_standard.tga",
+      "target": "Interface/NativeHunts/hunt_icon_standard.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_turnin.tga",
+      "target": "Interface/NativeHunts/hunt_icon_turnin.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_identity.tga",
+      "target": "Interface/NativeHunts/hunt_panel_identity.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_idle.tga",
+      "target": "Interface/NativeHunts/hunt_panel_idle.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_record.tga",
+      "target": "Interface/NativeHunts/hunt_panel_record.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_state.tga",
+      "target": "Interface/NativeHunts/hunt_panel_state.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_trail_prints.tga",
+      "target": "Interface/NativeHunts/hunt_trail_prints.tga"
     }
   ],
   "clientFrameXml": {
