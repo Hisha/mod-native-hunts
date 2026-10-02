@@ -9,11 +9,19 @@ The Hunts view is a child of `LFDParentFrame`; the stock Dungeon Finder and
 record regions are all children of one internal content panel. The record is
 anchored to that panel, not the outer PvE frame.
 
-The Hunts tab temporarily expands the stock parent from its captured dimensions
-to 400 by 500 so active-state instructions do not collide with ornaments or the
-record. Selecting Dungeon Finder or hiding the parent restores the exact
-captured stock dimensions; reopening reapplies the larger size only when Hunts
-is still the visible pane. The bottom tabs retain their stock-relative position.
+The stock build-12340 shell is fixed artwork: `LFDParentFrame` is 355 by 440,
+while `LFDQueueFrame` owns a 512-square `UI-LFG-FRAME` texture whose visible
+bounds are 356 by 440. Merely enlarging the parent therefore detaches its close
+button and tabs from the unchanged visible shell. Hunts keeps the stock width,
+uses a 355 by 500 parent, and composes its taller shell from fixed-size crops of
+the same Blizzard texture. The paper center and repeated side segment add height
+without scaling the stock border artwork.
+
+Selecting Dungeon Finder or hiding the parent restores the captured stock
+dimensions and reapplies the stock close-button and tab anchors. Reopening Hunts
+reapplies the Hunts geometry from constants, so repeated switching cannot
+accumulate offsets. Runtime Hunt panel textures retain their pre-resize authored
+dimensions; only the space between fixed panels grows.
 
 `NativeHuntsFrame.lua` is display-only. It requests a snapshot when the Hunts
 tab opens and accepts versioned `NHUNTS` addon messages whispered by the server

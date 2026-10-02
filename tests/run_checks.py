@@ -58,7 +58,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "16"):
+            manifest.get("schema") != 3 or manifest.get("version") != "17"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_core_content = [
         {
@@ -120,7 +120,7 @@ def run_content_checks() -> None:
         "hunt_panel_identity.tga": (512, 128),
         "hunt_panel_idle.tga": (512, 256),
         "hunt_panel_record.tga": (512, 128),
-        "hunt_panel_state.tga": (512, 256),
+        "hunt_panel_state.tga": (512, 128),
     }
     for entry in texture_entries:
         data = packaged[entry["source"]]
@@ -134,6 +134,7 @@ def run_content_checks() -> None:
             raise AssertionError(f"runtime panel texture canvas regressed: {entry['source']}")
     ui_xml = packaged[xml_member].decode("utf-8")
     ui_lua = packaged[lua_member].decode("utf-8")
+    asset_prep = (ROOT / "tools" / "prepare_ui_assets.py").read_text(encoding="utf-8")
     ET.fromstring(ui_xml)
     declared_targets = {entry["target"].replace("/", "\\").lower() for entry in content}
     artwork_references = set(re.findall(
@@ -150,11 +151,13 @@ def run_content_checks() -> None:
         'text="Hunts"',
         'text="Player vs. Environment"',
         'name="$parentContentPanel"',
-        '<Size x="344" y="406"/>',
-        '<Size x="328" y="82"/>',
-        '<Size x="328" y="156"/>',
-        '<Size x="328" y="244"/>',
-        '<Size x="328" y="90"/>',
+        '<Size x="296" y="406"/>',
+        '<Size x="280" y="88"/>',
+        '<Size x="280" y="118"/>',
+        '<Size x="280" y="212"/>',
+        '<Size x="280" y="86"/>',
+        '<Size x="356" y="156"/>',
+        '<Size x="356" y="30"/>',
         'name="$parentIdentity" hidden="true"',
         'name="$parentHuntState" hidden="true"',
         'name="$parentIdle" hidden="true"',
@@ -179,7 +182,34 @@ def run_content_checks() -> None:
     for token in required_xml:
         if token not in ui_xml:
             raise AssertionError(f"Native Hunts FrameXML behavior missing: {token}")
+    if '<Texture file="Interface\\LFGFrame\\UI-LFG-FRAME"><Size x="512" y="512"/>' in ui_xml:
+        raise AssertionError("Hunts mode reused the fixed 356x440 stock shell as a resizable texture")
+    authored_assets = (
+        'Asset("hunt_panel_idle.png", "hunt_panel_idle.tga", (280, 212), (512, 256))',
+        'Asset("hunt_panel_active.png", "hunt_panel_identity.tga", (280, 88), (512, 128))',
+        'Asset("hunt_panel_progress.png", "hunt_panel_state.tga", (280, 118), (512, 128))',
+        'Asset("hunt_panel_record.png", "hunt_panel_record.tga", (280, 86), (512, 128))',
+        'Asset("hunt_divider.png", "hunt_divider.tga", (260, 8), (512, 8))',
+    )
+    for token in authored_assets:
+        if token not in asset_prep:
+            raise AssertionError(f"authored Hunt texture dimensions regressed: {token}")
     xml_root = ET.fromstring(ui_xml)
+    authored_render_sizes = {
+        "Interface\\NativeHunts\\hunt_panel_identity.tga": (280, 88),
+        "Interface\\NativeHunts\\hunt_panel_state.tga": (280, 118),
+        "Interface\\NativeHunts\\hunt_panel_idle.tga": (280, 212),
+        "Interface\\NativeHunts\\hunt_panel_record.tga": (280, 86),
+        "Interface\\NativeHunts\\hunt_divider.tga": (260, 8),
+    }
+    for texture in (element for element in xml_root.iter() if element.tag.endswith("Texture")):
+        expected_size = authored_render_sizes.get(texture.get("file"))
+        if expected_size:
+            size = next((child for child in texture if child.tag.endswith("Size")), None)
+            actual_size = ((int(size.get("x")), int(size.get("y"))) if size is not None else None)
+            if actual_size != expected_size:
+                raise AssertionError(
+                    f"authored Hunt texture is stretched in FrameXML: {texture.get('file')}")
     parent_by_child = {child: parent for parent in xml_root.iter() for child in parent}
     named_frames = {element.get("name"): element for element in xml_root.iter()
                     if element.tag.endswith("Frame") and element.get("name")}
@@ -227,8 +257,10 @@ def run_content_checks() -> None:
         'NativeHuntsFrameContentPanelRecordAvailability:SetText',
         'NativeHuntsFrameContentPanelRecordSeals:SetText',
         'NativeHuntsFrameContentPanelIdentityIssuer:SetText',
-        'local HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT = 400, 500',
-        'LFDParentFrame:HookScript("OnHide",RestoreParentSize)',
+        'local HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT = 355, 500',
+        'local function PositionCloseButton()',
+        'parentCloseAnchor = {parentCloseButton:GetPoint(1)}',
+        'LFDParentFrame:HookScript("OnHide",ApplyStockGeometry)',
         r'Interface\\NativeHunts\\hunt_icon_standard.tga',
         r'Interface\\NativeHunts\\hunt_icon_elite.tga',
     )
@@ -272,9 +304,23 @@ def run_content_checks() -> None:
             ui_lua + "\nreturn Decode, Split, Number, HandleMessage, Render")
 
         lua.execute("""
+			local function AnimationGroup()
+				local animation = {
+					SetChange=function() end, SetDuration=function() end, SetOrder=function() end
+				}
+				return {
+					playing=false,
+					CreateAnimation=function() return animation end,
+					SetScript=function(self, event, callback) self[event]=callback end,
+					IsPlaying=function(self) return self.playing end,
+					Stop=function(self) self.playing=false end,
+					Play=function(self) self.playing=true end
+				}
+			end
             local function Control()
                 return {
 					text="", value=0, texture=nil, visible=true, width=0, height=0,
+					objectType="Frame", hooks={}, children={},
                     SetText=function(self, value) self.text=value end,
                     SetValue=function(self, value) self.value=value end,
                     SetTexture=function(self, value) self.texture=value end,
@@ -282,13 +328,19 @@ def run_content_checks() -> None:
 					SetHeight=function(self, value) self.height=value end,
 					GetWidth=function(self) return self.width end,
 					GetHeight=function(self) return self.height end,
+					GetObjectType=function(self) return self.objectType end,
+					GetPoint=function(self) return unpack(self.point) end,
+					GetChildren=function(self) return unpack(self.children) end,
                     ClearAllPoints=function(self) self.point=nil end,
                     SetPoint=function(self, point, relative, relativePoint, x, y)
                         self.point={point, relative, relativePoint, x, y}
                     end,
                     Hide=function(self) self.visible=false end,
 					Show=function(self) self.visible=true end,
-					IsShown=function(self) return self.visible end
+					IsShown=function(self) return self.visible end,
+					HookScript=function(self, event, callback) self.hooks[event]=callback end,
+					RegisterEvent=function() end,
+					CreateAnimationGroup=function() return AnimationGroup() end
                 }
             end
             NativeHuntsFrameContentPanelIdentity=Control()
@@ -318,19 +370,51 @@ def run_content_checks() -> None:
 			LFDParentFrame.height=440
 			LFDQueueFrame=Control()
 			NativeHuntsFrame=Control()
+			LFDParentFrameTab1=Control()
+			LFDParentFrameTab2=Control()
+			LFDParentFramePortrait=Control()
+			LFDParentFrameCloseButton=Control()
+			LFDParentFrameCloseButton.objectType="Button"
+			LFDParentFrameCloseButton:SetPoint("TOPRIGHT", LFDParentFrame, "TOPRIGHT", 2, -8)
+			LFDParentFrame.children={LFDParentFrameCloseButton, LFDQueueFrame, NativeHuntsFrame,
+				LFDParentFrameTab1, LFDParentFrameTab2, LFDParentFramePortrait}
+			NativeHuntsFrameInitializer=Control()
         """)
 
+        lua.globals().NativeHuntsFrame_OnLoad(lua.globals().NativeHuntsFrameInitializer)
         select_tab = lua.globals().NativeHuntsFrame_SelectTab
         select_tab(2)
-        if ((controls := lua.globals()).LFDParentFrame.width != 400 or
+        if ((controls := lua.globals()).LFDParentFrame.width != 355 or
                 controls.LFDParentFrame.height != 500 or
                 controls.LFDQueueFrame.visible or not controls.NativeHuntsFrame.visible):
             raise AssertionError("Hunts tab did not apply its bounded parent-frame size")
+        controls.LFDParentFrame.hooks.OnHide()
+        if (controls.LFDParentFrame.width != 355 or
+                controls.LFDParentFrame.height != 440):
+            raise AssertionError("hiding the PvE frame did not restore stock geometry")
+        controls.LFDParentFrame.hooks.OnShow()
+        if (controls.LFDParentFrame.width != 355 or
+                controls.LFDParentFrame.height != 500):
+            raise AssertionError("reopening the Hunts pane did not converge on Hunts geometry")
         select_tab(1)
         if (controls.LFDParentFrame.width != 355 or
                 controls.LFDParentFrame.height != 440 or
                 not controls.LFDQueueFrame.visible or controls.NativeHuntsFrame.visible):
             raise AssertionError("Dungeon Finder tab did not restore the stock parent-frame size")
+        for _ in range(3):
+            select_tab(2)
+            select_tab(1)
+        if (controls.LFDParentFrame.width != 355 or
+                controls.LFDParentFrame.height != 440 or
+                controls.LFDParentFrameTab1.point[4] != 18 or
+                controls.LFDParentFrameTab1.point[5] != -27 or
+                controls.LFDParentFrameTab2.point[4] != -15 or
+				controls.LFDParentFrameTab2.point[5] != 0 or
+				controls.LFDParentFrameCloseButton.point[1] != "TOPRIGHT" or
+				controls.LFDParentFrameCloseButton.point[3] != "TOPRIGHT" or
+				controls.LFDParentFrameCloseButton.point[4] != 2 or
+				controls.LFDParentFrameCloseButton.point[5] != -8):
+            raise AssertionError("repeated tab switching accumulated geometry drift")
 
         def escape(value: str) -> str:
             safe = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.'"
