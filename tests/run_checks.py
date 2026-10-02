@@ -58,7 +58,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "17"):
+            manifest.get("schema") != 3 or manifest.get("version") != "18"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_core_content = [
         {
@@ -228,6 +228,16 @@ def run_content_checks() -> None:
                           if element.tag.endswith("Anchor") and element.get("point") == "BOTTOM"), None)
     if record_anchor is None or record_anchor.get("relativeTo") is not None:
         raise AssertionError("Hunt Record must anchor to the internal content panel bottom")
+    state = named_frames["$parentHuntState"]
+    state_anchor = next((element for element in state.iter()
+                         if element.tag.endswith("Anchor") and element.get("point") == "TOP"), None)
+    state_offset = next((element for element in state.iter()
+                         if element.tag.endswith("AbsDimension")), None)
+    if (state_anchor is None or state_offset is None or
+            state_anchor.get("relativeTo") != "$parentIdentity" or
+            state_anchor.get("relativePoint") != "BOTTOM" or
+            state_offset.get("x") != "0" or state_offset.get("y") != "-30"):
+        raise AssertionError("active Hunt composition must keep a fixed 30px identity/state gap")
     required_lua = (
         "LFDQueueFrame:Hide()",
         "NativeHuntsFrame:Show()",

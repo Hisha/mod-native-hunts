@@ -38,7 +38,7 @@
 						</Layers>
 					</Frame>
 					<Frame name="$parentHuntState" hidden="true">
-						<Size x="280" y="118"/><Anchors><Anchor point="TOP" relativeTo="$parentIdentity" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-6"/></Offset></Anchor></Anchors>
+						<Size x="280" y="118"/><Anchors><Anchor point="TOP" relativeTo="$parentIdentity" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-30"/></Offset></Anchor></Anchors>
 						<Layers>
 							<Layer level="BACKGROUND">
 								<Texture file="Interface\NativeHunts\hunt_panel_state.tga"><Size x="280" y="118"/><TexCoords left="0" right="0.546875" top="0" bottom="0.921875"/><Anchors><Anchor point="TOPLEFT"/></Anchors></Texture>

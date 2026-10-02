@@ -9,6 +9,13 @@ The Hunts view is a child of `LFDParentFrame`; the stock Dungeon Finder and
 record regions are all children of one internal content panel. The record is
 anchored to that panel, not the outer PvE frame.
 
+The enlarged Hunts canvas composes the authored panels without resizing them.
+For an active Hunt, the fixed 280x88 identity panel is followed by a 30-pixel
+breathing space and the fixed 280x118 authoritative-state panel. The fixed
+280x86 record remains bottom-anchored, leaving 50 pixels of intentional space
+between state and record. Idle retains its fixed 280x212 presentation and the
+same bottom-anchored record.
+
 The stock build-12340 shell is fixed artwork: `LFDParentFrame` is 355 by 440,
 while `LFDQueueFrame` owns a 512-square `UI-LFG-FRAME` texture whose visible
 bounds are 356 by 440. Merely enlarging the parent therefore detaches its close
