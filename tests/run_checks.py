@@ -58,7 +58,7 @@ def run_content_checks() -> None:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
     if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "15"):
+            manifest.get("schema") != 3 or manifest.get("version") != "16"):
         raise AssertionError("invalid Native Hunts EPF identity")
     expected_core_content = [
         {
@@ -115,6 +115,13 @@ def run_content_checks() -> None:
         source = (ROOT / "content" / member).read_bytes()
         if packaged[member] != source:
             raise AssertionError(f"EPF client asset is stale: {member}")
+    expected_texture_canvases = {
+        "hunt_divider.tga": (512, 8),
+        "hunt_panel_identity.tga": (512, 128),
+        "hunt_panel_idle.tga": (512, 256),
+        "hunt_panel_record.tga": (512, 128),
+        "hunt_panel_state.tga": (512, 256),
+    }
     for entry in texture_entries:
         data = packaged[entry["source"]]
         if len(data) < 18 or data[2] != 2 or data[16] != 32 or data[17] != 0x28:
@@ -122,6 +129,9 @@ def run_content_checks() -> None:
         width, height = struct.unpack_from("<HH", data, 12)
         if (width & (width - 1)) or (height & (height - 1)):
             raise AssertionError(f"runtime texture canvas is not power-of-two: {entry['source']}")
+        expected_canvas = expected_texture_canvases.get(Path(entry["source"]).name)
+        if expected_canvas and (width, height) != expected_canvas:
+            raise AssertionError(f"runtime panel texture canvas regressed: {entry['source']}")
     ui_xml = packaged[xml_member].decode("utf-8")
     ui_lua = packaged[lua_member].decode("utf-8")
     ET.fromstring(ui_xml)
@@ -140,7 +150,11 @@ def run_content_checks() -> None:
         'text="Hunts"',
         'text="Player vs. Environment"',
         'name="$parentContentPanel"',
-        '<Size x="296" y="346"/>',
+        '<Size x="344" y="406"/>',
+        '<Size x="328" y="82"/>',
+        '<Size x="328" y="156"/>',
+        '<Size x="328" y="244"/>',
+        '<Size x="328" y="90"/>',
         'name="$parentIdentity" hidden="true"',
         'name="$parentHuntState" hidden="true"',
         'name="$parentIdle" hidden="true"',
@@ -212,6 +226,9 @@ def run_content_checks() -> None:
         'NativeHuntsFrameContentPanelRecordStandard:SetText',
         'NativeHuntsFrameContentPanelRecordAvailability:SetText',
         'NativeHuntsFrameContentPanelRecordSeals:SetText',
+        'NativeHuntsFrameContentPanelIdentityIssuer:SetText',
+        'local HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT = 400, 500',
+        'LFDParentFrame:HookScript("OnHide",RestoreParentSize)',
         r'Interface\\NativeHunts\\hunt_icon_standard.tga',
         r'Interface\\NativeHunts\\hunt_icon_elite.tga',
     )
@@ -257,25 +274,28 @@ def run_content_checks() -> None:
         lua.execute("""
             local function Control()
                 return {
-                    text="", value=0, texture=nil, visible=true,
+					text="", value=0, texture=nil, visible=true, width=0, height=0,
                     SetText=function(self, value) self.text=value end,
                     SetValue=function(self, value) self.value=value end,
                     SetTexture=function(self, value) self.texture=value end,
+					SetWidth=function(self, value) self.width=value end,
+					SetHeight=function(self, value) self.height=value end,
+					GetWidth=function(self) return self.width end,
+					GetHeight=function(self) return self.height end,
                     ClearAllPoints=function(self) self.point=nil end,
                     SetPoint=function(self, point, relative, relativePoint, x, y)
                         self.point={point, relative, relativePoint, x, y}
                     end,
                     Hide=function(self) self.visible=false end,
-                    Show=function(self) self.visible=true end
+					Show=function(self) self.visible=true end,
+					IsShown=function(self) return self.visible end
                 }
             end
             NativeHuntsFrameContentPanelIdentity=Control()
             NativeHuntsFrameContentPanelIdentityIcon=Control()
             NativeHuntsFrameContentPanelIdentityTier=Control()
             NativeHuntsFrameContentPanelIdentityPrey=Control()
-            NativeHuntsFrameContentPanelIdentityHuntmaster=Control()
-            NativeHuntsFrameContentPanelIdentityCity=Control()
-            NativeHuntsFrameContentPanelIdentityZone=Control()
+			NativeHuntsFrameContentPanelIdentityIssuer=Control()
             NativeHuntsFrameContentPanelHuntState=Control()
             NativeHuntsFrameContentPanelHuntStateHeader=Control()
             NativeHuntsFrameContentPanelHuntStatePrimary=Control()
@@ -293,7 +313,24 @@ def run_content_checks() -> None:
             NativeHuntsFrameContentPanelRecordAvailability=Control()
             NativeHuntsFrameContentPanelRecordSealIcon=Control()
             NativeHuntsFrameContentPanelRecordSeals=Control()
+			LFDParentFrame=Control()
+			LFDParentFrame.width=355
+			LFDParentFrame.height=440
+			LFDQueueFrame=Control()
+			NativeHuntsFrame=Control()
         """)
+
+        select_tab = lua.globals().NativeHuntsFrame_SelectTab
+        select_tab(2)
+        if ((controls := lua.globals()).LFDParentFrame.width != 400 or
+                controls.LFDParentFrame.height != 500 or
+                controls.LFDQueueFrame.visible or not controls.NativeHuntsFrame.visible):
+            raise AssertionError("Hunts tab did not apply its bounded parent-frame size")
+        select_tab(1)
+        if (controls.LFDParentFrame.width != 355 or
+                controls.LFDParentFrame.height != 440 or
+                not controls.LFDQueueFrame.visible or controls.NativeHuntsFrame.visible):
+            raise AssertionError("Dungeon Finder tab did not restore the stock parent-frame size")
 
         def escape(value: str) -> str:
             safe = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.'"
@@ -417,10 +454,8 @@ def run_content_checks() -> None:
                 standard.NativeHuntsFrameContentPanelIdentityIcon.texture !=
                 "Interface\\NativeHunts\\hunt_icon_standard.tga" or
                 standard.NativeHuntsFrameContentPanelIdentityPrey.text != "The Headsman" or
-                standard.NativeHuntsFrameContentPanelIdentityHuntmaster.text != "Huntmaster Varyn" or
-                standard.NativeHuntsFrameContentPanelIdentityCity.text != "Dalaran" or
-                standard.NativeHuntsFrameContentPanelIdentityZone.text !=
-                "Hunting Ground: Crystalsong Forest" or
+                standard.NativeHuntsFrameContentPanelIdentityIssuer.text !=
+                "Huntmaster Varyn  |cff9d9d9d•|r  Dalaran" or
                 standard.NativeHuntsFrameContentPanelHuntStateHeader.text != "HUNT PROGRESS" or
                 standard.NativeHuntsFrameContentPanelHuntStatePrimary.text != "Tracking" or
                 not standard.NativeHuntsFrameContentPanelHuntStateProgress.visible or
@@ -429,7 +464,7 @@ def run_content_checks() -> None:
                 not standard.NativeHuntsFrameContentPanelHuntStateDecoration.visible or
                 standard.NativeHuntsFrameContentPanelHuntStateReadyIcon.visible or
                 standard.NativeHuntsFrameContentPanelHuntStateSecondary.text !=
-                "Follow the trail through\nthe hunting ground."):
+                "Follow the trail through |cffffd200Crystalsong Forest|r."):
             raise AssertionError("Standard Hunt tracking rendering regressed")
         elite = rendered({"tier": "E"})
         if (elite.NativeHuntsFrameContentPanelIdentityTier.text != "ELITE HUNT" or
@@ -506,8 +541,8 @@ def run_content_checks() -> None:
         fallback = rendered({"state": "F", "huntmaster": "", "city": "", "prey": "",
                              "zone": "", "finalLocation": ""})
         if (fallback.NativeHuntsFrameContentPanelIdentityPrey.text != "Unknown Quarry" or
-                fallback.NativeHuntsFrameContentPanelIdentityHuntmaster.text != "Unknown Huntmaster" or
-                "Unknown Hunting Ground" not in fallback.NativeHuntsFrameContentPanelIdentityZone.text or
+                "Unknown Huntmaster" not in fallback.NativeHuntsFrameContentPanelIdentityIssuer.text or
+                "Unknown Location" not in fallback.NativeHuntsFrameContentPanelIdentityIssuer.text or
                 "Unknown Hunting Ground" not in
                 fallback.NativeHuntsFrameContentPanelHuntStatePrimary.text):
             raise AssertionError("missing optional display fields did not degrade safely")

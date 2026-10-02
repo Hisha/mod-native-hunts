@@ -29,11 +29,11 @@ class Asset:
 
 
 ASSETS = (
-    Asset("hunt_panel_idle.png", "hunt_panel_idle.tga", (280, 212), (512, 256)),
-    Asset("hunt_panel_active.png", "hunt_panel_identity.tga", (280, 88), (512, 128)),
-    Asset("hunt_panel_progress.png", "hunt_panel_state.tga", (280, 118), (512, 128)),
-    Asset("hunt_panel_record.png", "hunt_panel_record.tga", (280, 86), (512, 128)),
-    Asset("hunt_divider.png", "hunt_divider.tga", (260, 8), (512, 8)),
+    Asset("hunt_panel_idle.png", "hunt_panel_idle.tga", (328, 244), (512, 256)),
+    Asset("hunt_panel_active.png", "hunt_panel_identity.tga", (328, 82), (512, 128)),
+    Asset("hunt_panel_progress.png", "hunt_panel_state.tga", (328, 156), (512, 256)),
+    Asset("hunt_panel_record.png", "hunt_panel_record.tga", (328, 90), (512, 128)),
+    Asset("hunt_divider.png", "hunt_divider.tga", (308, 8), (512, 8)),
     Asset("hunt_icon_standard.png", "hunt_icon_standard.tga", (64, 64), (64, 64)),
     Asset("hunt_icon_elite.png", "hunt_icon_elite.tga", (64, 64), (64, 64)),
     Asset("hunt_icon_turnin.png", "hunt_icon_turnin.tga", (64, 64), (64, 64)),

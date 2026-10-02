@@ -2,6 +2,9 @@ local NATIVE_HUNTS_DUNGEON_TAB, NATIVE_HUNTS_HUNTS_TAB = 1, 2;
 local PREFIX, VERSION, MAX_MESSAGE, MAX_FRAGMENTS, MAX_RECORD = "NHUNTS", "1", 248, 8, 1024;
 local STANDARD_ICON = "Interface\\NativeHunts\\hunt_icon_standard.tga";
 local ELITE_ICON = "Interface\\NativeHunts\\hunt_icon_elite.tga";
+local STOCK_PARENT_WIDTH, STOCK_PARENT_HEIGHT = 355, 440;
+local HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT = 400, 500;
+local parentWidth, parentHeight = STOCK_PARENT_WIDTH, STOCK_PARENT_HEIGHT;
 local nonce, pendingNonce, lastSequence = 0, nil, 0;
 local assembly, hasSnapshot, timeoutGroup = nil, false, nil;
 local lastRequestAt = -100;
@@ -56,9 +59,7 @@ local function ClearActivePresentation()
 	NativeHuntsFrameContentPanelIdentityIcon:SetTexture(nil);
 	NativeHuntsFrameContentPanelIdentityTier:SetText("");
 	NativeHuntsFrameContentPanelIdentityPrey:SetText("");
-	NativeHuntsFrameContentPanelIdentityHuntmaster:SetText("");
-	NativeHuntsFrameContentPanelIdentityCity:SetText("");
-	NativeHuntsFrameContentPanelIdentityZone:SetText("");
+	NativeHuntsFrameContentPanelIdentityIssuer:SetText("");
 	NativeHuntsFrameContentPanelHuntStateHeader:SetText("");
 	NativeHuntsFrameContentPanelHuntStatePrimary:SetText("");
 	NativeHuntsFrameContentPanelHuntStateSecondary:SetText("");
@@ -143,24 +144,22 @@ local function Render(snapshot)
 		NativeHuntsFrameContentPanelIdentityTier:SetText("STANDARD HUNT");
 	end
 	NativeHuntsFrameContentPanelIdentityPrey:SetText(prey);
-	NativeHuntsFrameContentPanelIdentityHuntmaster:SetText(huntmaster);
-	NativeHuntsFrameContentPanelIdentityCity:SetText(city);
-	NativeHuntsFrameContentPanelIdentityZone:SetText("Hunting Ground: " .. zone);
+	NativeHuntsFrameContentPanelIdentityIssuer:SetText(huntmaster .. "  |cff9d9d9d•|r  " .. city);
 	if snapshot.state == "T" then
 		local progress = Progress(snapshot.progress);
-		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 15, -34);
-		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 15, -78);
+		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 20, -39);
+		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 20, -104);
 		NativeHuntsFrameContentPanelHuntStateHeader:SetText("HUNT PROGRESS");
 		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("Tracking");
 		NativeHuntsFrameContentPanelHuntStateProgress:SetValue(progress);
 		NativeHuntsFrameContentPanelHuntStateProgressText:SetText(progress .. "%");
 		NativeHuntsFrameContentPanelHuntStateProgress:Show();
 		NativeHuntsFrameContentPanelHuntStateDecoration:Show();
-		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Follow the trail through\nthe hunting ground.");
+		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Follow the trail through |cffffd200" .. zone .. "|r.");
 	elseif snapshot.state == "F" then
 		local progress = Progress(snapshot.progress);
-		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 15, -64);
-		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 15, -92);
+		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 20, -88);
+		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 20, -124);
 		NativeHuntsFrameContentPanelHuntStateHeader:SetText("TRAIL LOCATED");
 		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("Final Location\n|cffffd200" .. finalLocation .. "|r");
 		NativeHuntsFrameContentPanelHuntStateProgress:SetValue(progress);
@@ -168,21 +167,21 @@ local function Render(snapshot)
 		NativeHuntsFrameContentPanelHuntStateProgress:Show();
 		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Travel to the marked location and use\nthe Prey Trail Crystal.");
 	elseif snapshot.state == "P" then
-		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 15, -48);
-		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 15, -77);
+		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 20, -58);
+		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 20, -92);
 		NativeHuntsFrameContentPanelHuntStateHeader:SetText("FINAL CONFRONTATION");
 		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("|cffffd200" .. prey .. "|r");
 		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Defeat your prey.");
 	elseif snapshot.state == "R" then
-		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 15, -43);
-		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 15, -75);
+		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 20, -59);
+		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 20, -102);
 		NativeHuntsFrameContentPanelHuntStateHeader:SetText("HUNT COMPLETE");
 		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("|cffffd200READY TO TURN IN|r");
 		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("Return to " .. huntmaster .. "\nin " .. city .. ".");
 		NativeHuntsFrameContentPanelHuntStateReadyIcon:Show();
 	else
-		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 15, -48);
-		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 15, -77);
+		Place(NativeHuntsFrameContentPanelHuntStatePrimary, "TOPLEFT", "TOPLEFT", 20, -58);
+		Place(NativeHuntsFrameContentPanelHuntStateSecondary, "TOPLEFT", "TOPLEFT", 20, -92);
 		NativeHuntsFrameContentPanelHuntStateHeader:SetText("HUNT STATUS");
 		NativeHuntsFrameContentPanelHuntStatePrimary:SetText("Hunt information unavailable.");
 		NativeHuntsFrameContentPanelHuntStateSecondary:SetText("The authoritative Hunt state could not be displayed.");
@@ -253,15 +252,31 @@ local function RequestSnapshot()
 	if timeoutGroup then timeoutGroup:Stop(); timeoutGroup:Play(); end
 end
 
+local function SizeParent(width, height)
+	LFDParentFrame:SetWidth(width);
+	LFDParentFrame:SetHeight(height);
+end
+
+local function RestoreParentSize()
+	SizeParent(parentWidth, parentHeight);
+end
+
+local function ExpandParentForHunts()
+	SizeParent(HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT);
+end
+
 function NativeHuntsFrame_SelectTab(tab)
 	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame then return; end
-	if tab==NATIVE_HUNTS_HUNTS_TAB then LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); RequestSnapshot();
-	else tab=NATIVE_HUNTS_DUNGEON_TAB; NativeHuntsFrame:Hide(); LFDQueueFrame:Show(); end
+	if tab==NATIVE_HUNTS_HUNTS_TAB then ExpandParentForHunts(); LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); RequestSnapshot();
+	else tab=NATIVE_HUNTS_DUNGEON_TAB; RestoreParentSize(); NativeHuntsFrame:Hide(); LFDQueueFrame:Show(); end
 	NativeHuntsFrame_SetTitle(); if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame,tab); end
 end
 
 function NativeHuntsFrame_OnLoad(self)
 	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame or not LFDParentFrameTab1 or not LFDParentFrameTab2 then return; end
+	local width, height = LFDParentFrame:GetWidth(), LFDParentFrame:GetHeight();
+	if width and width > 0 then parentWidth = width; end
+	if height and height > 0 then parentHeight = height; end
 	if RegisterAddonMessagePrefix then RegisterAddonMessagePrefix(PREFIX); end
 	self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("CHAT_MSG_ADDON");
 	timeoutGroup=NativeHuntsFrame:CreateAnimationGroup(); local timeout=timeoutGroup:CreateAnimation("Alpha");
@@ -274,7 +289,10 @@ function NativeHuntsFrame_OnLoad(self)
 	if LFDMicroButton then NativeHuntsFrame_UpdateMicroButtonTooltip(LFDMicroButton);
 		if LFDMicroButton.HookScript then LFDMicroButton:HookScript("OnEvent",function(button,event) if event=="UPDATE_BINDINGS" then NativeHuntsFrame_UpdateMicroButtonTooltip(button); end end); end end
 	if hooksecurefunc and type(LFDFrame_OnEvent)=="function" then hooksecurefunc("LFDFrame_OnEvent",function(frame,event) if event=="LFG_OPEN_FROM_GOSSIP" then NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB); end end); end
-	LFDParentFrame:HookScript("OnShow",function() if NativeHuntsFrame:IsShown() then RequestSnapshot(); end end);
+	LFDParentFrame:HookScript("OnShow",function()
+		if NativeHuntsFrame:IsShown() then ExpandParentForHunts(); RequestSnapshot(); else RestoreParentSize(); end
+	end);
+	LFDParentFrame:HookScript("OnHide",RestoreParentSize);
 end
 
 function NativeHuntsFrame_OnEvent(self,event,...)

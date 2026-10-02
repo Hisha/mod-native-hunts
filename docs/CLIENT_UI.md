@@ -9,6 +9,12 @@ The Hunts view is a child of `LFDParentFrame`; the stock Dungeon Finder and
 record regions are all children of one internal content panel. The record is
 anchored to that panel, not the outer PvE frame.
 
+The Hunts tab temporarily expands the stock parent from its captured dimensions
+to 400 by 500 so active-state instructions do not collide with ornaments or the
+record. Selecting Dungeon Finder or hiding the parent restores the exact
+captured stock dimensions; reopening reapplies the larger size only when Hunts
+is still the visible pane. The bottom tabs retain their stock-relative position.
+
 `NativeHuntsFrame.lua` is display-only. It requests a snapshot when the Hunts
 tab opens and accepts versioned `NHUNTS` addon messages whispered by the server
 to the same player. Records are bounded, decoded defensively, sequenced, and
