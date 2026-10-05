@@ -1540,7 +1540,7 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.3290816326531,
+      "offsetX": -298.41964285714226,
       "offsetY": 279.1364795918366,
       "visible": true,
       "kind": "FONTSTRING",
@@ -1561,7 +1561,7 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.29464285714243,
+      "offsetX": -298.41964285714226,
       "offsetY": 288.7436224489793,
       "visible": true,
       "kind": "FONTSTRING",
@@ -1603,7 +1603,7 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.29464285714255,
+      "offsetX": -298.41964285714226,
       "offsetY": 307.9234693877544,
       "visible": true,
       "kind": "FONTSTRING",
@@ -1661,11 +1661,11 @@
       "DesignObject5",
       "DesignObject4",
       "DesignObject6",
+      "DesignObject11",
+      "DesignObject10",
       "DesignObject9",
       "DesignObject8",
-      "DesignObject7",
-      "DesignObject10",
-      "DesignObject11"
+      "DesignObject7"
     ],
     "groups": [
       {
