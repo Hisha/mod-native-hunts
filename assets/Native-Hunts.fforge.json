@@ -15,7 +15,7 @@
       "point": "TOPLEFT",
       "relativeTo": null,
       "relativePoint": "TOPLEFT",
-      "offsetX": 0,
+      "offsetX": -2.637755102040816,
       "offsetY": 0,
       "visible": true,
       "sourceName": "LFDParentFrame",
@@ -93,7 +93,7 @@
       "point": "TOPLEFT",
       "relativeTo": null,
       "relativePoint": "TOPLEFT",
-      "offsetX": 0,
+      "offsetX": 3.9566326530612246,
       "offsetY": 0,
       "visible": true,
       "stratum": "BACKGROUND",
@@ -1416,13 +1416,13 @@
     {
       "name": "DesignObject",
       "parent": null,
-      "width": 120,
+      "width": 270,
       "height": 24,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -321.93720625808265,
-      "offsetY": 331.5301391035542,
+      "offsetX": -304.79179809481786,
+      "offsetY": 332.18957787906436,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1436,18 +1436,18 @@
     {
       "name": "DesignObject2",
       "parent": null,
-      "width": 320,
-      "height": 85,
+      "width": 300,
+      "height": 95,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -319.1653786707883,
-      "offsetY": 287.4806800618225,
+      "offsetX": -306.6360419360943,
+      "offsetY": 290.77787393937393,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
         "texture": {
-          "file": "assets/hunt_panel_record.png"
+          "file": "hunt_panel_record.png"
         }
       }
     },
@@ -1465,7 +1465,7 @@
       "kind": "TEXTURE",
       "visual": {
         "texture": {
-          "file": "assets/hunt_panel_idle.png"
+          "file": "hunt_panel_idle.png"
         }
       }
     },
@@ -1540,8 +1540,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -317.19005102040774,
-      "offsetY": 277.6237244897959,
+      "offsetX": -298.3290816326531,
+      "offsetY": 279.1364795918366,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1561,8 +1561,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -317.19005102040796,
-      "offsetY": 287.51530612244903,
+      "offsetX": -298.29464285714243,
+      "offsetY": 288.7436224489793,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1573,12 +1573,104 @@
           "font": "GameFontNormal"
         }
       }
+    },
+    {
+      "name": "DesignObject9",
+      "parent": null,
+      "width": 120,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -298.41964285714226,
+      "offsetY": 298.19132653061206,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject10",
+      "parent": null,
+      "width": 120,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -298.29464285714255,
+      "offsetY": 307.9234693877544,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject11",
+      "parent": null,
+      "width": 10,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -232.70362309865516,
+      "offsetY": 279.8947464511982,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_seal.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject12",
+      "parent": null,
+      "width": 50,
+      "height": 50,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -470.8392857142854,
+      "offsetY": 350.1619897959184,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_circle_icon.png"
+        }
+      }
     }
   ],
   "editor": {
+    "lockedElements": [
+      "DesignObject3",
+      "DesignObject2",
+      "DesignObject",
+      "DesignObject5",
+      "DesignObject4",
+      "DesignObject6",
+      "DesignObject9",
+      "DesignObject8",
+      "DesignObject7",
+      "DesignObject10",
+      "DesignObject11"
+    ],
     "groups": [
       {
         "name": "Blizzard Dungeon Finder Frame",
+        "locked": true,
         "concept": "stock-framework",
         "stockIdentity": "wow-3.3.5a-12340:Interface/FrameXML/LFDFrame.xml:LFDParentFrame",
         "members": [
@@ -1649,6 +1741,22 @@
       {
         "id": "idle",
         "name": "Idle"
+      },
+      {
+        "id": "tracking",
+        "name": "Tracking"
+      },
+      {
+        "id": "located",
+        "name": "Located"
+      },
+      {
+        "id": "fight",
+        "name": "Fight"
+      },
+      {
+        "id": "turnin",
+        "name": "Turnin"
       }
     ],
     "designObjects": [
@@ -1673,7 +1781,7 @@
       {
         "frame": "DesignObject2",
         "displayName": "Hunt_Panel_Record",
-        "designAsset": "assets/hunt_panel_record.png"
+        "designAsset": "hunt_panel_record.png"
       },
       {
         "frame": "LFDQueueFrameLayout"
@@ -1681,7 +1789,7 @@
       {
         "frame": "DesignObject3",
         "displayName": "Hunt_Panel_Idle",
-        "designAsset": "assets/hunt_panel_idle.png",
+        "designAsset": "hunt_panel_idle.png",
         "states": [
           "idle"
         ]
@@ -1746,6 +1854,36 @@
           "size": 8,
           "justifyH": "LEFT"
         }
+      },
+      {
+        "frame": "DesignObject9",
+        "displayName": "Elite_Hunts",
+        "textOverride": "Elite Hunts:",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "LEFT"
+        }
+      },
+      {
+        "frame": "DesignObject10",
+        "displayName": "Standard_Hunts",
+        "textOverride": "Standard Hunts:",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "LEFT"
+        }
+      },
+      {
+        "frame": "DesignObject11",
+        "displayName": "Hunt_Seal",
+        "designAsset": "hunt_seal.png"
+      },
+      {
+        "frame": "DesignObject12",
+        "displayName": "Hunt_Circle_Icon",
+        "designAsset": "hunt_circle_icon.png"
       }
     ],
     "designOrder": [
@@ -1756,7 +1894,11 @@
       "DesignObject5",
       "DesignObject6",
       "DesignObject7",
-      "DesignObject8"
+      "DesignObject8",
+      "DesignObject9",
+      "DesignObject10",
+      "DesignObject11",
+      "DesignObject12"
     ]
   }
 }
