@@ -1,0 +1,1762 @@
+{
+  "format": "frameforge-project",
+  "version": 1,
+  "name": "Dungeon Finder UI",
+  "screen": {
+    "width": 1024,
+    "height": 768
+  },
+  "frames": [
+    {
+      "name": "LFDParentFrame",
+      "parent": null,
+      "width": 355,
+      "height": 440,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "LFDParentFrame",
+      "sourceLocation": {
+        "line": 863,
+        "column": 3
+      }
+    },
+    {
+      "name": "Button#5",
+      "parent": "LFDParentFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPRIGHT",
+      "relativeTo": null,
+      "relativePoint": "TOPRIGHT",
+      "offsetX": 2,
+      "offsetY": -8,
+      "visible": true,
+      "kind": "BUTTON",
+      "anonymous": true,
+      "inherits": "UIPanelCloseButton",
+      "sourceLocation": {
+        "line": 866,
+        "column": 5
+      }
+    },
+    {
+      "name": "LFDQueueFrame",
+      "parent": "LFDParentFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "setAllPoints": true,
+      "sourceName": "LFDQueueFrame",
+      "sourceLocation": {
+        "line": 875,
+        "column": 5
+      }
+    },
+    {
+      "name": "LFDQueueFrameBackground",
+      "parent": "LFDQueueFrame",
+      "width": 512,
+      "height": 256,
+      "point": "LEFT",
+      "relativeTo": null,
+      "relativePoint": "LEFT",
+      "offsetX": 29.572704081632644,
+      "offsetY": -66.63775510204084,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "TEXTURE",
+      "sourceName": "$parentBackground",
+      "sourceLocation": {
+        "line": 878,
+        "column": 8
+      },
+      "visual": {
+        "texture": {
+          "file": "Interface\\LFGFrame\\UI-LFG-BACKGROUND-QUESTPAPER"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameLayout",
+      "parent": "LFDQueueFrame",
+      "width": 512,
+      "height": 512,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "sourceName": "$parentLayout",
+      "sourceLocation": {
+        "line": 892,
+        "column": 8
+      },
+      "visual": {
+        "texture": {
+          "file": "Interface\\LFGFrame\\UI-LFG-FRAME"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameTitleText",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": null,
+      "relativePoint": "TOP",
+      "offsetX": 12,
+      "offsetY": -17,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentTitleText",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 906,
+        "column": 8
+      },
+      "visual": {
+        "text": {
+          "text": "LOOKING_FOR_DUNGEON",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameRoleButtonTank",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 65,
+      "offsetY": -60,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentRoleButtonTank",
+      "inherits": "LFGRoleButtonWithBackgroundTemplate",
+      "sourceLocation": {
+        "line": 918,
+        "column": 7
+      },
+      "visual": {
+        "id": 2
+      }
+    },
+    {
+      "name": "LFDQueueFrameRoleButtonHealer",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "LEFT",
+      "relativeTo": "LFDQueueFrameRoleButtonTank",
+      "relativePoint": "RIGHT",
+      "offsetX": 25,
+      "offsetY": 0,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentRoleButtonHealer",
+      "inherits": "LFGRoleButtonWithBackgroundTemplate",
+      "sourceLocation": {
+        "line": 935,
+        "column": 7
+      },
+      "visual": {
+        "id": 3
+      }
+    },
+    {
+      "name": "LFDQueueFrameRoleButtonDPS",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "LEFT",
+      "relativeTo": "LFDQueueFrameRoleButtonHealer",
+      "relativePoint": "RIGHT",
+      "offsetX": 23,
+      "offsetY": 0,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentRoleButtonDPS",
+      "inherits": "LFGRoleButtonWithBackgroundTemplate",
+      "sourceLocation": {
+        "line": 952,
+        "column": 7
+      },
+      "visual": {
+        "id": 1
+      }
+    },
+    {
+      "name": "LFDQueueFrameRoleButtonLeader",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "LEFT",
+      "relativeTo": "LFDQueueFrameRoleButtonDPS",
+      "relativePoint": "RIGHT",
+      "offsetX": 32,
+      "offsetY": 0,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentRoleButtonLeader",
+      "inherits": "LFGRoleButtonTemplate",
+      "sourceLocation": {
+        "line": 969,
+        "column": 7
+      },
+      "visual": {
+        "id": 4
+      }
+    },
+    {
+      "name": "LFDQueueFrameTypeDropDown",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 131,
+      "offsetY": -125,
+      "visible": true,
+      "sourceName": "$parentTypeDropDown",
+      "inherits": "UIDropDownMenuTemplate",
+      "sourceLocation": {
+        "line": 989,
+        "column": 7
+      },
+      "visual": {
+        "id": 1
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandom",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "setAllPoints": true,
+      "sourceName": "$parentRandom",
+      "sourceLocation": {
+        "line": 1017,
+        "column": 7
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomScrollBackground",
+      "parent": "LFDQueueFrameRandom",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPRIGHT",
+      "offsetX": 0,
+      "offsetY": -5,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "extraAnchors": [
+        {
+          "point": "BOTTOMRIGHT",
+          "relativeTo": null,
+          "relativePoint": "BOTTOMRIGHT",
+          "offsetX": 29,
+          "offsetY": -2
+        }
+      ],
+      "sourceName": "$parentScrollBackground",
+      "sourceLocation": {
+        "line": 1032,
+        "column": 12
+      },
+      "visual": {
+        "texture": {
+          "file": null,
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.55
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomScrollBackgroundTopLeft",
+      "parent": "LFDQueueFrameRandom",
+      "width": 31,
+      "height": 256,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPRIGHT",
+      "offsetX": -2,
+      "offsetY": 5,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "TEXTURE",
+      "sourceName": "$parentScrollBackgroundTopLeft",
+      "sourceLocation": {
+        "line": 1049,
+        "column": 12
+      },
+      "visual": {
+        "texture": {
+          "file": "Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar",
+          "texCoords": {
+            "left": 0,
+            "right": 0.484375,
+            "top": 0,
+            "bottom": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomScrollBackgroundBottomRight",
+      "parent": "LFDQueueFrameRandom",
+      "width": 31,
+      "height": 106,
+      "point": "BOTTOMLEFT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMRIGHT",
+      "offsetX": -2,
+      "offsetY": -4,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "TEXTURE",
+      "sourceName": "$parentScrollBackgroundBottomRight",
+      "sourceLocation": {
+        "line": 1062,
+        "column": 12
+      },
+      "visual": {
+        "texture": {
+          "file": "Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar",
+          "texCoords": {
+            "left": 0.515625,
+            "right": 1,
+            "top": 0,
+            "bottom": 0.4140625
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomChildFrame",
+      "parent": "LFDQueueFrameRandom",
+      "width": 1,
+      "height": 1,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentChildFrame",
+      "sourceLocation": {
+        "line": 1091,
+        "column": 11
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomChildFrameXPAmount",
+      "parent": "LFDQueueFrameRandomChildFrame",
+      "width": 0,
+      "height": 0,
+      "point": "LEFT",
+      "relativeTo": null,
+      "relativePoint": "RIGHT",
+      "offsetX": 10,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentXPAmount",
+      "inherits": "NumberFontNormalLarge",
+      "sourceLocation": {
+        "line": 1169,
+        "column": 14
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "LEFT",
+          "font": "NumberFontNormalLarge"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomChildFrameItem1",
+      "parent": "LFDQueueFrameRandomChildFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": -10,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentItem1",
+      "inherits": "LFDRandomDungeonLootTemplate",
+      "sourceLocation": {
+        "line": 1183,
+        "column": 13
+      },
+      "visual": {
+        "id": 1
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomChildFrameMoneyFrame",
+      "parent": "LFDQueueFrameRandomChildFrame",
+      "width": 0,
+      "height": 0,
+      "point": "LEFT",
+      "relativeTo": null,
+      "relativePoint": "RIGHT",
+      "offsetX": 10,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentMoneyFrame",
+      "inherits": "MoneyFrameTemplate",
+      "sourceLocation": {
+        "line": 1192,
+        "column": 13
+      }
+    },
+    {
+      "name": "LFDQueueFrameRandomChildFrameSpacer",
+      "parent": "LFDQueueFrameRandomChildFrame",
+      "width": 2,
+      "height": 2,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": -10,
+      "visible": true,
+      "sourceName": "$parentSpacer",
+      "sourceLocation": {
+        "line": 1207,
+        "column": 13
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecific",
+      "parent": "LFDQueueFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": false,
+      "setAllPoints": true,
+      "sourceName": "$parentSpecific",
+      "sourceLocation": {
+        "line": 1236,
+        "column": 7
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton1",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 25,
+      "offsetY": -165,
+      "visible": true,
+      "sourceName": "$parentListButton1",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1238,
+        "column": 9
+      },
+      "visual": {
+        "id": 1
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton2",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton1",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton2",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1247,
+        "column": 9
+      },
+      "visual": {
+        "id": 2
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton3",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton2",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton3",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1256,
+        "column": 9
+      },
+      "visual": {
+        "id": 3
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton4",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton3",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton4",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1265,
+        "column": 9
+      },
+      "visual": {
+        "id": 4
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton5",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton4",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton5",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1274,
+        "column": 9
+      },
+      "visual": {
+        "id": 5
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton6",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton5",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton6",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1283,
+        "column": 9
+      },
+      "visual": {
+        "id": 6
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton7",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton6",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton7",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1292,
+        "column": 9
+      },
+      "visual": {
+        "id": 7
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton8",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton7",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton8",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1301,
+        "column": 9
+      },
+      "visual": {
+        "id": 8
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton9",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton8",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton9",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1310,
+        "column": 9
+      },
+      "visual": {
+        "id": 9
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton10",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton9",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton10",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1319,
+        "column": 9
+      },
+      "visual": {
+        "id": 10
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton11",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton10",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton11",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1328,
+        "column": 9
+      },
+      "visual": {
+        "id": 11
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton12",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton11",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton12",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1337,
+        "column": 9
+      },
+      "visual": {
+        "id": 12
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton13",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton12",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton13",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1346,
+        "column": 9
+      },
+      "visual": {
+        "id": 13
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton14",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton13",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton14",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1355,
+        "column": 9
+      },
+      "visual": {
+        "id": 14
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificListButton15",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameSpecificListButton14",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "sourceName": "$parentListButton15",
+      "inherits": "LFDFrameDungeonChoiceTemplate",
+      "sourceLocation": {
+        "line": 1364,
+        "column": 9
+      },
+      "visual": {
+        "id": 15
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificScrollBackgroundTopLeft",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 31,
+      "height": 256,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPRIGHT",
+      "offsetX": -2,
+      "offsetY": 5,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "sourceName": "$parentScrollBackgroundTopLeft",
+      "sourceLocation": {
+        "line": 1388,
+        "column": 12
+      },
+      "visual": {
+        "texture": {
+          "file": "Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar",
+          "texCoords": {
+            "left": 0,
+            "right": 0.484375,
+            "top": 0,
+            "bottom": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameSpecificScrollBackgroundBottomRight",
+      "parent": "LFDQueueFrameSpecific",
+      "width": 31,
+      "height": 106,
+      "point": "BOTTOMLEFT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMRIGHT",
+      "offsetX": -2,
+      "offsetY": -2,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "sourceName": "$parentScrollBackgroundBottomRight",
+      "sourceLocation": {
+        "line": 1401,
+        "column": 12
+      },
+      "visual": {
+        "texture": {
+          "file": "Interface\\PaperDollInfoFrame\\UI-Character-ScrollBar",
+          "texCoords": {
+            "left": 0.515625,
+            "right": 1,
+            "top": 0,
+            "bottom": 0.4140625
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrame",
+      "parent": "LFDQueueFrame",
+      "width": 330,
+      "height": 257,
+      "point": "BOTTOMRIGHT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMRIGHT",
+      "offsetX": -7,
+      "offsetY": 28,
+      "visible": false,
+      "sourceName": "$parentCooldownFrame",
+      "sourceLocation": {
+        "line": 1468,
+        "column": 7
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameBlackFilter",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "setAllPoints": true,
+      "sourceName": "$parentBlackFilter",
+      "sourceLocation": {
+        "line": 1481,
+        "column": 10
+      },
+      "visual": {
+        "texture": {
+          "file": null,
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.93
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameDescription",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 300,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": null,
+      "relativePoint": "TOP",
+      "offsetX": 0,
+      "offsetY": -30,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentDescription",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1486,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": "LFG_RANDOM_COOLDOWN_OTHER",
+          "justifyH": "CENTER",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameTime",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 0,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": "LFDQueueFrameCooldownFrameDescription",
+      "relativePoint": "BOTTOM",
+      "offsetX": 0,
+      "offsetY": -10,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentTime",
+      "inherits": "GameFontHighlightLarge",
+      "sourceLocation": {
+        "line": 1498,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "CENTER",
+          "font": "GameFontHighlightLarge"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameName1",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 120,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameCooldownFrameDescription",
+      "relativePoint": "BOTTOMLEFT",
+      "offsetX": 25,
+      "offsetY": -60,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentName1",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1507,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "LEFT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameStatus1",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 110,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameCooldownFrameName1",
+      "relativePoint": "TOPRIGHT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentStatus1",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1519,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "RIGHT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameName2",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 120,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": "LFDQueueFrameCooldownFrameName1",
+      "relativePoint": "BOTTOM",
+      "offsetX": 0,
+      "offsetY": -5,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentName2",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1531,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "LEFT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameStatus2",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 110,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameCooldownFrameName2",
+      "relativePoint": "TOPRIGHT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentStatus2",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1543,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "RIGHT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameName3",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 120,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": "LFDQueueFrameCooldownFrameName2",
+      "relativePoint": "BOTTOM",
+      "offsetX": 0,
+      "offsetY": -5,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentName3",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1555,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "LEFT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameStatus3",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 110,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameCooldownFrameName3",
+      "relativePoint": "TOPRIGHT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentStatus3",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1567,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "RIGHT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameName4",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 120,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": "LFDQueueFrameCooldownFrameName3",
+      "relativePoint": "BOTTOM",
+      "offsetX": 0,
+      "offsetY": -5,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentName4",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1579,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "LEFT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameCooldownFrameStatus4",
+      "parent": "LFDQueueFrameCooldownFrame",
+      "width": 110,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFrameCooldownFrameName4",
+      "relativePoint": "TOPRIGHT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentStatus4",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1591,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "RIGHT",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFramePartyBackfill",
+      "parent": "LFDQueueFrame",
+      "width": 330,
+      "height": 257,
+      "point": "BOTTOMRIGHT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMRIGHT",
+      "offsetX": -7,
+      "offsetY": 28,
+      "visible": false,
+      "sourceName": "$parentPartyBackfill",
+      "sourceLocation": {
+        "line": 1610,
+        "column": 7
+      }
+    },
+    {
+      "name": "LFDQueueFramePartyBackfillBlackFilter",
+      "parent": "LFDQueueFramePartyBackfill",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "setAllPoints": true,
+      "sourceName": "$parentBlackFilter",
+      "sourceLocation": {
+        "line": 1623,
+        "column": 10
+      },
+      "visual": {
+        "texture": {
+          "file": null,
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.93
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFramePartyBackfillDescription",
+      "parent": "LFDQueueFramePartyBackfill",
+      "width": 300,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": null,
+      "relativePoint": "TOP",
+      "offsetX": -0,
+      "offsetY": -70,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentDescription",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1628,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": null,
+          "justifyH": "CENTER",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFramePartyBackfillBackfillButton",
+      "parent": "LFDQueueFramePartyBackfill",
+      "width": 153,
+      "height": 22,
+      "point": "TOPRIGHT",
+      "relativeTo": "LFDQueueFramePartyBackfillDescription",
+      "relativePoint": "BOTTOM",
+      "offsetX": -5,
+      "offsetY": -10,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentBackfillButton",
+      "inherits": "UIPanelButtonTemplate2",
+      "sourceLocation": {
+        "line": 1643,
+        "column": 9
+      },
+      "visual": {
+        "text": {
+          "text": "YES"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFramePartyBackfillNoBackfillButton",
+      "parent": "LFDQueueFramePartyBackfill",
+      "width": 153,
+      "height": 22,
+      "point": "TOPLEFT",
+      "relativeTo": "LFDQueueFramePartyBackfillDescription",
+      "relativePoint": "BOTTOM",
+      "offsetX": 5,
+      "offsetY": -10,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentNoBackfillButton",
+      "inherits": "UIPanelButtonTemplate2",
+      "sourceLocation": {
+        "line": 1661,
+        "column": 9
+      },
+      "visual": {
+        "text": {
+          "text": "HIDE"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameNoLFDWhileLFR",
+      "parent": "LFDQueueFrame",
+      "width": 330,
+      "height": 257,
+      "point": "BOTTOMRIGHT",
+      "relativeTo": null,
+      "relativePoint": "BOTTOMRIGHT",
+      "offsetX": -7,
+      "offsetY": 28,
+      "visible": false,
+      "sourceName": "$parentNoLFDWhileLFR",
+      "sourceLocation": {
+        "line": 1692,
+        "column": 7
+      }
+    },
+    {
+      "name": "LFDQueueFrameNoLFDWhileLFRBlackFilter",
+      "parent": "LFDQueueFrameNoLFDWhileLFR",
+      "width": 0,
+      "height": 0,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 0,
+      "offsetY": 0,
+      "visible": true,
+      "stratum": "BACKGROUND",
+      "kind": "TEXTURE",
+      "setAllPoints": true,
+      "sourceName": "$parentBlackFilter",
+      "sourceLocation": {
+        "line": 1705,
+        "column": 10
+      },
+      "visual": {
+        "texture": {
+          "file": null,
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.93
+          }
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameNoLFDWhileLFRDescription",
+      "parent": "LFDQueueFrameNoLFDWhileLFR",
+      "width": 300,
+      "height": 0,
+      "point": "TOP",
+      "relativeTo": null,
+      "relativePoint": "TOP",
+      "offsetX": -0,
+      "offsetY": -70,
+      "visible": true,
+      "stratum": "MEDIUM",
+      "kind": "FONTSTRING",
+      "sourceName": "$parentDescription",
+      "inherits": "GameFontNormal",
+      "sourceLocation": {
+        "line": 1710,
+        "column": 10
+      },
+      "visual": {
+        "text": {
+          "text": "NO_LFD_WHILE_LFR",
+          "justifyH": "CENTER",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "LFDQueueFrameNoLFDWhileLFRLeaveQueueButton",
+      "parent": "LFDQueueFrameNoLFDWhileLFR",
+      "width": 153,
+      "height": 22,
+      "point": "TOP",
+      "relativeTo": "LFDQueueFrameNoLFDWhileLFRDescription",
+      "relativePoint": "BOTTOM",
+      "offsetX": 0,
+      "offsetY": -10,
+      "visible": true,
+      "kind": "BUTTON",
+      "sourceName": "$parentLeaveQueueButton",
+      "inherits": "UIPanelButtonTemplate2",
+      "sourceLocation": {
+        "line": 1725,
+        "column": 9
+      },
+      "visual": {
+        "text": {
+          "text": "LIST_ME"
+        }
+      }
+    },
+    {
+      "name": "LFDParentFramePortrait",
+      "parent": "LFDParentFrame",
+      "width": 64,
+      "height": 64,
+      "point": "TOPLEFT",
+      "relativeTo": null,
+      "relativePoint": "TOPLEFT",
+      "offsetX": 9,
+      "offsetY": -5,
+      "visible": true,
+      "sourceName": "LFDParentFramePortrait",
+      "inherits": "EyeTemplate",
+      "sourceLocation": {
+        "line": 1771,
+        "column": 3
+      }
+    },
+    {
+      "name": "DesignObject",
+      "parent": null,
+      "width": 120,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -321.93720625808265,
+      "offsetY": 331.5301391035542,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE"
+        }
+      }
+    },
+    {
+      "name": "DesignObject2",
+      "parent": null,
+      "width": 320,
+      "height": 85,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -319.1653786707883,
+      "offsetY": 287.4806800618225,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "assets/hunt_panel_record.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject3",
+      "parent": null,
+      "width": 340,
+      "height": 295,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -326.4221938775508,
+      "offsetY": 98.25637755102021,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "assets/hunt_panel_idle.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject4",
+      "parent": null,
+      "width": 300,
+      "height": 25,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.7410714285718,
+      "offsetY": 121.33673469387756,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject5",
+      "parent": null,
+      "width": 300,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.0816326530615,
+      "offsetY": 83.74872448979598,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject6",
+      "parent": null,
+      "width": 300,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -326.42219387755074,
+      "offsetY": 63.96556122448976,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject7",
+      "parent": null,
+      "width": 120,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -317.19005102040774,
+      "offsetY": 277.6237244897959,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject8",
+      "parent": null,
+      "width": 120,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -317.19005102040796,
+      "offsetY": 287.51530612244903,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    }
+  ],
+  "editor": {
+    "groups": [
+      {
+        "name": "Blizzard Dungeon Finder Frame",
+        "concept": "stock-framework",
+        "stockIdentity": "wow-3.3.5a-12340:Interface/FrameXML/LFDFrame.xml:LFDParentFrame",
+        "members": [
+          "LFDParentFrame",
+          "Button#5",
+          "LFDQueueFrame",
+          "LFDQueueFrameBackground",
+          "LFDQueueFrameLayout",
+          "LFDQueueFrameTitleText",
+          "LFDQueueFrameRoleButtonTank",
+          "LFDQueueFrameRoleButtonHealer",
+          "LFDQueueFrameRoleButtonDPS",
+          "LFDQueueFrameRoleButtonLeader",
+          "LFDQueueFrameTypeDropDown",
+          "LFDQueueFrameRandom",
+          "LFDQueueFrameRandomScrollBackground",
+          "LFDQueueFrameRandomScrollBackgroundTopLeft",
+          "LFDQueueFrameRandomScrollBackgroundBottomRight",
+          "LFDQueueFrameRandomChildFrame",
+          "LFDQueueFrameRandomChildFrameXPAmount",
+          "LFDQueueFrameRandomChildFrameItem1",
+          "LFDQueueFrameRandomChildFrameMoneyFrame",
+          "LFDQueueFrameRandomChildFrameSpacer",
+          "LFDQueueFrameSpecific",
+          "LFDQueueFrameSpecificListButton1",
+          "LFDQueueFrameSpecificListButton2",
+          "LFDQueueFrameSpecificListButton3",
+          "LFDQueueFrameSpecificListButton4",
+          "LFDQueueFrameSpecificListButton5",
+          "LFDQueueFrameSpecificListButton6",
+          "LFDQueueFrameSpecificListButton7",
+          "LFDQueueFrameSpecificListButton8",
+          "LFDQueueFrameSpecificListButton9",
+          "LFDQueueFrameSpecificListButton10",
+          "LFDQueueFrameSpecificListButton11",
+          "LFDQueueFrameSpecificListButton12",
+          "LFDQueueFrameSpecificListButton13",
+          "LFDQueueFrameSpecificListButton14",
+          "LFDQueueFrameSpecificListButton15",
+          "LFDQueueFrameSpecificScrollBackgroundTopLeft",
+          "LFDQueueFrameSpecificScrollBackgroundBottomRight",
+          "LFDQueueFrameCooldownFrame",
+          "LFDQueueFrameCooldownFrameBlackFilter",
+          "LFDQueueFrameCooldownFrameDescription",
+          "LFDQueueFrameCooldownFrameTime",
+          "LFDQueueFrameCooldownFrameName1",
+          "LFDQueueFrameCooldownFrameStatus1",
+          "LFDQueueFrameCooldownFrameName2",
+          "LFDQueueFrameCooldownFrameStatus2",
+          "LFDQueueFrameCooldownFrameName3",
+          "LFDQueueFrameCooldownFrameStatus3",
+          "LFDQueueFrameCooldownFrameName4",
+          "LFDQueueFrameCooldownFrameStatus4",
+          "LFDQueueFramePartyBackfill",
+          "LFDQueueFramePartyBackfillBlackFilter",
+          "LFDQueueFramePartyBackfillDescription",
+          "LFDQueueFramePartyBackfillBackfillButton",
+          "LFDQueueFramePartyBackfillNoBackfillButton",
+          "LFDQueueFrameNoLFDWhileLFR",
+          "LFDQueueFrameNoLFDWhileLFRBlackFilter",
+          "LFDQueueFrameNoLFDWhileLFRDescription",
+          "LFDQueueFrameNoLFDWhileLFRLeaveQueueButton",
+          "LFDParentFramePortrait"
+        ]
+      }
+    ],
+    "designStates": [
+      {
+        "id": "idle",
+        "name": "Idle"
+      }
+    ],
+    "designObjects": [
+      {
+        "frame": "LFDParentFrame",
+        "displayName": "Blizzard Dungeon Finder Frame"
+      },
+      {
+        "frame": "LFDQueueFrameTitleText",
+        "textOverride": "Player vs. Environment"
+      },
+      {
+        "frame": "DesignObject",
+        "displayName": "Header Text",
+        "textOverride": "Native Hunt",
+        "textStyle": {
+          "baseStyle": "GameFontNormal",
+          "size": 14,
+          "justifyH": "CENTER"
+        }
+      },
+      {
+        "frame": "DesignObject2",
+        "displayName": "Hunt_Panel_Record",
+        "designAsset": "assets/hunt_panel_record.png"
+      },
+      {
+        "frame": "LFDQueueFrameLayout"
+      },
+      {
+        "frame": "DesignObject3",
+        "displayName": "Hunt_Panel_Idle",
+        "designAsset": "assets/hunt_panel_idle.png",
+        "states": [
+          "idle"
+        ]
+      },
+      {
+        "frame": "DesignObject4",
+        "displayName": "No_Active_Hunt",
+        "textOverride": "No Active Hunt",
+        "textStyle": {
+          "baseStyle": "GameFontNormal",
+          "size": 24,
+          "outline": "THICK",
+          "shadow": true,
+          "justifyH": "CENTER"
+        },
+        "states": [
+          "idle"
+        ]
+      },
+      {
+        "frame": "DesignObject5",
+        "displayName": "Speak_Huntmaster",
+        "textOverride": "Speak with a Huntmaster",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 14,
+          "justifyH": "CENTER"
+        },
+        "states": [
+          "idle"
+        ]
+      },
+      {
+        "frame": "DesignObject6",
+        "displayName": "begin_hunt",
+        "textOverride": "to begin a Hunt.",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 14,
+          "justifyH": "CENTER"
+        },
+        "states": [
+          "idle"
+        ]
+      },
+      {
+        "frame": "DesignObject7",
+        "displayName": "Hunt_Seals",
+        "textOverride": "Huntmaster\u0027s Seals:",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "LEFT"
+        }
+      },
+      {
+        "frame": "DesignObject8",
+        "displayName": "Elite_Today",
+        "textOverride": "Elite Today:",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "LEFT"
+        }
+      }
+    ],
+    "designOrder": [
+      "DesignObject",
+      "DesignObject2",
+      "DesignObject3",
+      "DesignObject4",
+      "DesignObject5",
+      "DesignObject6",
+      "DesignObject7",
+      "DesignObject8"
+    ]
+  }
+}
