@@ -1756,9 +1756,331 @@
           "font": "GameFontNormal"
         }
       }
+    },
+    {
+      "name": "DesignObject18",
+      "parent": null,
+      "width": 330,
+      "height": 150,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.3607173737361,
+      "offsetY": 159.97061115152633,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_panel_active.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject19",
+      "parent": null,
+      "width": 335,
+      "height": 70,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.94633397500843,
+      "offsetY": 88.69612723687466,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_header.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject20",
+      "parent": null,
+      "width": 330,
+      "height": 130,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.3607173737361,
+      "offsetY": 25.12687611573557,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_panel_active.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject21",
+      "parent": null,
+      "width": 64,
+      "height": 64,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -435.85780525502264,
+      "offsetY": 179.28902627511593,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_icon_standard.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject22",
+      "parent": null,
+      "width": 320,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.70413395546683,
+      "offsetY": 91.03351106159428,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject23",
+      "parent": null,
+      "width": 64,
+      "height": 64,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -435.8578,
+      "offsetY": 179.289,
+      "visible": true,
+      "kind": "TEXTURE",
+      "visual": {
+        "texture": {
+          "file": "hunt_icon_elite.png"
+        }
+      }
+    },
+    {
+      "name": "DesignObject24",
+      "parent": null,
+      "width": 320,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.7041,
+      "offsetY": 91.0335,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject25",
+      "parent": null,
+      "width": 320,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.7041,
+      "offsetY": 91.0335,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject26",
+      "parent": null,
+      "width": 320,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -327.7041,
+      "offsetY": 91.0335,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject27",
+      "parent": null,
+      "width": 120,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -342.7189,
+      "offsetY": 199.5834,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject28",
+      "parent": null,
+      "width": 120,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -342.7189,
+      "offsetY": 199.5834,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject29",
+      "parent": null,
+      "width": 220,
+      "height": 24,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -292.7189,
+      "offsetY": 177.40743229621665,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject30",
+      "parent": null,
+      "width": 200,
+      "height": 16,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -302.7189,
+      "offsetY": 156.5754989584032,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject31",
+      "parent": null,
+      "width": 200,
+      "height": 16,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -302.7189,
+      "offsetY": 139.77555271823115,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject32",
+      "parent": null,
+      "width": 80,
+      "height": 16,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -362.7189,
+      "offsetY": 123.64760432766613,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject33",
+      "parent": null,
+      "width": 140,
+      "height": 16,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -251.32719575297344,
+      "offsetY": 123.64760432766613,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
     }
   ],
   "editor": {
+    "activeDesignState": "turnin",
     "lockedElements": [
       "DesignObject3",
       "DesignObject2",
@@ -1775,7 +2097,23 @@
       "DesignObject14",
       "DesignObject15",
       "DesignObject16",
-      "DesignObject17"
+      "DesignObject17",
+      "DesignObject22",
+      "DesignObject18",
+      "DesignObject20",
+      "DesignObject19",
+      "DesignObject23",
+      "DesignObject21",
+      "DesignObject24",
+      "DesignObject25",
+      "DesignObject26",
+      "DesignObject28",
+      "DesignObject27",
+      "DesignObject32",
+      "DesignObject31",
+      "DesignObject30",
+      "DesignObject29",
+      "DesignObject33"
     ],
     "groups": [
       {
@@ -2044,9 +2382,219 @@
           "size": 8,
           "justifyH": "RIGHT"
         }
+      },
+      {
+        "frame": "DesignObject18",
+        "displayName": "Hunt_Panel_Top",
+        "designAsset": "hunt_panel_active.png",
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject19",
+        "displayName": "Hunt_Header",
+        "designAsset": "hunt_header.png",
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject20",
+        "displayName": "Hunt_Panel_Bottom",
+        "designAsset": "hunt_panel_active.png",
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject21",
+        "displayName": "Standard_Hunt_Icon",
+        "designAsset": "hunt_icon_standard.png",
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject22",
+        "displayName": "Hunt_Progress_Text",
+        "textOverride": "Hunt Progress",
+        "textStyle": {
+          "baseStyle": "GameFontNormal"
+        },
+        "states": [
+          "tracking"
+        ]
+      },
+      {
+        "frame": "DesignObject23",
+        "displayName": "Elite_Hunt_Icon",
+        "designAsset": "hunt_icon_elite.png",
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject24",
+        "displayName": "Trail_Located_Text",
+        "textOverride": "Trail Located",
+        "textStyle": {
+          "baseStyle": "GameFontNormal"
+        },
+        "states": [
+          "located"
+        ]
+      },
+      {
+        "frame": "DesignObject25",
+        "displayName": "Final_Confrontation_Text",
+        "textOverride": "Final Confrontation",
+        "textStyle": {
+          "baseStyle": "GameFontNormal"
+        },
+        "states": [
+          "fight"
+        ]
+      },
+      {
+        "frame": "DesignObject26",
+        "displayName": "Hunt_Complete_Text",
+        "textOverride": "Hunt Complete",
+        "textStyle": {
+          "baseStyle": "GameFontNormal"
+        },
+        "states": [
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject27",
+        "displayName": "Tracker_Standard_Hunt",
+        "textOverride": "Standard Hunt",
+        "textStyle": {
+          "baseStyle": "GameFontNormal",
+          "outline": "NORMAL",
+          "shadow": true,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject28",
+        "displayName": "Tracker_Elite_Hunt",
+        "textOverride": "Elite Hunt",
+        "textStyle": {
+          "baseStyle": "GameFontNormal",
+          "outline": "NORMAL",
+          "shadow": true,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject29",
+        "displayName": "Tracker_Target_Name",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 18,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject30",
+        "displayName": "Tracker_Huntmaster",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 10,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject31",
+        "displayName": "Tracker_Location",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 10,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject32",
+        "displayName": "Tracker_Hunt_Ground",
+        "textOverride": "Hunting Ground:",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 10,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
+      },
+      {
+        "frame": "DesignObject33",
+        "displayName": "Tracker_Hunt_Ground_Value",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 10,
+          "justifyH": "LEFT"
+        },
+        "states": [
+          "tracking",
+          "located",
+          "fight",
+          "turnin"
+        ]
       }
     ],
     "designOrder": [
+      "DesignObject23",
       "DesignObject",
       "DesignObject2",
       "DesignObject3",
@@ -2063,7 +2611,22 @@
       "DesignObject14",
       "DesignObject15",
       "DesignObject16",
-      "DesignObject17"
+      "DesignObject17",
+      "DesignObject18",
+      "DesignObject20",
+      "DesignObject19",
+      "DesignObject21",
+      "DesignObject22",
+      "DesignObject24",
+      "DesignObject25",
+      "DesignObject26",
+      "DesignObject28",
+      "DesignObject27",
+      "DesignObject29",
+      "DesignObject30",
+      "DesignObject31",
+      "DesignObject32",
+      "DesignObject33"
     ]
   }
 }
