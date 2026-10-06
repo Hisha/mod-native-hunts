@@ -1651,6 +1651,111 @@
           "file": "hunt_circle_icon.png"
         }
       }
+    },
+    {
+      "name": "DesignObject13",
+      "parent": null,
+      "width": 80,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -230.4456924811592,
+      "offsetY": 307.9234693877544,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject14",
+      "parent": null,
+      "width": 80,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -230.44569248115923,
+      "offsetY": 298.42405609183675,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject15",
+      "parent": null,
+      "width": 80,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -230.4456924811592,
+      "offsetY": 288.7436224489793,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject16",
+      "parent": null,
+      "width": 80,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -230.4456924811592,
+      "offsetY": 288.7436224489793,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
+    },
+    {
+      "name": "DesignObject17",
+      "parent": null,
+      "width": 70,
+      "height": 10,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -235.4456924811592,
+      "offsetY": 279.1364795918366,
+      "visible": true,
+      "kind": "FONTSTRING",
+      "visual": {
+        "text": {
+          "text": "Text",
+          "justifyH": "CENTER",
+          "justifyV": "MIDDLE",
+          "font": "GameFontNormal"
+        }
+      }
     }
   ],
   "editor": {
@@ -1665,7 +1770,12 @@
       "DesignObject10",
       "DesignObject9",
       "DesignObject8",
-      "DesignObject7"
+      "DesignObject7",
+      "DesignObject13",
+      "DesignObject14",
+      "DesignObject15",
+      "DesignObject16",
+      "DesignObject17"
     ],
     "groups": [
       {
@@ -1884,6 +1994,56 @@
         "frame": "DesignObject12",
         "displayName": "Hunt_Circle_Icon",
         "designAsset": "hunt_circle_icon.png"
+      },
+      {
+        "frame": "DesignObject13",
+        "displayName": "Standard_Hunts_Value",
+        "textOverride": "0",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "RIGHT"
+        }
+      },
+      {
+        "frame": "DesignObject14",
+        "displayName": "Elite_Hunts_Value",
+        "textOverride": "0",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "RIGHT"
+        }
+      },
+      {
+        "frame": "DesignObject15",
+        "displayName": "Elite_Today_Available",
+        "textOverride": "Available",
+        "textStyle": {
+          "baseStyle": "GameFontGreen",
+          "size": 8,
+          "justifyH": "RIGHT"
+        }
+      },
+      {
+        "frame": "DesignObject16",
+        "displayName": "Elite_Today_Unavailable",
+        "textOverride": "Unavailable",
+        "textStyle": {
+          "baseStyle": "GameFontDisable",
+          "size": 8,
+          "justifyH": "RIGHT"
+        }
+      },
+      {
+        "frame": "DesignObject17",
+        "displayName": "Hunt_Seal_Value",
+        "textOverride": "0",
+        "textStyle": {
+          "baseStyle": "GameFontHighlight",
+          "size": 8,
+          "justifyH": "RIGHT"
+        }
       }
     ],
     "designOrder": [
@@ -1898,7 +2058,12 @@
       "DesignObject9",
       "DesignObject10",
       "DesignObject11",
-      "DesignObject12"
+      "DesignObject12",
+      "DesignObject13",
+      "DesignObject14",
+      "DesignObject15",
+      "DesignObject16",
+      "DesignObject17"
     ]
   }
 }
