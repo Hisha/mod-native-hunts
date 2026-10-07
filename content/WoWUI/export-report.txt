@@ -1,0 +1,13 @@
+FrameForge WoW 3.3.5a export report
+Project: Dungeon Finder UI
+Objects: 49
+Runtime bindings: 0
+States: Idle, Tracking, Located, Fight, Turnin
+Project assets: 11
+Stock foundation: referenced; not copied
+StatusBar defaultValue: editor preview metadata only; omitted from FrameXML runtime initialization
+
+Diagnostics:
+WARNING NAME_SANITIZED [DesignObject]: Runtime name 'Header Text' was mapped to WoW-safe 'Header_Text'.
+WARNING STOCK_OVERRIDE_CONTRACT [LFDQueueFrameTitleText]: 'LFDQueueFrameTitleText' is client-owned stock UI. Its authored override is recorded as a diagnostic contract and is not flattened into generated XML.
+Round-trip self-check: PASS (49/49 runtime identities)

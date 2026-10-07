@@ -1,0 +1,809 @@
+{
+  "schema": "frameforge-wow335-manifest",
+  "version": 2,
+  "target": {
+    "game": "World of Warcraft",
+    "version": "3.3.5a",
+    "build": 12340
+  },
+  "project": "Dungeon Finder UI",
+  "layout": "FrameForgeLayout.xml",
+  "rootRuntimeId": "FrameForge_Dungeon_Finder_UI",
+  "stockFoundation": {
+    "identity": "wow-3.3.5a-12340:Interface/FrameXML/LFDFrame.xml:LFDParentFrame",
+    "runtimeParent": "LFDParentFrame",
+    "strategy": "reference-client-owned-foundation"
+  },
+  "states": [
+    {
+      "id": "idle",
+      "name": "Idle",
+      "show": [
+        "Header_Text",
+        "Hunt_Panel_Record",
+        "Hunt_Panel_Idle",
+        "No_Active_Hunt",
+        "Speak_Huntmaster",
+        "begin_hunt",
+        "Hunt_Seals",
+        "Elite_Today",
+        "Elite_Hunts",
+        "Standard_Hunts",
+        "Hunt_Seal",
+        "Hunt_Circle_Icon",
+        "Standard_Hunts_Value",
+        "Elite_Hunts_Value",
+        "Elite_Today_Available",
+        "Elite_Today_Unavailable",
+        "Hunt_Seal_Value"
+      ],
+      "hide": [
+        "Elite_Hunt_Icon",
+        "Hunt_Panel_Top",
+        "Hunt_Panel_Bottom",
+        "Hunt_Header",
+        "Standard_Hunt_Icon",
+        "Hunt_Progress_Text",
+        "Trail_Located_Text",
+        "Final_Confrontation_Text",
+        "Hunt_Complete_Text",
+        "Tracker_Elite_Hunt",
+        "Tracker_Standard_Hunt",
+        "Tracker_Target_Name",
+        "Tracker_Huntmaster",
+        "Tracker_Location",
+        "Tracker_Hunt_Ground",
+        "Tracker_Hunt_Ground_Value",
+        "Tracker_Progress_Surround",
+        "Tracker_Hunt_Progress",
+        "Tracking_Text",
+        "Tracking2_Text",
+        "Tracking3_Text",
+        "Located_Text",
+        "Located2_Text",
+        "Located3_Text",
+        "Hunt_Complete_Icon",
+        "Complete_Text",
+        "Complete2A_Text",
+        "Complete2B_Huntmaster_Value",
+        "Complete3A_Text",
+        "Complete3B_Location_Value",
+        "Final_Fight_Icon",
+        "Final_Fight_Text"
+      ]
+    },
+    {
+      "id": "tracking",
+      "name": "Tracking",
+      "show": [
+        "Elite_Hunt_Icon",
+        "Header_Text",
+        "Hunt_Panel_Record",
+        "Hunt_Seals",
+        "Elite_Today",
+        "Elite_Hunts",
+        "Standard_Hunts",
+        "Hunt_Seal",
+        "Hunt_Circle_Icon",
+        "Standard_Hunts_Value",
+        "Elite_Hunts_Value",
+        "Elite_Today_Available",
+        "Elite_Today_Unavailable",
+        "Hunt_Seal_Value",
+        "Hunt_Panel_Top",
+        "Hunt_Panel_Bottom",
+        "Hunt_Header",
+        "Standard_Hunt_Icon",
+        "Hunt_Progress_Text",
+        "Tracker_Elite_Hunt",
+        "Tracker_Standard_Hunt",
+        "Tracker_Target_Name",
+        "Tracker_Huntmaster",
+        "Tracker_Location",
+        "Tracker_Hunt_Ground",
+        "Tracker_Hunt_Ground_Value",
+        "Tracker_Progress_Surround",
+        "Tracker_Hunt_Progress",
+        "Tracking_Text",
+        "Tracking2_Text",
+        "Tracking3_Text"
+      ],
+      "hide": [
+        "Hunt_Panel_Idle",
+        "No_Active_Hunt",
+        "Speak_Huntmaster",
+        "begin_hunt",
+        "Trail_Located_Text",
+        "Final_Confrontation_Text",
+        "Hunt_Complete_Text",
+        "Located_Text",
+        "Located2_Text",
+        "Located3_Text",
+        "Hunt_Complete_Icon",
+        "Complete_Text",
+        "Complete2A_Text",
+        "Complete2B_Huntmaster_Value",
+        "Complete3A_Text",
+        "Complete3B_Location_Value",
+        "Final_Fight_Icon",
+        "Final_Fight_Text"
+      ]
+    },
+    {
+      "id": "located",
+      "name": "Located",
+      "show": [
+        "Elite_Hunt_Icon",
+        "Header_Text",
+        "Hunt_Panel_Record",
+        "Hunt_Seals",
+        "Elite_Today",
+        "Elite_Hunts",
+        "Standard_Hunts",
+        "Hunt_Seal",
+        "Hunt_Circle_Icon",
+        "Standard_Hunts_Value",
+        "Elite_Hunts_Value",
+        "Elite_Today_Available",
+        "Elite_Today_Unavailable",
+        "Hunt_Seal_Value",
+        "Hunt_Panel_Top",
+        "Hunt_Panel_Bottom",
+        "Hunt_Header",
+        "Standard_Hunt_Icon",
+        "Trail_Located_Text",
+        "Tracker_Elite_Hunt",
+        "Tracker_Standard_Hunt",
+        "Tracker_Target_Name",
+        "Tracker_Huntmaster",
+        "Tracker_Location",
+        "Tracker_Hunt_Ground",
+        "Tracker_Hunt_Ground_Value",
+        "Tracker_Progress_Surround",
+        "Tracker_Hunt_Progress",
+        "Located_Text",
+        "Located2_Text",
+        "Located3_Text"
+      ],
+      "hide": [
+        "Hunt_Panel_Idle",
+        "No_Active_Hunt",
+        "Speak_Huntmaster",
+        "begin_hunt",
+        "Hunt_Progress_Text",
+        "Final_Confrontation_Text",
+        "Hunt_Complete_Text",
+        "Tracking_Text",
+        "Tracking2_Text",
+        "Tracking3_Text",
+        "Hunt_Complete_Icon",
+        "Complete_Text",
+        "Complete2A_Text",
+        "Complete2B_Huntmaster_Value",
+        "Complete3A_Text",
+        "Complete3B_Location_Value",
+        "Final_Fight_Icon",
+        "Final_Fight_Text"
+      ]
+    },
+    {
+      "id": "fight",
+      "name": "Fight",
+      "show": [
+        "Elite_Hunt_Icon",
+        "Header_Text",
+        "Hunt_Panel_Record",
+        "Hunt_Seals",
+        "Elite_Today",
+        "Elite_Hunts",
+        "Standard_Hunts",
+        "Hunt_Seal",
+        "Hunt_Circle_Icon",
+        "Standard_Hunts_Value",
+        "Elite_Hunts_Value",
+        "Elite_Today_Available",
+        "Elite_Today_Unavailable",
+        "Hunt_Seal_Value",
+        "Hunt_Panel_Top",
+        "Hunt_Panel_Bottom",
+        "Hunt_Header",
+        "Standard_Hunt_Icon",
+        "Final_Confrontation_Text",
+        "Tracker_Elite_Hunt",
+        "Tracker_Standard_Hunt",
+        "Tracker_Target_Name",
+        "Tracker_Huntmaster",
+        "Tracker_Location",
+        "Tracker_Hunt_Ground",
+        "Tracker_Hunt_Ground_Value",
+        "Final_Fight_Icon",
+        "Final_Fight_Text"
+      ],
+      "hide": [
+        "Hunt_Panel_Idle",
+        "No_Active_Hunt",
+        "Speak_Huntmaster",
+        "begin_hunt",
+        "Hunt_Progress_Text",
+        "Trail_Located_Text",
+        "Hunt_Complete_Text",
+        "Tracker_Progress_Surround",
+        "Tracker_Hunt_Progress",
+        "Tracking_Text",
+        "Tracking2_Text",
+        "Tracking3_Text",
+        "Located_Text",
+        "Located2_Text",
+        "Located3_Text",
+        "Hunt_Complete_Icon",
+        "Complete_Text",
+        "Complete2A_Text",
+        "Complete2B_Huntmaster_Value",
+        "Complete3A_Text",
+        "Complete3B_Location_Value"
+      ]
+    },
+    {
+      "id": "turnin",
+      "name": "Turnin",
+      "show": [
+        "Elite_Hunt_Icon",
+        "Header_Text",
+        "Hunt_Panel_Record",
+        "Hunt_Seals",
+        "Elite_Today",
+        "Elite_Hunts",
+        "Standard_Hunts",
+        "Hunt_Seal",
+        "Hunt_Circle_Icon",
+        "Standard_Hunts_Value",
+        "Elite_Hunts_Value",
+        "Elite_Today_Available",
+        "Elite_Today_Unavailable",
+        "Hunt_Seal_Value",
+        "Hunt_Panel_Top",
+        "Hunt_Panel_Bottom",
+        "Hunt_Header",
+        "Standard_Hunt_Icon",
+        "Hunt_Complete_Text",
+        "Tracker_Elite_Hunt",
+        "Tracker_Standard_Hunt",
+        "Tracker_Target_Name",
+        "Tracker_Huntmaster",
+        "Tracker_Location",
+        "Tracker_Hunt_Ground",
+        "Tracker_Hunt_Ground_Value",
+        "Hunt_Complete_Icon",
+        "Complete_Text",
+        "Complete2A_Text",
+        "Complete2B_Huntmaster_Value",
+        "Complete3A_Text",
+        "Complete3B_Location_Value"
+      ],
+      "hide": [
+        "Hunt_Panel_Idle",
+        "No_Active_Hunt",
+        "Speak_Huntmaster",
+        "begin_hunt",
+        "Hunt_Progress_Text",
+        "Trail_Located_Text",
+        "Final_Confrontation_Text",
+        "Tracker_Progress_Surround",
+        "Tracker_Hunt_Progress",
+        "Tracking_Text",
+        "Tracking2_Text",
+        "Tracking3_Text",
+        "Located_Text",
+        "Located2_Text",
+        "Located3_Text",
+        "Final_Fight_Icon",
+        "Final_Fight_Text"
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "sourceObject": "DesignObject23",
+      "runtimeId": "Elite_Hunt_Icon",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject",
+      "runtimeId": "Header_Text",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject2",
+      "runtimeId": "Hunt_Panel_Record",
+      "type": "Texture",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject3",
+      "runtimeId": "Hunt_Panel_Idle",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "idle"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject4",
+      "runtimeId": "No_Active_Hunt",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "idle"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject5",
+      "runtimeId": "Speak_Huntmaster",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "idle"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject6",
+      "runtimeId": "begin_hunt",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "idle"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject7",
+      "runtimeId": "Hunt_Seals",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject8",
+      "runtimeId": "Elite_Today",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject9",
+      "runtimeId": "Elite_Hunts",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject10",
+      "runtimeId": "Standard_Hunts",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject11",
+      "runtimeId": "Hunt_Seal",
+      "type": "Texture",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject12",
+      "runtimeId": "Hunt_Circle_Icon",
+      "type": "Texture",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject13",
+      "runtimeId": "Standard_Hunts_Value",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject14",
+      "runtimeId": "Elite_Hunts_Value",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject15",
+      "runtimeId": "Elite_Today_Available",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject16",
+      "runtimeId": "Elite_Today_Unavailable",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject17",
+      "runtimeId": "Hunt_Seal_Value",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject18",
+      "runtimeId": "Hunt_Panel_Top",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject20",
+      "runtimeId": "Hunt_Panel_Bottom",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject19",
+      "runtimeId": "Hunt_Header",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject21",
+      "runtimeId": "Standard_Hunt_Icon",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject22",
+      "runtimeId": "Hunt_Progress_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject24",
+      "runtimeId": "Trail_Located_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "located"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject25",
+      "runtimeId": "Final_Confrontation_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "fight"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject26",
+      "runtimeId": "Hunt_Complete_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject28",
+      "runtimeId": "Tracker_Elite_Hunt",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject27",
+      "runtimeId": "Tracker_Standard_Hunt",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject29",
+      "runtimeId": "Tracker_Target_Name",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject30",
+      "runtimeId": "Tracker_Huntmaster",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject31",
+      "runtimeId": "Tracker_Location",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject32",
+      "runtimeId": "Tracker_Hunt_Ground",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject33",
+      "runtimeId": "Tracker_Hunt_Ground_Value",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located",
+        "fight",
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject35",
+      "runtimeId": "Tracker_Progress_Surround",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject34",
+      "runtimeId": "Tracker_Hunt_Progress",
+      "type": "StatusBar",
+      "allStates": false,
+      "states": [
+        "tracking",
+        "located"
+      ],
+      "runtimeValueRequired": false,
+      "editorPreviewDefault": 50
+    },
+    {
+      "sourceObject": "DesignObject36",
+      "runtimeId": "Tracking_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject37",
+      "runtimeId": "Tracking2_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject38",
+      "runtimeId": "Tracking3_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "tracking"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject39",
+      "runtimeId": "Located_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "located"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject40",
+      "runtimeId": "Located2_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "located"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject41",
+      "runtimeId": "Located3_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "located"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject42",
+      "runtimeId": "Hunt_Complete_Icon",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject43",
+      "runtimeId": "Complete_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject45",
+      "runtimeId": "Complete2A_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject46",
+      "runtimeId": "Complete2B_Huntmaster_Value",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject47",
+      "runtimeId": "Complete3A_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject48",
+      "runtimeId": "Complete3B_Location_Value",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "turnin"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject44",
+      "runtimeId": "Final_Fight_Icon",
+      "type": "Texture",
+      "allStates": false,
+      "states": [
+        "fight"
+      ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject49",
+      "runtimeId": "Final_Fight_Text",
+      "type": "FontString",
+      "allStates": false,
+      "states": [
+        "fight"
+      ],
+      "runtimeValueRequired": false
+    }
+  ]
+}

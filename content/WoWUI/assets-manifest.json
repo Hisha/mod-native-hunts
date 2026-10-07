@@ -1,0 +1,107 @@
+{
+  "schema": "frameforge-wow335-assets",
+  "version": 1,
+  "note": "Project PNGs require conversion by a later content-packaging phase. Stock client artwork is referenced and never copied.",
+  "assets": [
+    {
+      "sourceProjectAsset": "hunt_circle_icon.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_circle_icon",
+      "packagingTarget": "textures/hunt_circle_icon.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Circle_Icon"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_header.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_header",
+      "packagingTarget": "textures/hunt_header.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Header"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_icon_elite.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_elite",
+      "packagingTarget": "textures/hunt_icon_elite.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Elite_Hunt_Icon"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_icon_finalfight.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_finalfight",
+      "packagingTarget": "textures/hunt_icon_finalfight.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Final_Fight_Icon"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_icon_standard.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_standard",
+      "packagingTarget": "textures/hunt_icon_standard.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Standard_Hunt_Icon"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_icon_turnin.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_turnin",
+      "packagingTarget": "textures/hunt_icon_turnin.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Complete_Icon"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_panel_active.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_panel_active",
+      "packagingTarget": "textures/hunt_panel_active.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Panel_Bottom",
+        "Hunt_Panel_Top"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_panel_idle.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_panel_idle",
+      "packagingTarget": "textures/hunt_panel_idle.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Panel_Idle"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_panel_record.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_panel_record",
+      "packagingTarget": "textures/hunt_panel_record.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Panel_Record"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_progress_empty.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_progress_empty",
+      "packagingTarget": "textures/hunt_progress_empty.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Tracker_Progress_Surround"
+      ]
+    },
+    {
+      "sourceProjectAsset": "hunt_seal.png",
+      "logicalTexture": "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_seal",
+      "packagingTarget": "textures/hunt_seal.tga",
+      "conversion": "png-to-wow-compatible-tga-or-blp",
+      "consumers": [
+        "Hunt_Seal"
+      ]
+    }
+  ]
+}
