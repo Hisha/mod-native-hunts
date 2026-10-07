@@ -2077,10 +2077,31 @@
           "font": "GameFontNormal"
         }
       }
+    },
+    {
+      "name": "DesignObject34",
+      "parent": null,
+      "width": 250,
+      "height": 16,
+      "point": "CENTER",
+      "relativeTo": null,
+      "relativePoint": "CENTER",
+      "offsetX": -328.1275008970706,
+      "offsetY": 62.98341114362513,
+      "visible": true,
+      "kind": "STATUSBAR",
+      "visual": {
+        "statusBar": {
+          "minValue": 0,
+          "maxValue": 100,
+          "defaultValue": 50,
+          "barTexture": "Interface/TargetingFrame/UI-StatusBar"
+        }
+      }
     }
   ],
   "editor": {
-    "activeDesignState": "turnin",
+    "activeDesignState": "tracking",
     "lockedElements": [
       "DesignObject3",
       "DesignObject2",
@@ -2113,7 +2134,8 @@
       "DesignObject31",
       "DesignObject30",
       "DesignObject29",
-      "DesignObject33"
+      "DesignObject33",
+      "DesignObject34"
     ],
     "groups": [
       {
@@ -2591,6 +2613,14 @@
           "fight",
           "turnin"
         ]
+      },
+      {
+        "frame": "DesignObject34",
+        "displayName": "Hunt_Progress_Bar",
+        "states": [
+          "tracking",
+          "located"
+        ]
       }
     ],
     "designOrder": [
@@ -2626,7 +2656,8 @@
       "DesignObject30",
       "DesignObject31",
       "DesignObject32",
-      "DesignObject33"
+      "DesignObject33",
+      "DesignObject34"
     ]
   }
 }
