@@ -4,6 +4,7 @@ Objects: 49
 Runtime bindings: 0
 States: Idle, Tracking, Located, Fight, Turnin
 Project assets: 11
+Packaged source files: 11
 Stock foundation: referenced; not copied
 StatusBar defaultValue: editor preview metadata only; omitted from FrameXML runtime initialization
 

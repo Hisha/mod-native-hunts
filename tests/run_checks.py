@@ -736,6 +736,77 @@ def run_content_checks() -> None:
     print("PASS managed Native Hunts EPF and passive FrameXML contract", flush=True)
 
 
+def run_content_checks() -> None:
+    """Verify the current portable FrameForge EPF contract.
+
+    The earlier passive Lua renderer remains in repository history, but package
+    version 19 intentionally proves static FrameForge rendering only. Runtime
+    state/value binding is the next milestone.
+    """
+    epf = ROOT / "content" / "mod-native-hunts.epf"
+    manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
+    manifest = json.loads(manifest_source)
+    if (manifest.get("schema"), manifest.get("package"), manifest.get("version")) != (
+            3, "mod-native-hunts", "19"):
+        raise AssertionError("invalid Native Hunts EPF identity/version")
+    declaration = manifest.get("frameForgeWowUi")
+    if declaration != [{
+            "source": "WoWUI",
+            "layoutTarget": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
+    }]:
+        raise AssertionError("generic FrameForge WoWUI declaration is incorrect")
+    load_entries = manifest.get("clientFrameXml", {}).get("loadEntries")
+    if load_entries != [{
+            "target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
+            "after": "Interface/FrameXML/LFDFrame.xml",
+    }]:
+        raise AssertionError("FrameForge layout is not loaded after stock LFDFrame.xml")
+
+    expected = tuple(sorted({"manifest.json",
+        manifest["clientFrameXml"]["stockTocSource"], *(
+            path.relative_to(ROOT / "content").as_posix()
+            for path in (ROOT / "content" / "WoWUI").rglob("*") if path.is_file())}))
+    with zipfile.ZipFile(epf) as archive:
+        if tuple(archive.namelist()) != expected:
+            raise AssertionError("EPF member set or deterministic order is incorrect")
+        packaged = {member: archive.read(member) for member in expected}
+    if packaged["manifest.json"] != manifest_source:
+        raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
+    if any(member.endswith(".fforge.json") for member in expected):
+        raise AssertionError("authoring .fforge source must not be embedded")
+
+    frame = json.loads(packaged["WoWUI/frameforge-manifest.json"])
+    assets = json.loads(packaged["WoWUI/assets-manifest.json"])
+    if (frame.get("schema"), frame.get("version"), frame.get("layout")) != (
+            "frameforge-wow335-manifest", 2, "FrameForgeLayout.xml"):
+        raise AssertionError("unsupported FrameForge manifest")
+    rows = assets.get("assets", [])
+    if assets.get("schema") != "frameforge-wow335-assets" or assets.get("version") != 2:
+        raise AssertionError("unsupported FrameForge assets manifest")
+    if len(rows) != 11:
+        raise AssertionError("Native Hunts FrameForge package must contain 11 project assets")
+    for row in rows:
+        member = "WoWUI/" + row["source"]
+        if member not in packaged:
+            raise AssertionError(f"missing portable source asset: {member}")
+        if hashlib.sha256(packaged[member]).hexdigest().upper() != row["contentSha256"]:
+            raise AssertionError(f"portable source asset hash mismatch: {member}")
+        if (not row["logicalTexture"].startswith("Interface\\FrameForge\\") or
+                not row["packagingTarget"].endswith(".tga")):
+            raise AssertionError(f"invalid runtime texture declaration: {member}")
+    layout = packaged["WoWUI/FrameForgeLayout.xml"]
+    ET.fromstring(layout)
+    if b"Interface\\TargetingFrame\\UI-StatusBar" not in layout:
+        raise AssertionError("stock StatusBar logical reference is missing")
+    forbidden = (b".blp", b"Fonts\\", b".MPQ", b".mpq")
+    for member, body in packaged.items():
+        if member.startswith("WoWUI/assets/") and not member.endswith(".png"):
+            raise AssertionError(f"unexpected portable artwork member: {member}")
+        if any(token in body for token in forbidden) and member.startswith("WoWUI/assets/"):
+            raise AssertionError(f"Blizzard/runtime content embedded as source artwork: {member}")
+    print("PASS deterministic package-19 FrameForge WoWUI EPF contract", flush=True)
+
+
 def run_source_safety_checks() -> None:
     prohibited = {
         "legacy package key": '"mod-hunts"',

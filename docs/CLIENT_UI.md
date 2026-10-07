@@ -1,6 +1,39 @@
 # Native Hunts client UI
++
+## FrameForge static-render milestone
 
-## Architecture
+The authoritative editable design is `assets/Native-Hunts.fforge.json`.
+FrameForge Export writes the generated, portable package to `content/WoWUI/`.
+Do not hand-edit `FrameForgeLayout.xml`; re-export from the authoring source.
+
+Rebuild the module package with:
+
+```text
+python content/build_epf.py
+python tests/run_checks.py
+```
+
+Package version 19 embeds the complete `WoWUI` directory and declares it with
+the generic schema-3 `frameForgeWowUi` field. The PNGs in `WoWUI/assets` are
+source artwork. Content Manager verifies their hashes and converts them to
+32-bit TGA under their manifest `Interface/FrameForge/...` logical paths. The
+EPF needs no FrameForge installation, external `WoWUI` directory, artwork
+directory, absolute path, or `.fforge` source after it is built.
+
+The generated layout loads through the existing `clientFrameXml.loadEntries`
+mechanism immediately after stock `LFDFrame.xml`, so `LFDParentFrame` exists.
+Blizzard LFD XML/artwork and `UI-StatusBar` remain stock logical references and
+are never bundled.
+
+This milestone intentionally packages only the static FrameForge layout.
+Adapting the ten semantic Native Hunts runtime values/states to generated
+controls is deferred until the PTR proves XML loading, geometry, and artwork.
+The earlier `content/client/Interface/FrameXML/NativeHuntsFrame.*` implementation
+remains source/reference material but is not included in package version 19,
+avoiding duplicate controls and premature runtime binding.
+
+
+## Historical pre-FrameForge renderer (not packaged in version 19)
 
 `NativeHuntsFrame.xml` adds one bounded view after stock `LFDFrame.xml`. It does
 not replace `LFDParentFrame`, `LFDQueueFrame`, `LFDFrame.lua`, or the stock TOC.
@@ -60,7 +93,7 @@ but not packaged: the selected identity/state/record panel sources already
 contain those ornaments. Layering the standalone copies would duplicate and
 misalign the artwork.
 
-## Content Manager and client lifecycle
+## Historical renderer lifecycle reference
 
 The schema-3 manifest declares every XML, Lua, and TGA runtime file. Its
 `clientFrameXml` contribution inserts only `NativeHuntsFrame.xml` after stock
@@ -75,7 +108,7 @@ player must fully restart the client after replacing that patch; `/reload` is
 not sufficient for protected FrameXML or replaced MPQ textures. Clear the
 client cache only when testing indicates stale packaged content.
 
-## Manual PTR validation
+## Historical runtime-binding validation (deferred)
 
 1. Copy the rebuilt `mod-native-hunts.epf` into the configured Content Manager
    discovery directory. Run `.content scan`, `.content install mod-native-hunts`,

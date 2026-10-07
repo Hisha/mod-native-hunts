@@ -68,6 +68,11 @@ runtime objects.
 
 ## Managed content
 
+Package version 19 embeds the portable FrameForge export from
+`content/WoWUI/`. Content Manager stages the generated layout after stock
+`LFDFrame.xml` and converts all eleven project-owned PNG sources to runtime TGA.
+The `.fforge` authoring source and Blizzard-owned assets are not packaged.
+
 `content/mod-native-hunts.epf` declares, without authored allocated IDs:
 
 - a passive Native Hunts view loaded additively after stock `LFDFrame.xml`, with
@@ -103,8 +108,9 @@ This pass does not implement Elite/Epic assignments, dynamic final-site
 generation, guard directions, a Seal equipment vendor, or live client/server
 Hunt-state transport. The native client surface is intentionally passive: it
 shows placeholder copy only and neither sends addon messages nor invents a
-protocol. The existing snapshot/domain boundary remains independent of HuntsUI
-and ready for a future native state adapter.
+protocol. The package-19 client milestone is static only: FrameForge state and
+value binding is deliberately deferred until after PTR visual validation. The
+existing snapshot/domain boundary remains ready for that later adapter.
 
 ## Checks
 

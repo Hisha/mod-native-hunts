@@ -1,0 +1,635 @@
+{
+  "schema": 3,
+  "package": "mod-native-hunts",
+  "name": "Native Hunts",
+  "version": "19",
+  "description": "Managed Native Hunts server resources plus a portable FrameForge WoWUI package for static client rendering; runtime FrameForge state/value binding is intentionally deferred.",
+  "content": [],
+  "clientFrameXml": {
+    "stockTocSource": "upstream/FrameXML.toc",
+    "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
+    "loadEntries": [
+      {
+        "target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
+        "after": "Interface/FrameXML/LFDFrame.xml"
+      }
+    ]
+  },
+  "dbcRows": [
+    {
+      "op": "add",
+      "table": "Item",
+      "symbol": "huntmaster-seal",
+      "fields": {
+        "ClassID": 15,
+        "SubclassID": 0,
+        "SoundOverrideSubclassID": -1,
+        "Material": -1,
+        "DisplayInfoID": {
+          "copyFromItem": 6948
+        },
+        "InventoryType": 0,
+        "SheatheType": 0
+      }
+    }
+  ],
+  "serverRows": [
+    {
+      "table": "item_template",
+      "op": "upsert",
+      "symbol": "huntmaster-seal",
+      "fields": {
+        "name": "Huntmaster's Seal",
+        "description": "A physical token issued by the Huntmasters.",
+        "Quality": 1,
+        "stackable": 200,
+        "bonding": 0,
+        "BagFamily": 8192
+      }
+    }
+  ],
+  "currencies": [
+    {
+      "symbol": "huntmaster-seal-currency",
+      "item": "huntmaster-seal",
+      "category": {
+        "symbol": "hunts"
+      }
+    }
+  ],
+  "currencyCategories": [
+    {
+      "symbol": "hunts",
+      "name": {
+        "enUS": "Hunts"
+      }
+    }
+  ],
+  "spells": [
+    {
+      "symbol": "active-standard-hunt",
+      "copyFrom": 1494,
+      "profile": "informational-self-aura-v1",
+      "name": {
+        "enUS": "Standard Hunt"
+      },
+      "description": {
+        "enUS": "You are tracking a Standard Hunt target."
+      },
+      "auraDescription": {
+        "enUS": "A Standard Hunt is active."
+      },
+      "iconCopyFromSpell": 1494
+    },
+    {
+      "symbol": "active-elite-hunt",
+      "copyFrom": 67823,
+      "profile": "informational-self-aura-v1",
+      "name": {
+        "enUS": "Elite Hunt"
+      },
+      "description": {
+        "enUS": "You are tracking an Elite Hunt target."
+      },
+      "auraDescription": {
+        "enUS": "An Elite Hunt is active."
+      },
+      "iconCopyFromSpell": 67823
+    }
+  ],
+  "creatureTemplates": [
+    {
+      "symbol": "huntmaster-corvin",
+      "copyFrom": 68,
+      "overrides": {
+        "name": "Huntmaster Corvin",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-brannoc",
+      "copyFrom": 5595,
+      "overrides": {
+        "name": "Huntmaster Brannoc",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-shalara",
+      "copyFrom": 4262,
+      "overrides": {
+        "name": "Huntmistress Shalara",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-veylan",
+      "copyFrom": 16733,
+      "overrides": {
+        "name": "Huntmaster Veylan",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-gorrak",
+      "copyFrom": 3296,
+      "overrides": {
+        "name": "Huntmaster Gorrak",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-tahu",
+      "copyFrom": 3084,
+      "overrides": {
+        "name": "Huntmaster Tahu",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-morcant",
+      "copyFrom": 5624,
+      "overrides": {
+        "name": "Huntmaster Morcant",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-vaelith",
+      "copyFrom": 16222,
+      "overrides": {
+        "name": "Huntmistress Vaelith",
+        "subname": "Master of the Hunt",
+        "minLevel": 60,
+        "maxLevel": 60,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-raleth",
+      "copyFrom": 19687,
+      "overrides": {
+        "name": "Huntmaster Raleth",
+        "subname": "Master of the Hunt",
+        "minLevel": 70,
+        "maxLevel": 70,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "huntmaster-varyn",
+      "copyFrom": 30659,
+      "overrides": {
+        "name": "Huntmaster Varyn",
+        "subname": "Master of the Hunt",
+        "minLevel": 80,
+        "maxLevel": 80,
+        "npcFlags": 1,
+        "scriptName": "mod_native_hunts_huntmaster"
+      }
+    },
+    {
+      "symbol": "prey-ashfang",
+      "copyFrom": 448,
+      "overrides": {
+        "name": "Ashfang",
+        "subname": "The Grey Terror",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-silkmaw",
+      "copyFrom": 30,
+      "overrides": {
+        "name": "Silkmaw",
+        "subname": "The Webbed Horror",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-gorehide",
+      "copyFrom": 157,
+      "overrides": {
+        "name": "Gorehide",
+        "subname": "The Iron Tusk",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-whiteclaw",
+      "copyFrom": 1130,
+      "overrides": {
+        "name": "Whiteclaw",
+        "subname": "The Mountain Ghost",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-tidefang",
+      "copyFrom": 391,
+      "overrides": {
+        "name": "Tidefang",
+        "subname": "Terror of the Shore",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-stonegut",
+      "copyFrom": 1210,
+      "overrides": {
+        "name": "Stonegut",
+        "subname": "The Wandering Brute",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-sootfang",
+      "copyFrom": 1225,
+      "overrides": {
+        "name": "Sootfang",
+        "subname": "The Black Bear",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-nightfang",
+      "copyFrom": 521,
+      "overrides": {
+        "name": "Nightfang",
+        "subname": "The Shadow Wolf",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-shadowclaw",
+      "copyFrom": 728,
+      "overrides": {
+        "name": "Shadowclaw",
+        "subname": "The Jungle Stalker",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-dreadwing",
+      "copyFrom": 10357,
+      "overrides": {
+        "name": "Dreadwing",
+        "subname": "The Night Screamer",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-venomtail",
+      "copyFrom": 5937,
+      "overrides": {
+        "name": "Venomtail",
+        "subname": "The Death Sting",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-stormcoil",
+      "copyFrom": 5834,
+      "overrides": {
+        "name": "Stormcoil",
+        "subname": "The Thunder Serpent",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-mirejaw",
+      "copyFrom": 14233,
+      "overrides": {
+        "name": "Mirejaw",
+        "subname": "The Ancient Maw",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-razortalon",
+      "copyFrom": 14232,
+      "overrides": {
+        "name": "Razortalon",
+        "subname": "The Blood Raptor",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-cliffhowl",
+      "copyFrom": 8211,
+      "overrides": {
+        "name": "Cliffhowl",
+        "subname": "The Ridge Hunter",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "prey-grimmaw",
+      "copyFrom": 8215,
+      "overrides": {
+        "name": "Grimmaw",
+        "subname": "The Forest Breaker",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-oathbreaker",
+      "copyFrom": 3976,
+      "overrides": {
+        "name": "The Oathbreaker",
+        "subname": "Fallen Hand of the Light",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-winterborn",
+      "copyFrom": 4275,
+      "overrides": {
+        "name": "The Winterborn",
+        "subname": "Exiled Master of the Frozen Arts",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-headsman",
+      "copyFrom": 3975,
+      "overrides": {
+        "name": "The Headsman",
+        "subname": "Executioner Without a Banner",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-veiled-knife",
+      "copyFrom": 639,
+      "overrides": {
+        "name": "The Veiled Knife",
+        "subname": "Blade in the Dark",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-ashen-pact",
+      "copyFrom": 16807,
+      "overrides": {
+        "name": "The Ashen Pact",
+        "subname": "Bearer of the Black Covenant",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-wildclaw",
+      "copyFrom": 3840,
+      "overrides": {
+        "name": "The Wildclaw",
+        "subname": "Fang of the Untamed",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-stormcaller",
+      "copyFrom": 17204,
+      "overrides": {
+        "name": "The Stormcaller",
+        "subname": "Voice of the Broken Sky",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-dusk-confessor",
+      "copyFrom": 4299,
+      "overrides": {
+        "name": "The Dusk Confessor",
+        "subname": "Voice Beyond the Veil",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-gravebound",
+      "copyFrom": 28912,
+      "overrides": {
+        "name": "The Gravebound",
+        "subname": "Knight of the Black Earth",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-farstrider",
+      "copyFrom": 16295,
+      "overrides": {
+        "name": "The Farstrider",
+        "subname": "Hunter of the Long Trail",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    },
+    {
+      "symbol": "elite-farstrider-wolf",
+      "copyFrom": 299,
+      "overrides": {
+        "name": "Nightfang",
+        "subname": "Farstrider Companion",
+        "faction": 14,
+        "unitFlags": 0
+      }
+    }
+  ],
+  "gameobjectTemplates": [
+    {
+      "symbol": "prey-trail-crystal",
+      "copyFrom": 19529,
+      "overrides": {
+        "name": "Prey Trail Crystal",
+        "type": 1,
+        "displayId": 7942,
+        "size": 1,
+        "scriptName": "mod_native_hunts_trail_crystal"
+      }
+    },
+    {
+      "symbol": "return-rift",
+      "copyFrom": 19529,
+      "overrides": {
+        "name": "Return Rift",
+        "type": 1,
+        "displayId": 1327,
+        "size": 1,
+        "scriptName": "mod_native_hunts_return_rift"
+      }
+    }
+  ],
+  "creatureSpawns": [
+    {
+      "symbol": "huntmaster-corvin-spawn",
+      "creature": {
+        "symbol": "huntmaster-corvin"
+      },
+      "map": 0,
+      "x": -8771.718,
+      "y": 637.399,
+      "z": 97.22381,
+      "orientation": 3.0327725
+    },
+    {
+      "symbol": "huntmaster-brannoc-spawn",
+      "creature": {
+        "symbol": "huntmaster-brannoc"
+      },
+      "map": 0,
+      "x": -5036.303,
+      "y": -1189.7064,
+      "z": 507.4897,
+      "orientation": 5.23103
+    },
+    {
+      "symbol": "huntmaster-shalara-spawn",
+      "creature": {
+        "symbol": "huntmaster-shalara"
+      },
+      "map": 1,
+      "x": 9947.34,
+      "y": 2272.71,
+      "z": 1341.47,
+      "orientation": 0.017453
+    },
+    {
+      "symbol": "huntmaster-veylan-spawn",
+      "creature": {
+        "symbol": "huntmaster-veylan"
+      },
+      "map": 530,
+      "x": -4185.3833,
+      "y": -11559.71,
+      "z": -125.5796,
+      "orientation": 3.652105
+    },
+    {
+      "symbol": "huntmaster-gorrak-spawn",
+      "creature": {
+        "symbol": "huntmaster-gorrak"
+      },
+      "map": 1,
+      "x": 1857.5254,
+      "y": -4516.36,
+      "z": 24.02204,
+      "orientation": 3.5012627
+    },
+    {
+      "symbol": "huntmaster-tahu-spawn",
+      "creature": {
+        "symbol": "huntmaster-tahu"
+      },
+      "map": 1,
+      "x": -1401.8701,
+      "y": -144.85625,
+      "z": 159.25444,
+      "orientation": 1.7206132
+    },
+    {
+      "symbol": "huntmaster-morcant-spawn",
+      "creature": {
+        "symbol": "huntmaster-morcant"
+      },
+      "map": 0,
+      "x": 1476.3986,
+      "y": 36.700302,
+      "z": -62.353333,
+      "orientation": 1.599211
+    },
+    {
+      "symbol": "huntmaster-vaelith-spawn",
+      "creature": {
+        "symbol": "huntmaster-vaelith"
+      },
+      "map": 530,
+      "x": 9801.341,
+      "y": -7324.399,
+      "z": 14.6854105,
+      "orientation": 2.006077
+    },
+    {
+      "symbol": "huntmaster-raleth-spawn",
+      "creature": {
+        "symbol": "huntmaster-raleth"
+      },
+      "map": 530,
+      "x": -2019.2322,
+      "y": 5203.5225,
+      "z": -35.69525,
+      "orientation": 5.916366
+    },
+    {
+      "symbol": "huntmaster-varyn-spawn",
+      "creature": {
+        "symbol": "huntmaster-varyn"
+      },
+      "map": 571,
+      "x": 5773.8013,
+      "y": 548.9488,
+      "z": 651.6386,
+      "orientation": 0.8435841
+    }
+  ],
+  "frameForgeWowUi": [
+    {
+      "source": "WoWUI",
+      "layoutTarget": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml"
+    }
+  ]
+}
+
