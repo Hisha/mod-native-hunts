@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import os
 from pathlib import Path
 import shutil
@@ -43,10 +44,28 @@ def run_domain_tests() -> None:
         print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
 
 
-def run_content_checks() -> None:
+def run_functional_ui_checks() -> None:
+    """Verify the functional Native Hunts client contract of the known-working
+    version-18 package.
+
+    A package that ships only static FrameForge layout does not package this
+    contract's FrameXML/Lua content and must fail here.
+    """
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
     source_manifest = json.loads(manifest_source)
+    if (source_manifest.get("package") != "mod-native-hunts" or
+            source_manifest.get("schema") != 3):
+        raise AssertionError("invalid Native Hunts EPF identity")
+    required_sources = {
+        "client/Interface/FrameXML/NativeHuntsFrame.xml",
+        "client/Interface/FrameXML/NativeHuntsFrame.lua",
+    }
+    packaged_sources = {entry.get("source") for entry in source_manifest.get("content", [])}
+    if not required_sources <= packaged_sources:
+        raise AssertionError(
+            "functional Native Hunts FrameXML/Lua content is not packaged; a static "
+            "FrameForge layout-only export cannot pass the functional client contract")
     expected_members = ["manifest.json", *(
         entry["source"] for entry in source_manifest["content"]),
         source_manifest["clientFrameXml"]["stockTocSource"]]
@@ -57,9 +76,6 @@ def run_content_checks() -> None:
     if packaged["manifest.json"] != manifest_source:
         raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
     manifest = json.loads(packaged["manifest.json"])
-    if (manifest.get("package") != "mod-native-hunts" or
-            manifest.get("schema") != 3 or manifest.get("version") != "18"):
-        raise AssertionError("invalid Native Hunts EPF identity")
     expected_core_content = [
         {
             "type": "file",
@@ -733,19 +749,24 @@ def run_content_checks() -> None:
     for disposable in ("test-creature", "test-creature-spawn", "test-object"):
         if disposable in serialized:
             raise AssertionError(f"disposable resource remains: {disposable}")
-    print("PASS managed Native Hunts EPF and passive FrameXML contract", flush=True)
+    print("PASS functional Native Hunts FrameXML client contract", flush=True)
 
 
-def run_content_checks() -> None:
-    """Verify the current portable FrameForge EPF contract.
+def run_frameforge_package_checks() -> None:
+    """Verify the static FrameForge WoWUI EPF packaging contract.
 
-    The earlier passive Lua renderer remains in repository history, but package
-    version 19 intentionally proves static FrameForge rendering only. Runtime
-    state/value binding is the next milestone.
+    Package version 19 intentionally proves static FrameForge rendering only;
+    this contract never validates runtime Lua/state binding. It applies only
+    to packages that declare frameForgeWowUi; packages with functional
+    FrameXML content are covered by run_functional_ui_checks.
     """
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
+    if "frameForgeWowUi" not in manifest:
+        print("SKIP static FrameForge WoWUI EPF contract (no frameForgeWowUi declaration)",
+              flush=True)
+        return
     if (manifest.get("schema"), manifest.get("package"), manifest.get("version")) != (
             3, "mod-native-hunts", "19"):
         raise AssertionError("invalid Native Hunts EPF identity/version")
@@ -804,7 +825,24 @@ def run_content_checks() -> None:
             raise AssertionError(f"unexpected portable artwork member: {member}")
         if any(token in body for token in forbidden) and member.startswith("WoWUI/assets/"):
             raise AssertionError(f"Blizzard/runtime content embedded as source artwork: {member}")
-    print("PASS deterministic package-19 FrameForge WoWUI EPF contract", flush=True)
+    print("PASS static package-19 FrameForge WoWUI EPF contract", flush=True)
+
+
+def run_function_shadow_guard() -> None:
+    """Reject duplicate top-level definitions that would silently shadow earlier ones."""
+    for path in sorted((ROOT / "tests").glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        defined: dict[str, int] = {}
+        for node in tree.body:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                continue
+            if node.name in defined:
+                raise AssertionError(
+                    f"duplicate top-level definition {node.name!r} in "
+                    f"{path.relative_to(ROOT)} (line {defined[node.name]} and line "
+                    f"{node.lineno}); the later definition shadows the earlier one")
+            defined[node.name] = node.lineno
+    print("PASS test scripts have no shadowed top-level definitions", flush=True)
 
 
 def run_source_safety_checks() -> None:
@@ -961,9 +999,25 @@ def run_source_safety_checks() -> None:
 
 
 def main() -> None:
-    run_domain_tests()
-    run_content_checks()
-    run_source_safety_checks()
+    checks = (
+        run_function_shadow_guard,
+        run_domain_tests,
+        run_functional_ui_checks,
+        run_frameforge_package_checks,
+        run_source_safety_checks,
+    )
+    failures = []
+    for check in checks:
+        try:
+            check()
+        except Exception as error:
+            print(f"FAIL {check.__name__}: {error}", flush=True)
+            failures.append(check.__name__)
+    if failures:
+        raise SystemExit(
+            f"{len(failures)} of {len(checks)} check groups failed: "
+            f"{', '.join(failures)}")
+    print("PASS all Native Hunts check groups", flush=True)
 
 
 if __name__ == "__main__":
