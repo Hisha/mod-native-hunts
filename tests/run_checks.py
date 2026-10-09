@@ -54,6 +54,10 @@ def run_functional_ui_checks() -> None:
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
     source_manifest = json.loads(manifest_source)
+    if source_manifest.get("version") != "18":
+        print("SKIP legacy version-18 presentation contract (superseded by functional FrameForge integration)",
+              flush=True)
+        return
     if (source_manifest.get("package") != "mod-native-hunts" or
             source_manifest.get("schema") != 3):
         raise AssertionError("invalid Native Hunts EPF identity")
@@ -752,6 +756,263 @@ def run_functional_ui_checks() -> None:
     print("PASS functional Native Hunts FrameXML client contract", flush=True)
 
 
+def run_frameforge_functional_ui_checks() -> None:
+    """Verify package-20 functional FrameXML composition and module-owned presentation."""
+    content_root = ROOT / "content"
+    manifest_source = (content_root / "manifest.json").read_bytes()
+    manifest = json.loads(manifest_source)
+    if manifest.get("version") != "20":
+        print("SKIP functional FrameForge package-20 contract", flush=True)
+        return
+    if "frameForgeWowUi" in manifest or not manifest.get("content"):
+        raise AssertionError("functional package must use explicit managed content, not static FrameForge staging")
+    expected_frame_xml = {
+        "stockTocSource": "upstream/FrameXML.toc",
+        "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
+        "loadEntries": [{
+            "target": "Interface/FrameXML/NativeHuntsFrame.xml",
+            "after": "Interface/FrameXML/LFDFrame.xml",
+        }],
+    }
+    if manifest.get("clientFrameXml") != expected_frame_xml:
+        raise AssertionError("functional FrameXML load order no longer follows LFDFrame.xml")
+    required_targets = {
+        "Interface/FrameXML/NativeHuntsFrame.xml",
+        "Interface/FrameXML/NativeHuntsFrame.lua",
+    }
+    targets = {entry["target"] for entry in manifest["content"]}
+    if not required_targets <= targets:
+        raise AssertionError("functional XML/Lua relationship is not packaged")
+
+    expected_members = tuple(sorted({"manifest.json", expected_frame_xml["stockTocSource"], *(
+        entry["source"] for entry in manifest["content"])}))
+    with zipfile.ZipFile(content_root / "mod-native-hunts.epf") as archive:
+        if tuple(archive.namelist()) != expected_members:
+            raise AssertionError("functional EPF member set or deterministic order is incorrect")
+        packaged = {name: archive.read(name) for name in expected_members}
+    if packaged["manifest.json"] != manifest_source:
+        raise AssertionError("functional EPF manifest is stale")
+    for entry in manifest["content"]:
+        if packaged[entry["source"]] != (content_root / entry["source"]).read_bytes():
+            raise AssertionError(f"functional EPF member is stale: {entry['source']}")
+
+    exported_manifest = json.loads((content_root / "WoWUI/frameforge-manifest.json").read_text())
+    assets_manifest = json.loads((content_root / "WoWUI/assets-manifest.json").read_text())
+    inventory = exported_manifest.get("controlInventory", [])
+    if (exported_manifest.get("exportMode") != "functional-source-composition" or
+            len(inventory) != 49 or exported_manifest.get("valueSources") != [] or
+            exported_manifest.get("stateProbes") != []):
+        raise AssertionError("authoritative zero-mapping 49-object FrameForge contract is incorrect")
+    if [state["id"] for state in exported_manifest.get("states", [])] != [
+            "idle", "tracking", "located", "fight", "turnin"]:
+        raise AssertionError("FrameForge visual state order or identity regressed")
+
+    xml_source = content_root / "client/Interface/FrameXML/NativeHuntsFrame.xml"
+    lua_source = content_root / "client/Interface/FrameXML/NativeHuntsFrame.lua"
+    ui_xml = xml_source.read_text(encoding="utf-8")
+    ui_lua = lua_source.read_text(encoding="utf-8")
+    xml_root = ET.fromstring(ui_xml)
+    exported_xml_root = ET.parse(content_root / "WoWUI/NativeHuntsFrame.xml").getroot()
+    integrated_subtree = next((element for element in xml_root.iter()
+                               if element.get("name") == "FrameForge_Dungeon_Finder_UI"), None)
+    exported_subtree = next((element for element in exported_xml_root.iter()
+                             if element.get("name") == "FrameForge_Dungeon_Finder_UI"), None)
+    if integrated_subtree is None or exported_subtree is None:
+        raise AssertionError("generated FrameForge presentation subtree is missing")
+    if ET.tostring(integrated_subtree) != ET.tostring(exported_subtree):
+        raise AssertionError("generated FrameForge geometry or artwork references were modified")
+    names = {element.get("name") for element in xml_root.iter() if element.get("name")}
+    inventory_names = {entry["exportedName"] for entry in inventory}
+    if len(inventory_names) != 49 or not inventory_names <= names:
+        raise AssertionError("integrated FrameXML lost an authored control identity")
+    wrappers = {entry["parentPath"].split("/")[-1] for entry in inventory
+                if entry["type"] in {"Texture", "FontString"}}
+    if not wrappers <= names:
+        raise AssertionError("integrated FrameXML lost a generated presentation wrapper")
+    named = {element.get("name"): element for element in xml_root.iter() if element.get("name")}
+    if (named.get("$parentContentPanel") is None or
+            named["$parentContentPanel"].get("hidden") != "true"):
+        raise AssertionError("legacy Native Hunts presentation was not suppressed")
+    for required in ("NativeHuntsFrame", "NativeHuntsFrameInitializer",
+                     "FrameForge_Dungeon_Finder_UI", "LFDParentFrameTab1", "LFDParentFrameTab2"):
+        if required not in names:
+            raise AssertionError(f"functional FrameXML controller identity is missing: {required}")
+    if ('<Script file="NativeHuntsFrame.lua"/>' not in ui_xml or
+            'parent="LFDParentFrame"' not in ui_xml):
+        raise AssertionError("functional host or Lua relationship regressed")
+
+    presentation_rows = re.findall(
+        r'\{"([A-Za-z0-9_]+)", "([A-Za-z0-9_]+)", "([*ITLFR]+)"\}', ui_lua)
+    if len(presentation_rows) != 49 or {row[0] for row in presentation_rows} != inventory_names:
+        raise AssertionError("Lua presentation inventory does not cover exactly 49 exported controls")
+    row_by_name = {row[0]: row for row in presentation_rows}
+    state_code = {"idle": "I", "tracking": "T", "located": "L", "fight": "F", "turnin": "R"}
+    for state in exported_manifest["states"]:
+        expected_show = set(state["show"])
+        actual_show = {name for name, _, memberships in presentation_rows
+                       if memberships == "*" or state_code[state["id"]] in memberships}
+        if actual_show != expected_show:
+            raise AssertionError(f"Lua state membership differs from FrameForge state {state['id']}")
+    for entry in inventory:
+        if entry["type"] in {"Texture", "FontString"}:
+            expected_wrapper = entry["parentPath"].split("/")[-1]
+            if row_by_name[entry["exportedName"]][1] != expected_wrapper:
+                raise AssertionError(f"Lua wrapper differs from inventory: {entry['exportedName']}")
+
+    required_lua = (
+        "Standard_Hunts_Value:SetText", "Elite_Hunts_Value:SetText",
+        "Hunt_Seal_Value:SetText", "Tracker_Target_Name:SetText",
+        "Tracker_Huntmaster:SetText", "Tracker_Location:SetText",
+        "Tracker_Hunt_Ground_Value:SetText", "Complete2B_Huntmaster_Value:SetText",
+        "Complete3B_Location_Value:SetText", "Tracker_Hunt_Progress:SetMinMaxValues(0, 100)",
+        "Tracker_Hunt_Progress:SetValue", 'snapshot.state == "T" and "T"',
+        'snapshot.state == "F" and "L"', 'snapshot.state == "P" and "F"',
+        'snapshot.state == "R" and "R"', "LFDQueueFrame:Hide()", "NativeHuntsFrame:Show()",
+        'RegisterAddonMessagePrefix(PREFIX)', 'self:RegisterEvent("CHAT_MSG_ADDON")',
+        'LFDQueueFrameTitleText:SetText("Player vs. Environment")',
+    )
+    for token in required_lua:
+        if token not in ui_lua:
+            raise AssertionError(f"module-owned FrameForge renderer behavior missing: {token}")
+    for legacy in ("NativeHuntsFrameContentPanelIdentity", "NativeHuntsFrameContentPanelHuntState",
+                   "NativeHuntsFrameContentPanelRecordStandard"):
+        if legacy in ui_lua:
+            raise AssertionError(f"Lua still drives obsolete presentation control: {legacy}")
+    for token in ("C_ChatInfo", "table.unpack", "bit32.", "utf8.", "goto ", "//"):
+        if token in ui_lua:
+            raise AssertionError(f"modern Lua/WoW API token found: {token}")
+
+    target_by_logical = {entry["target"].replace("/", "\\").lower(): entry
+                         for entry in manifest["content"]}
+    asset_rows = assets_manifest.get("assets", [])
+    if len(asset_rows) != 11:
+        raise AssertionError("FrameForge export must retain all 11 authored assets")
+    for row in asset_rows:
+        source = content_root / "WoWUI" / row["source"]
+        if hashlib.sha256(source.read_bytes()).hexdigest().upper() != row["contentSha256"]:
+            raise AssertionError(f"authoritative FrameForge asset hash mismatch: {source.name}")
+        target = (row["logicalTexture"] + ".tga").lower()
+        entry = target_by_logical.get(target)
+        if not entry:
+            raise AssertionError(f"runtime FrameForge artwork is not packaged: {target}")
+        data = (content_root / entry["source"]).read_bytes()
+        if len(data) < 18 or data[2] != 2 or data[16] != 32 or data[17] != 0x28:
+            raise AssertionError(f"runtime artwork is not a 32-bit top-origin TGA: {entry['source']}")
+        width, height = struct.unpack_from("<HH", data, 12)
+        if (width & (width - 1)) or (height & (height - 1)):
+            raise AssertionError(f"runtime FrameForge texture is not power-of-two: {entry['source']}")
+
+    try:
+        from lupa.lua51 import LuaError, LuaRuntime
+    except ImportError:
+        print("SKIP direct Lua 5.1 FrameForge renderer vectors (lupa.lua51 unavailable)", flush=True)
+    else:
+        lua = LuaRuntime()
+        decode, render = lua.execute(ui_lua + "\nreturn Decode, Render")
+        lua.execute("""
+            local function AnimationGroup()
+                local animation={SetChange=function() end,SetDuration=function() end,SetOrder=function() end}
+                return {playing=false,CreateAnimation=function() return animation end,
+                    SetScript=function(self,event,callback) self[event]=callback end,
+                    IsPlaying=function(self) return self.playing end,Stop=function(self) self.playing=false end,
+                    Play=function(self) self.playing=true end}
+            end
+            function FrameForgeTestControl()
+                return {text="",value=0,min=0,max=0,visible=true,width=0,height=0,objectType="Frame",hooks={},children={},
+                    SetText=function(self,value) self.text=value end,SetValue=function(self,value) self.value=value end,
+                    SetMinMaxValues=function(self,min,max) self.min=min self.max=max end,
+                    SetTexture=function(self,value) self.texture=value end,SetWidth=function(self,value) self.width=value end,
+                    SetHeight=function(self,value) self.height=value end,GetWidth=function(self) return self.width end,
+                    GetHeight=function(self) return self.height end,GetObjectType=function(self) return self.objectType end,
+                    GetPoint=function(self) return unpack(self.point) end,GetChildren=function(self) return unpack(self.children) end,
+                    ClearAllPoints=function(self) self.point=nil end,
+                    SetPoint=function(self,point,relative,relativePoint,x,y) self.point={point,relative,relativePoint,x,y} end,
+                    Hide=function(self) self.visible=false end,Show=function(self) self.visible=true end,
+                    IsShown=function(self) return self.visible end,
+                    HookScript=function(self,event,callback) self.hooks[event]=callback end,
+                    RegisterEvent=function() end,CreateAnimationGroup=function() return AnimationGroup() end}
+            end
+        """)
+        controls = lua.globals()
+        for name in names:
+            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                controls[name] = controls.FrameForgeTestControl()
+        for name in ("LFDParentFrame", "LFDQueueFrame", "LFDParentFramePortrait",
+                     "LFDParentFrameCloseButton", "LFDQueueFrameTitleText"):
+            controls[name] = controls.FrameForgeTestControl()
+        controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
+        controls.LFDParentFrameCloseButton.objectType = "Button"
+        controls.LFDParentFrameCloseButton.SetPoint(
+            controls.LFDParentFrameCloseButton, "TOPRIGHT", controls.LFDParentFrame,
+            "TOPRIGHT", 2, -8)
+        controls.LFDParentFrame.children = lua.table_from([
+            controls.LFDParentFrameCloseButton, controls.LFDQueueFrame, controls.NativeHuntsFrame,
+            controls.LFDParentFrameTab1, controls.LFDParentFrameTab2, controls.LFDParentFramePortrait])
+        controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
+        if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
+                controls.Tracker_Hunt_Progress.value != 0):
+            raise AssertionError("FrameForge StatusBar was not initialized before the first snapshot")
+
+        def lua_table(value):
+            if isinstance(value, dict):
+                return lua.table_from({key: lua_table(item) for key, item in value.items()})
+            return value
+
+        stats = {"standard": 11, "elite": 3, "eliteUnlocked": True, "accepted": 1,
+                 "limit": 1, "eliteAvailable": False, "sealState": "A", "seals": 7}
+        active = {"revision": 1, "contentAvailable": True, "active": True, "state": "T",
+                  "tier": "S", "progress": 54, "finalVisible": False, "ready": False,
+                  "huntmaster": "Huntmaster Varyn", "city": "Dalaran", "prey": "The Headsman",
+                  "zone": "Crystalsong Forest", "finalLocation": "Crystalsong Forest",
+                  "reason": "", "stats": stats}
+
+        def rendered(**overrides):
+            snapshot = dict(active)
+            snapshot.update(overrides)
+            snapshot["stats"] = dict(overrides.get("stats", stats))
+            render(lua_table(snapshot))
+            return controls
+
+        standard = rendered()
+        if (standard.Tracker_Target_Name.text != "The Headsman" or
+                standard.Tracker_Huntmaster.text != "Huntmaster Varyn" or
+                standard.Tracker_Location.text != "Dalaran" or
+                standard.Tracker_Hunt_Ground_Value.text != "Crystalsong Forest" or
+                standard.Tracker_Hunt_Progress.value != 54 or
+                not standard.Hunt_Progress_Text__FFLayer.visible or
+                standard.Trail_Located_Text__FFLayer.visible or
+                standard.Elite_Hunt_Icon__FFLayer.visible or
+                not standard.Standard_Hunt_Icon__FFLayer.visible):
+            raise AssertionError("Tracking state or dynamic FrameForge values regressed")
+        located = rendered(state="F", progress=100)
+        if (not located.Trail_Located_Text__FFLayer.visible or
+                not located.Located_Text__FFLayer.visible or
+                located.Tracking_Text__FFLayer.visible or located.Tracker_Hunt_Progress.value != 100):
+            raise AssertionError("Located state regressed")
+        fight = rendered(state="P", tier="E")
+        if (not fight.Final_Fight_Icon__FFLayer.visible or
+                fight.Tracker_Hunt_Progress.visible or not fight.Elite_Hunt_Icon__FFLayer.visible or
+                fight.Standard_Hunt_Icon__FFLayer.visible):
+            raise AssertionError("Fight state regressed")
+        turnin = rendered(state="R")
+        if (not turnin.Hunt_Complete_Icon__FFLayer.visible or
+                turnin.Complete2B_Huntmaster_Value.text != "Huntmaster Varyn" or
+                turnin.Complete3B_Location_Value.text != "Dalaran"):
+            raise AssertionError("Turnin state regressed")
+        idle = rendered(active=False, state="I", tier="N", progress=0)
+        if (not idle.Hunt_Panel_Idle__FFLayer.visible or idle.Hunt_Panel_Top__FFLayer.visible or
+                idle.Standard_Hunts_Value.text != "11" or idle.Elite_Hunts_Value.text != "3" or
+                idle.Hunt_Seal_Value.text != "7"):
+            raise AssertionError("Idle state or Hunt record rendering regressed")
+        if decode("field%09with%25delimiter") != "field\twith%delimiter":
+            raise AssertionError("Lua client decoder regression")
+        for malformed in ("%", "%GG", "%00", "%1F"):
+            if decode(malformed) is not None:
+                raise AssertionError(f"Lua decoder accepted malformed data: {malformed}")
+        print("PASS direct Lua 5.1 FrameForge state and value vectors", flush=True)
+    print("PASS functional FrameForge Native Hunts client contract", flush=True)
+
+
 def run_frameforge_package_checks() -> None:
     """Verify the static FrameForge WoWUI EPF packaging contract.
 
@@ -1003,6 +1264,7 @@ def main() -> None:
         run_function_shadow_guard,
         run_domain_tests,
         run_functional_ui_checks,
+        run_frameforge_functional_ui_checks,
         run_frameforge_package_checks,
         run_source_safety_checks,
     )

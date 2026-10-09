@@ -11,4 +11,10 @@ StatusBar defaultValue: editor preview metadata only; omitted from FrameXML runt
 Diagnostics:
 WARNING NAME_SANITIZED [DesignObject]: Runtime name 'Header Text' was mapped to WoW-safe 'Header_Text'.
 WARNING STOCK_OVERRIDE_CONTRACT [LFDQueueFrameTitleText]: 'LFDQueueFrameTitleText' is client-owned stock UI. Its authored override is recorded as a diagnostic contract and is not flattened into generated XML.
-Round-trip self-check: PASS (49/49 runtime identities)
+
+Export mode: functional source composition
+Authoritative FrameXML: NativeHuntsFrame.xml
+Composed design objects: 49
+Source scripts, templates, hierarchy, and identities: preserved
+Control inventory: frameforge-manifest.json > controlInventory
+Packaging note: keep the addon's existing Lua files and TOC/XML load-order entries; FrameForge does not copy or generate application Lua.

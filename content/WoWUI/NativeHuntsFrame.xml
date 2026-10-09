@@ -18,9 +18,7 @@
 			<Layer level="ARTWORK"><FontString inherits="GameFontNormal" text="Player vs. Environment"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-17"/></Offset></Anchor></Anchors></FontString></Layer>
 		</Layers>
 		<Frames>
-			<!-- Retained as the authoritative functional source contract, but superseded by
-			     FrameForge_Dungeon_Finder_UI. Keep the host, tabs, initializer and scripts active. -->
-			<Frame name="$parentContentPanel" hidden="true">
+			<Frame name="$parentContentPanel">
 				<Size x="296" y="406"/><Anchors><Anchor point="TOP"><Offset><AbsDimension x="12" y="-44"/></Offset></Anchor></Anchors>
 				<Layers><Layer level="ARTWORK">
 					<FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Native Hunts"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors></FontString>

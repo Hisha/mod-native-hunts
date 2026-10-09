@@ -1,134 +1,108 @@
 # Native Hunts client UI
-+
-## FrameForge static-render milestone
 
-The authoritative editable design is `assets/Native-Hunts.fforge.json`.
-FrameForge Export writes the generated, portable package to `content/WoWUI/`.
-Do not hand-edit `FrameForgeLayout.xml`; re-export from the authoring source.
+## Functional FrameForge integration
 
-Rebuild the module package with:
+The editable design remains `assets/Native-Hunts.fforge.json` and the authoritative FrameForge
+export remains `content/WoWUI/`. Do not hand-edit either as part of module integration. Package 20
+uses the exported `NativeHuntsFrame.xml` composition as the visual source, while the checked-in
+runtime copy at `content/client/Interface/FrameXML/NativeHuntsFrame.xml` adds one integration-only
+change: the legacy `$parentContentPanel` is hidden.
 
-```text
-python content/build_epf.py
-python tests/run_checks.py
-```
+The functional host, `NativeHuntsFrame.lua`, both PvE tabs, and the initializer/event frame remain
+active. `FrameForge_Dungeon_Finder_UI` is the only visible Native Hunts presentation. Blizzard's
+`LFDParentFrame`, `LFDQueueFrame`, templates, close button, microbutton, and load order remain owned
+by the stock client.
 
-Package version 19 embeds the complete `WoWUI` directory and declares it with
-the generic schema-3 `frameForgeWowUi` field. The PNGs in `WoWUI/assets` are
-source artwork. Content Manager verifies their hashes and converts them to
-32-bit TGA under their manifest `Interface/FrameForge/...` logical paths. The
-EPF needs no FrameForge installation, external `WoWUI` directory, artwork
-directory, absolute path, or `.fforge` source after it is built.
+## Runtime values
 
-The generated layout loads through the existing `clientFrameXml.loadEntries`
-mechanism immediately after stock `LFDFrame.xml`, so `LFDParentFrame` exists.
-Blizzard LFD XML/artwork and `UI-StatusBar` remain stock logical references and
-are never bundled.
+The server continues to send the versioned `NHUNTS` snapshot over the existing same-player addon
+message channel. FrameForge has zero runtime bindings; module Lua consumes its actual
+`controlInventory` identities:
 
-This milestone intentionally packages only the static FrameForge layout.
-Adapting the ten semantic Native Hunts runtime values/states to generated
-controls is deferred until the PTR proves XML loading, geometry, and artwork.
-The earlier `content/client/Interface/FrameXML/NativeHuntsFrame.*` implementation
-remains source/reference material but is not included in package version 19,
-avoiding duplicate controls and premature runtime binding.
+| Control | Snapshot source |
+| --- | --- |
+| `Standard_Hunts_Value` | `stats.standard` lifetime Standard completions |
+| `Elite_Hunts_Value` | `stats.elite` lifetime Elite completions |
+| `Elite_Today_Available` / `Elite_Today_Unavailable` | `stats.eliteUnlocked`, `stats.eliteAvailable` |
+| `Hunt_Seal_Value` | `stats.sealState`, `stats.seals` physical inventory balance |
+| `Tracker_Target_Name` | assignment `prey` |
+| `Tracker_Huntmaster` | assignment `huntmaster` |
+| `Tracker_Location` | assignment `city` |
+| `Tracker_Hunt_Ground_Value` | assignment `zone`, or `finalLocation` after reveal |
+| `Tracker_Hunt_Progress` | bounded assignment `progress` |
+| `Complete2B_Huntmaster_Value` | assignment `huntmaster` |
+| `Complete3B_Location_Value` | assignment `city` |
 
+No values are invented. Missing optional strings use bounded `Unknown ...` fallbacks already used by
+the functional client. Content or snapshot failure uses the Idle composition with an unavailable
+message.
 
-## Historical pre-FrameForge renderer (not packaged in version 19)
+`LFDQueueFrameTitleText` is Blizzard-owned. The FrameForge stock override contract is implemented at
+runtime by setting it to `Player vs. Environment`; Blizzard XML is not modified.
 
-`NativeHuntsFrame.xml` adds one bounded view after stock `LFDFrame.xml`. It does
-not replace `LFDParentFrame`, `LFDQueueFrame`, `LFDFrame.lua`, or the stock TOC.
-The Hunts view is a child of `LFDParentFrame`; the stock Dungeon Finder and
-`TOGGLELFGPARENT` path remain intact. Identity, authoritative state, idle, and
-record regions are all children of one internal content panel. The record is
-anchored to that panel, not the outer PvE frame.
+## Visual states
 
-The enlarged Hunts canvas composes the authored panels without resizing them.
-For an active Hunt, the fixed 280x88 identity panel is followed by a 30-pixel
-breathing space and the fixed 280x118 authoritative-state panel. The fixed
-280x86 record remains bottom-anchored, leaving 50 pixels of intentional space
-between state and record. Idle retains its fixed 280x212 presentation and the
-same bottom-anchored record.
+Lua carries the exact state memberships from `frameforge-manifest.json` and addresses region wrapper
+frames using the actual `controlInventory.parentPath` identities. The authoritative server lifecycle
+maps as follows:
 
-The stock build-12340 shell is fixed artwork: `LFDParentFrame` is 355 by 440,
-while `LFDQueueFrame` owns a 512-square `UI-LFG-FRAME` texture whose visible
-bounds are 356 by 440. Merely enlarging the parent therefore detaches its close
-button and tabs from the unchanged visible shell. Hunts keeps the stock width,
-uses a 355 by 500 parent, and composes its taller shell from fixed-size crops of
-the same Blizzard texture. The paper center and repeated side segment add height
-without scaling the stock border artwork.
+| FrameForge state | Module condition |
+| --- | --- |
+| Idle | no active assignment, unavailable content/snapshot, or unknown state |
+| Tracking | `HuntState::Tracking` / protocol `T` |
+| Located | `HuntState::FinalRevealed` / protocol `F` |
+| Fight | `HuntState::PreyActive` / protocol `P` |
+| Turnin | `HuntState::ReadyToTurnIn` / protocol `R` |
 
-Selecting Dungeon Finder or hiding the parent restores the captured stock
-dimensions and reapplies the stock close-button and tab anchors. Reopening Hunts
-reapplies the Hunts geometry from constants, so repeated switching cannot
-accumulate offsets. Runtime Hunt panel textures retain their pre-resize authored
-dimensions; only the space between fixed panels grows.
+Tier-specific Standard/Elite artwork is selected within active states. Daily availability and Seal
+artwork are selected after the shared state membership is applied. The exported StatusBar is
+initialized to `0..100` and value `0` before the first server response.
 
-`NativeHuntsFrame.lua` is display-only. It requests a snapshot when the Hunts
-tab opens and accepts versioned `NHUNTS` addon messages whispered by the server
-to the same player. Records are bounded, decoded defensively, sequenced, and
-assembled before rendering. The server supplies the state; Lua does not advance
-Hunts or make gameplay decisions.
+## Artwork and packaging
 
-## Artwork
-
-Original PNG artwork stays in `assets/`. Run:
+Run:
 
 ```bash
 python3 tools/prepare_ui_assets.py
+python3 content/build_epf.py
+python3 tests/run_checks.py
 ```
 
-The script alpha-trims and resamples usable sources, then writes deterministic,
-uncompressed 32-bit TGA files on power-of-two canvases under
-`content/client/Interface/NativeHunts/`. FrameXML uses explicit texture
-coordinates so transparent canvas padding is never displayed.
+The asset preparation tool retains the historical source textures needed by the preserved functional
+XML and converts all eleven `content/WoWUI/assets/*.png` files to deterministic uncompressed 32-bit,
+top-origin TGA files under `content/client/Interface/FrameForge/Dungeon_Finder_UI/`. Complete source
+images are resampled to power-of-two canvases; FrameXML scales them into the unchanged authored
+geometry.
 
-`hunt_forest_trees.png` and `hunt_state_dust.png` are intentionally not
-converted: inspection shows their checkerboard is baked into fully opaque RGB
-pixels rather than represented by PNG alpha. Shipping them would display the
-checkerboard in game. Replace those two source files with genuine-alpha PNGs
-before adding them to the preparation map.
+Package 20 explicitly includes functional XML, Lua, and every required TGA. Its
+`clientFrameXml.loadEntries` inserts only `Interface/FrameXML/NativeHuntsFrame.xml` immediately after
+stock `Interface/FrameXML/LFDFrame.xml`. The broken package-19 static-layout declaration and empty
+content array are not used.
 
-The standalone corner, header, and empty-progress-frame sources are also kept
-but not packaged: the selected identity/state/record panel sources already
-contain those ornaments. Layering the standalone copies would duplicate and
-misalign the artwork.
+## PTR deployment and verification
 
-## Historical renderer lifecycle reference
+Local implementation stops before deployment. For an authorized PTR release:
 
-The schema-3 manifest declares every XML, Lua, and TGA runtime file. Its
-`clientFrameXml` contribution inserts only `NativeHuntsFrame.xml` after stock
-`Interface/FrameXML/LFDFrame.xml`. Content Manager owns the composed stock TOC
-and automatically records the `protected-framexml` client requirement.
+1. Copy `content/mod-native-hunts.epf` to Content Manager's configured discovery directory.
+2. Run `.content scan`, then `.content install mod-native-hunts`.
+3. Optionally run `.content stage mod-native-hunts` and inspect the staged paths, FrameXML insertion,
+   Lua, and all `Interface/FrameForge/Dungeon_Finder_UI/*.tga` files.
+4. Run `.content build`; record the immutable build number and SHA-256. Do not activate unless the
+   reviewed build contains package version 20 and the expected protected-FrameXML requirement.
+5. When authorized, run `.content activate <build-number>` and publish that exact artifact.
+6. Update the PTR Portalkeeper patch entry with the published URL and SHA-256 while retaining
+   `Requirements=protected-framexml` and isolated runtime mode.
+7. Exit every WoW process, install through Portalkeeper, and fully restart the client. `/reload` is
+   insufficient for replaced protected FrameXML/MPQ textures.
+8. Open Player vs. Environment through the microbutton, key binding, and LFG gossip. Verify Dungeon
+   Finder remains the default stock tab and that repeated tab switches do not drift geometry.
+9. Select Hunts and verify exactly one presentation, no Lua/XML errors, no green/missing textures,
+   and correct Idle, Tracking, Located, Fight, and Turnin states.
+10. Verify Standard/Elite tier selection, target, issuer, city, hunting ground, progress, lifetime
+    statistics, daily Elite availability, and physical Seal balance.
+11. Exercise relog, abandon, tracking progress, reveal, crystal use, prey kill, Return Rift, turn-in,
+    `/reload`, and reconnect. Recheck stock queueing, roles, proposals, eye indicator, Escape handling,
+    gossip opening, and both bottom tabs.
 
-No worldserver restart is required for this milestone's Lua/XML/TGA changes.
-A restart is required only when deploying rebuilt Native Hunts server-module
-code; none changed here. Install the updated EPF and use Content Manager's
-normal build/activate lifecycle to create and publish a new client patch. The
-player must fully restart the client after replacing that patch; `/reload` is
-not sufficient for protected FrameXML or replaced MPQ textures. Clear the
-client cache only when testing indicates stale packaged content.
-
-## Historical runtime-binding validation (deferred)
-
-1. Copy the rebuilt `mod-native-hunts.epf` into the configured Content Manager
-   discovery directory. Run `.content scan`, `.content install mod-native-hunts`,
-   and optionally `.content stage mod-native-hunts` for a development MPQ.
-2. Run `.content build`, record the reported build number and SHA-256, inspect
-   the staged artifact, then run `.content activate <build-number>`.
-3. Publish that immutable MPQ. Update the PTR Portalkeeper `WowPatch` entry's
-   `SourceURL` and `SHA256`; retain isolated runtime mode and
-   `Requirements=protected-framexml`.
-4. Exit every WoW process, let Portalkeeper install/update and verify the patch,
-   then launch PTR through its prepared generation-2 runtime.
-5. Open Player vs. Environment through the microbutton, key binding, and LFG
-   gossip. Confirm Dungeon Finder remains the default stock view where expected.
-6. Select Hunts and verify no Lua/XML errors, missing green textures, or tab
-   overlap at normal and reduced UI scales.
-7. Check idle, Standard Tracking, Elite Tracking, Trail Located, Final
-   Confrontation, and Hunt Complete presentations.
-8. Verify progress updates, final location, exact issuing Huntmaster/city,
-   lifetime counts, daily Elite status, and physical Seal balance.
-9. Exercise relog, `/reload`, abandon, prey kill, Return Rift, and turn-in.
-   Confirm stale state is cleared and the server snapshot reconstructs the view.
-10. Recheck Dungeon Finder queueing, roles, proposals, eye indicator, Escape
-   handling, gossip opening, and both bottom tabs.
+Static validation cannot prove in-game rendering, protected FrameXML loading, client texture decoding,
+or live event timing; those remain PTR acceptance requirements.

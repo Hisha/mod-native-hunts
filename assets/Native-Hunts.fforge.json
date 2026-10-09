@@ -2412,8 +2412,16 @@
       }
     }
   ],
+  "functionalExport": {
+    "source": {
+      "fileName": "NativeHuntsFrame.xml",
+      "referencePath": "../content/client/Interface/FrameXML/NativeHuntsFrame.xml",
+      "sha256": "42673D3FC3F2046315DE8CB1CB630AD018769734CF383E5C5B0BDB9EAFDA47C0"
+    },
+    "hostFrame": "NativeHuntsFrame"
+  },
   "editor": {
-    "activeDesignState": "fight",
+    "activeDesignState": "idle",
     "lockedElements": [
       "DesignObject3",
       "DesignObject2",

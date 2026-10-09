@@ -68,14 +68,17 @@ runtime objects.
 
 ## Managed content
 
-Package version 19 embeds the portable FrameForge export from
-`content/WoWUI/`. Content Manager stages the generated layout after stock
-`LFDFrame.xml` and converts all eleven project-owned PNG sources to runtime TGA.
-The `.fforge` authoring source and Blizzard-owned assets are not packaged.
+Package version 20 preserves the protected, functional FrameXML/Lua
+architecture and composes the 49-object FrameForge design into its existing PvE
+host. Module-owned Lua maps the existing Native Hunts snapshot to the exported
+visual states and dynamic values. Content Manager loads the functional XML
+after stock `LFDFrame.xml`, and all eleven project-owned PNG sources are
+converted to runtime TGA. The `.fforge` authoring source and Blizzard-owned
+assets are not packaged.
 
 `content/mod-native-hunts.epf` declares, without authored allocated IDs:
 
-- a passive Native Hunts view loaded additively after stock `LFDFrame.xml`, with
+- a functional Native Hunts view loaded additively after stock `LFDFrame.xml`, with
   Dungeon Finder and Hunts tabs inside the unchanged `LFDParentFrame` shell;
 - ten Huntmaster templates and permanent managed spawns;
 - sixteen standard-prey templates copied from established stock donors;
@@ -105,12 +108,12 @@ revision. `native_hunt_stats` owns lifetime completion statistics.
 ## Deliberate boundaries
 
 This pass does not implement Elite/Epic assignments, dynamic final-site
-generation, guard directions, a Seal equipment vendor, or live client/server
-Hunt-state transport. The native client surface is intentionally passive: it
-shows placeholder copy only and neither sends addon messages nor invents a
-protocol. The package-19 client milestone is static only: FrameForge state and
-value binding is deliberately deferred until after PTR visual validation. The
-existing snapshot/domain boundary remains ready for that later adapter.
+generation, guard directions, or a Seal equipment vendor. The client is a
+presentation-only consumer: it requests and renders the existing server
+snapshot protocol but cannot accept, advance, abandon, complete, or otherwise
+mutate Hunt gameplay. Static checks cannot prove protected-FrameXML behavior or
+final visual placement in the 3.3.5a client, so package 20 still requires PTR
+installation and in-game validation before activation.
 
 ## Checks
 

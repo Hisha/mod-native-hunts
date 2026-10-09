@@ -7,7 +7,7 @@
     "build": 12340
   },
   "project": "Dungeon Finder UI",
-  "layout": "FrameForgeLayout.xml",
+  "layout": "NativeHuntsFrame.xml",
   "rootRuntimeId": "FrameForge_Dungeon_Finder_UI",
   "stockFoundation": {
     "identity": "wow-3.3.5a-12340:Interface/FrameXML/LFDFrame.xml:LFDParentFrame",
@@ -804,6 +804,405 @@
         "fight"
       ],
       "runtimeValueRequired": false
+    }
+  ],
+  "exportMode": "functional-source-composition",
+  "functionalHost": "NativeHuntsFrame",
+  "functionalSourceSha256": "42673D3FC3F2046315DE8CB1CB630AD018769734CF383E5C5B0BDB9EAFDA47C0",
+  "stateProbes": [],
+  "valueSources": [],
+  "controlInventory": [
+    {
+      "authoredName": "Elite_Hunt_Icon",
+      "sourceObject": "DesignObject23",
+      "exportedName": "Elite_Hunt_Icon",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Elite_Hunt_Icon__FFLayer",
+      "luaAccess": "_G[\u0022Elite_Hunt_Icon\u0022]"
+    },
+    {
+      "authoredName": "Header Text",
+      "sourceObject": "DesignObject",
+      "exportedName": "Header_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Header_Text__FFLayer",
+      "luaAccess": "_G[\u0022Header_Text\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Panel_Record",
+      "sourceObject": "DesignObject2",
+      "exportedName": "Hunt_Panel_Record",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Panel_Record__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Panel_Record\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Panel_Idle",
+      "sourceObject": "DesignObject3",
+      "exportedName": "Hunt_Panel_Idle",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Panel_Idle__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Panel_Idle\u0022]"
+    },
+    {
+      "authoredName": "No_Active_Hunt",
+      "sourceObject": "DesignObject4",
+      "exportedName": "No_Active_Hunt",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/No_Active_Hunt__FFLayer",
+      "luaAccess": "_G[\u0022No_Active_Hunt\u0022]"
+    },
+    {
+      "authoredName": "Speak_Huntmaster",
+      "sourceObject": "DesignObject5",
+      "exportedName": "Speak_Huntmaster",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Speak_Huntmaster__FFLayer",
+      "luaAccess": "_G[\u0022Speak_Huntmaster\u0022]"
+    },
+    {
+      "authoredName": "begin_hunt",
+      "sourceObject": "DesignObject6",
+      "exportedName": "begin_hunt",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/begin_hunt__FFLayer",
+      "luaAccess": "_G[\u0022begin_hunt\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Seals",
+      "sourceObject": "DesignObject7",
+      "exportedName": "Hunt_Seals",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Seals__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Seals\u0022]"
+    },
+    {
+      "authoredName": "Elite_Today",
+      "sourceObject": "DesignObject8",
+      "exportedName": "Elite_Today",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Elite_Today__FFLayer",
+      "luaAccess": "_G[\u0022Elite_Today\u0022]"
+    },
+    {
+      "authoredName": "Elite_Hunts",
+      "sourceObject": "DesignObject9",
+      "exportedName": "Elite_Hunts",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Elite_Hunts__FFLayer",
+      "luaAccess": "_G[\u0022Elite_Hunts\u0022]"
+    },
+    {
+      "authoredName": "Standard_Hunts",
+      "sourceObject": "DesignObject10",
+      "exportedName": "Standard_Hunts",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Standard_Hunts__FFLayer",
+      "luaAccess": "_G[\u0022Standard_Hunts\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Seal",
+      "sourceObject": "DesignObject11",
+      "exportedName": "Hunt_Seal",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Seal__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Seal\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Circle_Icon",
+      "sourceObject": "DesignObject12",
+      "exportedName": "Hunt_Circle_Icon",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Circle_Icon__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Circle_Icon\u0022]"
+    },
+    {
+      "authoredName": "Standard_Hunts_Value",
+      "sourceObject": "DesignObject13",
+      "exportedName": "Standard_Hunts_Value",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Standard_Hunts_Value__FFLayer",
+      "luaAccess": "_G[\u0022Standard_Hunts_Value\u0022]"
+    },
+    {
+      "authoredName": "Elite_Hunts_Value",
+      "sourceObject": "DesignObject14",
+      "exportedName": "Elite_Hunts_Value",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Elite_Hunts_Value__FFLayer",
+      "luaAccess": "_G[\u0022Elite_Hunts_Value\u0022]"
+    },
+    {
+      "authoredName": "Elite_Today_Available",
+      "sourceObject": "DesignObject15",
+      "exportedName": "Elite_Today_Available",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Elite_Today_Available__FFLayer",
+      "luaAccess": "_G[\u0022Elite_Today_Available\u0022]"
+    },
+    {
+      "authoredName": "Elite_Today_Unavailable",
+      "sourceObject": "DesignObject16",
+      "exportedName": "Elite_Today_Unavailable",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Elite_Today_Unavailable__FFLayer",
+      "luaAccess": "_G[\u0022Elite_Today_Unavailable\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Seal_Value",
+      "sourceObject": "DesignObject17",
+      "exportedName": "Hunt_Seal_Value",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Seal_Value__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Seal_Value\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Panel_Top",
+      "sourceObject": "DesignObject18",
+      "exportedName": "Hunt_Panel_Top",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Panel_Top__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Panel_Top\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Panel_Bottom",
+      "sourceObject": "DesignObject20",
+      "exportedName": "Hunt_Panel_Bottom",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Panel_Bottom__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Panel_Bottom\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Header",
+      "sourceObject": "DesignObject19",
+      "exportedName": "Hunt_Header",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Header__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Header\u0022]"
+    },
+    {
+      "authoredName": "Standard_Hunt_Icon",
+      "sourceObject": "DesignObject21",
+      "exportedName": "Standard_Hunt_Icon",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Standard_Hunt_Icon__FFLayer",
+      "luaAccess": "_G[\u0022Standard_Hunt_Icon\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Progress_Text",
+      "sourceObject": "DesignObject22",
+      "exportedName": "Hunt_Progress_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Progress_Text__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Progress_Text\u0022]"
+    },
+    {
+      "authoredName": "Trail_Located_Text",
+      "sourceObject": "DesignObject24",
+      "exportedName": "Trail_Located_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Trail_Located_Text__FFLayer",
+      "luaAccess": "_G[\u0022Trail_Located_Text\u0022]"
+    },
+    {
+      "authoredName": "Final_Confrontation_Text",
+      "sourceObject": "DesignObject25",
+      "exportedName": "Final_Confrontation_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Final_Confrontation_Text__FFLayer",
+      "luaAccess": "_G[\u0022Final_Confrontation_Text\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Complete_Text",
+      "sourceObject": "DesignObject26",
+      "exportedName": "Hunt_Complete_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Complete_Text__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Complete_Text\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Elite_Hunt",
+      "sourceObject": "DesignObject28",
+      "exportedName": "Tracker_Elite_Hunt",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Elite_Hunt__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Elite_Hunt\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Standard_Hunt",
+      "sourceObject": "DesignObject27",
+      "exportedName": "Tracker_Standard_Hunt",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Standard_Hunt__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Standard_Hunt\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Target_Name",
+      "sourceObject": "DesignObject29",
+      "exportedName": "Tracker_Target_Name",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Target_Name__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Target_Name\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Huntmaster",
+      "sourceObject": "DesignObject30",
+      "exportedName": "Tracker_Huntmaster",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Huntmaster__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Huntmaster\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Location",
+      "sourceObject": "DesignObject31",
+      "exportedName": "Tracker_Location",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Location__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Location\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Hunt_Ground",
+      "sourceObject": "DesignObject32",
+      "exportedName": "Tracker_Hunt_Ground",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Hunt_Ground__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Hunt_Ground\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Hunt_Ground_Value",
+      "sourceObject": "DesignObject33",
+      "exportedName": "Tracker_Hunt_Ground_Value",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Hunt_Ground_Value__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Hunt_Ground_Value\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Progress_Surround",
+      "sourceObject": "DesignObject35",
+      "exportedName": "Tracker_Progress_Surround",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracker_Progress_Surround__FFLayer",
+      "luaAccess": "_G[\u0022Tracker_Progress_Surround\u0022]"
+    },
+    {
+      "authoredName": "Tracker_Hunt_Progress",
+      "sourceObject": "DesignObject34",
+      "exportedName": "Tracker_Hunt_Progress",
+      "type": "StatusBar",
+      "parentPath": "FrameForge_Dungeon_Finder_UI",
+      "luaAccess": "_G[\u0022Tracker_Hunt_Progress\u0022]"
+    },
+    {
+      "authoredName": "Tracking_Text",
+      "sourceObject": "DesignObject36",
+      "exportedName": "Tracking_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracking_Text__FFLayer",
+      "luaAccess": "_G[\u0022Tracking_Text\u0022]"
+    },
+    {
+      "authoredName": "Tracking2_Text",
+      "sourceObject": "DesignObject37",
+      "exportedName": "Tracking2_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracking2_Text__FFLayer",
+      "luaAccess": "_G[\u0022Tracking2_Text\u0022]"
+    },
+    {
+      "authoredName": "Tracking3_Text",
+      "sourceObject": "DesignObject38",
+      "exportedName": "Tracking3_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Tracking3_Text__FFLayer",
+      "luaAccess": "_G[\u0022Tracking3_Text\u0022]"
+    },
+    {
+      "authoredName": "Located_Text",
+      "sourceObject": "DesignObject39",
+      "exportedName": "Located_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Located_Text__FFLayer",
+      "luaAccess": "_G[\u0022Located_Text\u0022]"
+    },
+    {
+      "authoredName": "Located2_Text",
+      "sourceObject": "DesignObject40",
+      "exportedName": "Located2_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Located2_Text__FFLayer",
+      "luaAccess": "_G[\u0022Located2_Text\u0022]"
+    },
+    {
+      "authoredName": "Located3_Text",
+      "sourceObject": "DesignObject41",
+      "exportedName": "Located3_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Located3_Text__FFLayer",
+      "luaAccess": "_G[\u0022Located3_Text\u0022]"
+    },
+    {
+      "authoredName": "Hunt_Complete_Icon",
+      "sourceObject": "DesignObject42",
+      "exportedName": "Hunt_Complete_Icon",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Hunt_Complete_Icon__FFLayer",
+      "luaAccess": "_G[\u0022Hunt_Complete_Icon\u0022]"
+    },
+    {
+      "authoredName": "Complete_Text",
+      "sourceObject": "DesignObject43",
+      "exportedName": "Complete_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Complete_Text__FFLayer",
+      "luaAccess": "_G[\u0022Complete_Text\u0022]"
+    },
+    {
+      "authoredName": "Complete2A_Text",
+      "sourceObject": "DesignObject45",
+      "exportedName": "Complete2A_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Complete2A_Text__FFLayer",
+      "luaAccess": "_G[\u0022Complete2A_Text\u0022]"
+    },
+    {
+      "authoredName": "Complete2B_Huntmaster_Value",
+      "sourceObject": "DesignObject46",
+      "exportedName": "Complete2B_Huntmaster_Value",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Complete2B_Huntmaster_Value__FFLayer",
+      "luaAccess": "_G[\u0022Complete2B_Huntmaster_Value\u0022]"
+    },
+    {
+      "authoredName": "Complete3A_Text",
+      "sourceObject": "DesignObject47",
+      "exportedName": "Complete3A_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Complete3A_Text__FFLayer",
+      "luaAccess": "_G[\u0022Complete3A_Text\u0022]"
+    },
+    {
+      "authoredName": "Complete3B_Location_Value",
+      "sourceObject": "DesignObject48",
+      "exportedName": "Complete3B_Location_Value",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Complete3B_Location_Value__FFLayer",
+      "luaAccess": "_G[\u0022Complete3B_Location_Value\u0022]"
+    },
+    {
+      "authoredName": "Final_Fight_Icon",
+      "sourceObject": "DesignObject44",
+      "exportedName": "Final_Fight_Icon",
+      "type": "Texture",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Final_Fight_Icon__FFLayer",
+      "luaAccess": "_G[\u0022Final_Fight_Icon\u0022]"
+    },
+    {
+      "authoredName": "Final_Fight_Text",
+      "sourceObject": "DesignObject49",
+      "exportedName": "Final_Fight_Text",
+      "type": "FontString",
+      "parentPath": "FrameForge_Dungeon_Finder_UI/Final_Fight_Text__FFLayer",
+      "luaAccess": "_G[\u0022Final_Fight_Text\u0022]"
     }
   ]
 }

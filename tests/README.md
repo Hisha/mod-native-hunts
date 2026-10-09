@@ -1,6 +1,6 @@
 # Native Hunts checks
 
-`run_checks.py` performs five database-free check groups:
+`run_checks.py` performs six database-free check groups:
 
 1. a duplicate-definition guard that parses every `tests/*.py` script and
    rejects top-level functions or classes defined more than once (a later
@@ -17,13 +17,18 @@
    baseline, additive LFD-shell load ordering, passive UI safety, all ten
    Huntmasters and spawns, all sixteen standard prey, both clean
    scripted-button runtime templates, the physical Seal declaration, and
-   removal of disposable validation symbols; packages that ship only static
-   FrameForge layout fail this contract;
-4. the static FrameForge WoWUI packaging contract for packages that declare
+   removal of disposable validation symbols; this historical contract is
+   skipped when the current manifest is not version 18;
+4. the functional FrameForge package-20 contract: deterministic explicit EPF
+   content, protected load ordering, the unchanged generated 49-object subtree,
+   exact five-state membership, module-owned dynamic value mapping, legacy-view
+   suppression, WoW 3.3.5/Lua 5.1 safety, direct renderer vectors, and all
+   eleven converted project-owned textures;
+5. the static FrameForge WoWUI packaging contract for packages that declare
    `frameForgeWowUi` (currently package version 19): deterministic EPF member
    set and hashes, portable source artwork, and layout-only load entries;
    it is skipped for packages with functional FrameXML content;
-5. native-only source/persistence safety checks that reject legacy package,
+6. native-only source/persistence safety checks that reject legacy package,
    table, protocol, migration, world-database assignment placement, undocumented
    configuration reads, and hard-coded allocated identities, and require
    the single-transaction inventory/statistics/assignment turn-in safeguards.
