@@ -354,7 +354,7 @@ function NativeHuntsFrame_OnLoad(self)
 	timeoutGroup:SetScript("OnFinished",function()
 		if pendingNonce then pendingNonce=nil; hasSnapshot=false; assembly=nil; RenderWaiting("Hunt information unavailable."); end
 	end);
-	InitializeTabs();
+    InitializeTabs();
 	NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB);
 	if LFDMicroButton then NativeHuntsFrame_UpdateMicroButtonTooltip(LFDMicroButton);
 		if LFDMicroButton.HookScript then LFDMicroButton:HookScript("OnEvent",function(button,event) if event=="UPDATE_BINDINGS" then NativeHuntsFrame_UpdateMicroButtonTooltip(button); end end); end end
