@@ -6,12 +6,19 @@ The editable design remains `assets/Native-Hunts.fforge.json` and the authoritat
 export remains `content/WoWUI/`. Do not hand-edit either as part of module integration. Package 20
 uses the exported `NativeHuntsFrame.xml` composition as the visual source, while the checked-in
 runtime copy at `content/client/Interface/FrameXML/NativeHuntsFrame.xml` adds one integration-only
-change: the legacy `$parentContentPanel` is hidden.
+presentation change: the legacy `$parentContentPanel` is hidden. It also applies two host-integration
+fixes: all 49 screen-relative `UIParent` anchors are uniformly retargeted to the set-all-points
+`FrameForge_Dungeon_Finder_UI` root, and the initializer is declared after that root so its `OnLoad`
+can safely initialize the composition.
 
 The functional host, `NativeHuntsFrame.lua`, both PvE tabs, and the initializer/event frame remain
 active. `FrameForge_Dungeon_Finder_UI` is the only visible Native Hunts presentation. Blizzard's
 `LFDParentFrame`, `LFDQueueFrame`, templates, close button, microbutton, and load order remain owned
 by the stock client.
+
+The PvE tab contract explicitly establishes `LFDParentFrame.numTabs = 2` before calling Blizzard's
+`PanelTemplates_SetTab`. Optional tab-resize support is independent, matching the 3.3.5a API where
+the selection helper requires a numeric `numTabs` field.
 
 ## Runtime values
 

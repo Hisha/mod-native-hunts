@@ -20,10 +20,12 @@
    removal of disposable validation symbols; this historical contract is
    skipped when the current manifest is not version 18;
 4. the functional FrameForge package-20 contract: deterministic explicit EPF
-   content, protected load ordering, the unchanged generated 49-object subtree,
-   exact five-state membership, module-owned dynamic value mapping, legacy-view
-   suppression, WoW 3.3.5/Lua 5.1 safety, direct renderer vectors, and all
-   eleven converted project-owned textures;
+   content, protected load ordering, the authored 49-object composition,
+   exact five-state membership, uniform root-relative coordinate conversion,
+   PvE visibility ancestry, two-tab Blizzard panel initialization and selection,
+   module-owned dynamic value mapping, legacy-view suppression, WoW 3.3.5/Lua
+   5.1 safety, direct renderer vectors, and all eleven converted project-owned
+   textures;
 5. the static FrameForge WoWUI packaging contract for packages that declare
    `frameForgeWowUi` (currently package version 19): deterministic EPF member
    set and hashes, portable source artwork, and layout-only load entries;

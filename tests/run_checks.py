@@ -819,8 +819,24 @@ def run_frameforge_functional_ui_checks() -> None:
                              if element.get("name") == "FrameForge_Dungeon_Finder_UI"), None)
     if integrated_subtree is None or exported_subtree is None:
         raise AssertionError("generated FrameForge presentation subtree is missing")
+    exported_anchors = [element for element in exported_subtree.iter()
+                        if element.tag.endswith("Anchor") and
+                        element.get("relativeTo") == "UIParent"]
+    integrated_anchors = [element for element in integrated_subtree.iter()
+                          if element.tag.endswith("Anchor")]
+    if len(exported_anchors) != 49 or len(integrated_anchors) != 49:
+        raise AssertionError("FrameForge composition must retain exactly 49 authored anchors")
+    if any(anchor.get("relativeTo") != "FrameForge_Dungeon_Finder_UI"
+           for anchor in integrated_anchors):
+        raise AssertionError("FrameForge controls are not anchored to the PvE composition root")
+    # The only permitted generated-subtree transformation is the uniform coordinate-space
+    # conversion from screen-relative UIParent anchors to the integrated composition root.
+    for anchor in exported_anchors:
+        anchor.set("relativeTo", "FrameForge_Dungeon_Finder_UI")
+    integrated_subtree.tail = None
+    exported_subtree.tail = None
     if ET.tostring(integrated_subtree) != ET.tostring(exported_subtree):
-        raise AssertionError("generated FrameForge geometry or artwork references were modified")
+        raise AssertionError("FrameForge geometry, artwork, or non-root-relative anchors changed")
     names = {element.get("name") for element in xml_root.iter() if element.get("name")}
     inventory_names = {entry["exportedName"] for entry in inventory}
     if len(inventory_names) != 49 or not inventory_names <= names:
@@ -830,6 +846,29 @@ def run_frameforge_functional_ui_checks() -> None:
     if not wrappers <= names:
         raise AssertionError("integrated FrameXML lost a generated presentation wrapper")
     named = {element.get("name"): element for element in xml_root.iter() if element.get("name")}
+    native_frame = named["NativeHuntsFrame"]
+    frameforge_root = named["FrameForge_Dungeon_Finder_UI"]
+    if (native_frame.get("parent") != "LFDParentFrame" or
+            frameforge_root.get("parent") != "NativeHuntsFrame" or
+            frameforge_root.get("setAllPoints") != "true"):
+        raise AssertionError("FrameForge root is not coupled to the Native Hunts PvE content area")
+    parent_by_child = {child: parent for parent in xml_root.iter() for child in parent}
+    presentation_nodes = {
+        entry["exportedName"] if entry["type"] == "StatusBar"
+        else entry["parentPath"].split("/")[-1]
+        for entry in inventory
+    }
+    for node_name in presentation_nodes:
+        node = named.get(node_name)
+        ancestor = node
+        while ancestor is not None and ancestor is not frameforge_root:
+            ancestor = parent_by_child.get(ancestor)
+        if node is None or ancestor is not frameforge_root:
+            raise AssertionError(f"FrameForge visibility escaped its PvE root: {node_name}")
+    top_level_names = [element.get("name") for element in list(xml_root)]
+    if top_level_names.index("NativeHuntsFrameInitializer") < top_level_names.index(
+            "FrameForge_Dungeon_Finder_UI"):
+        raise AssertionError("Native Hunts initializer runs before the FrameForge root exists")
     if (named.get("$parentContentPanel") is None or
             named["$parentContentPanel"].get("hidden") != "true"):
         raise AssertionError("legacy Native Hunts presentation was not suppressed")
@@ -870,6 +909,8 @@ def run_frameforge_functional_ui_checks() -> None:
         'snapshot.state == "R" and "R"', "LFDQueueFrame:Hide()", "NativeHuntsFrame:Show()",
         'RegisterAddonMessagePrefix(PREFIX)', 'self:RegisterEvent("CHAT_MSG_ADDON")',
         'LFDQueueFrameTitleText:SetText("Player vs. Environment")',
+        'LFDParentFrame.numTabs = 2', 'InitializeTabs();',
+        'type(LFDParentFrame.numTabs) ~= "number"',
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -932,6 +973,11 @@ def run_frameforge_functional_ui_checks() -> None:
                     HookScript=function(self,event,callback) self.hooks[event]=callback end,
                     RegisterEvent=function() end,CreateAnimationGroup=function() return AnimationGroup() end}
             end
+            function PanelTemplates_SetNumTabs(frame,count) frame.numTabs=count end
+            function PanelTemplates_SetTab(frame,selected)
+                for index=1,frame.numTabs do end
+                frame.selectedTab=selected
+            end
         """)
         controls = lua.globals()
         for name in names:
@@ -949,9 +995,19 @@ def run_frameforge_functional_ui_checks() -> None:
             controls.LFDParentFrameCloseButton, controls.LFDQueueFrame, controls.NativeHuntsFrame,
             controls.LFDParentFrameTab1, controls.LFDParentFrameTab2, controls.LFDParentFramePortrait])
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
+        if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
+            raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
         if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
                 controls.Tracker_Hunt_Progress.value != 0):
             raise AssertionError("FrameForge StatusBar was not initialized before the first snapshot")
+        controls.NativeHuntsFrame_SelectTab(2)
+        if (controls.LFDParentFrame.selectedTab != 2 or controls.LFDQueueFrame.visible or
+                not controls.NativeHuntsFrame.visible):
+            raise AssertionError("Hunts tab selection did not update Blizzard's panel state")
+        controls.NativeHuntsFrame_SelectTab(1)
+        if (controls.LFDParentFrame.selectedTab != 1 or not controls.LFDQueueFrame.visible or
+                controls.NativeHuntsFrame.visible):
+            raise AssertionError("Dungeon Finder tab selection did not restore Blizzard's panel state")
 
         def lua_table(value):
             if isinstance(value, dict):

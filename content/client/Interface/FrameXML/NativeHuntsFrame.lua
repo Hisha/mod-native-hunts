@@ -309,8 +309,20 @@ local function ApplyHuntsGeometry()
 	PositionTabs();
 end
 
+local function InitializeTabs()
+	-- PanelTemplates_SetTab in the 3.3.5a client loops over frame.numTabs.
+	-- Establish that contract directly even when an optional resize helper is absent.
+	LFDParentFrame.numTabs = 2;
+	if PanelTemplates_SetNumTabs then PanelTemplates_SetNumTabs(LFDParentFrame, 2); end
+	if PanelTemplates_TabResize then
+		PanelTemplates_TabResize(LFDParentFrameTab1, 0);
+		PanelTemplates_TabResize(LFDParentFrameTab2, 0);
+	end
+end
+
 function NativeHuntsFrame_SelectTab(tab)
 	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame then return; end
+	if type(LFDParentFrame.numTabs) ~= "number" then InitializeTabs(); end
 	if tab==NATIVE_HUNTS_HUNTS_TAB then ApplyHuntsGeometry(); LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); RequestSnapshot();
 	else tab=NATIVE_HUNTS_DUNGEON_TAB; ApplyStockGeometry(); NativeHuntsFrame:Hide(); LFDQueueFrame:Show(); end
 	NativeHuntsFrame_SetTitle(); if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame,tab); end
@@ -342,7 +354,7 @@ function NativeHuntsFrame_OnLoad(self)
 	timeoutGroup:SetScript("OnFinished",function()
 		if pendingNonce then pendingNonce=nil; hasSnapshot=false; assembly=nil; RenderWaiting("Hunt information unavailable."); end
 	end);
-	if PanelTemplates_SetNumTabs and PanelTemplates_TabResize then PanelTemplates_SetNumTabs(LFDParentFrame,2); PanelTemplates_TabResize(LFDParentFrameTab1,0); PanelTemplates_TabResize(LFDParentFrameTab2,0); end
+	InitializeTabs();
 	NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB);
 	if LFDMicroButton then NativeHuntsFrame_UpdateMicroButtonTooltip(LFDMicroButton);
 		if LFDMicroButton.HookScript then LFDMicroButton:HookScript("OnEvent",function(button,event) if event=="UPDATE_BINDINGS" then NativeHuntsFrame_UpdateMicroButtonTooltip(button); end end); end end

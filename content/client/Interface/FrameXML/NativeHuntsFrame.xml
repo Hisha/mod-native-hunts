@@ -94,8 +94,6 @@
 	</Frame>
 	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder"><Anchors><Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="18" y="-27"/></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
 	<Button name="LFDParentFrameTab2" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="2" text="Hunts"><Anchors><Anchor point="LEFT" relativeTo="LFDParentFrameTab1" relativePoint="RIGHT"><Offset><AbsDimension x="-15" y="0"/></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
-	<Frame name="NativeHuntsFrameInitializer" parent="UIParent"><Scripts><OnLoad function="NativeHuntsFrame_OnLoad"/><OnEvent function="NativeHuntsFrame_OnEvent"/></Scripts></Frame>
-
 	<Frame name="FrameForge_Dungeon_Finder_UI" parent="NativeHuntsFrame" setAllPoints="true" xmlns="http://www.blizzard.com/wow/ui/">
 	    <Frames>
 	      <Frame name="Elite_Hunt_Icon__FFLayer" frameStrata="MEDIUM" frameLevel="1" hidden="true">
@@ -103,7 +101,7 @@
 	          <AbsDimension x="64" y="64" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-98.7200448979592" y="15.289" />
 	            </Offset>
@@ -120,7 +118,7 @@
 	          <AbsDimension x="270" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="32.345957007223" y="168.189577879064" />
 	            </Offset>
@@ -141,7 +139,7 @@
 	          <AbsDimension x="300" y="95" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="30.5017131659466" y="126.777873939374" />
 	            </Offset>
@@ -158,7 +156,7 @@
 	          <AbsDimension x="340" y="295" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.71556122449" y="-65.7436224489798" />
 	            </Offset>
@@ -175,7 +173,7 @@
 	          <AbsDimension x="300" y="25" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.39668367346906" y="-42.6632653061224" />
 	            </Offset>
@@ -200,7 +198,7 @@
 	          <AbsDimension x="300" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.0561224489794" y="-80.251275510204" />
 	            </Offset>
@@ -221,7 +219,7 @@
 	          <AbsDimension x="300" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155612244901" y="-100.03443877551" />
 	            </Offset>
@@ -242,7 +240,7 @@
 	          <AbsDimension x="120" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="38.7181122448986" y="115.136479591837" />
 	            </Offset>
@@ -263,7 +261,7 @@
 	          <AbsDimension x="120" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="38.7181122448986" y="124.743622448979" />
 	            </Offset>
@@ -284,7 +282,7 @@
 	          <AbsDimension x="120" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="38.7181122448986" y="134.191326530612" />
 	            </Offset>
@@ -305,7 +303,7 @@
 	          <AbsDimension x="120" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="38.7181122448986" y="143.923469387754" />
 	            </Offset>
@@ -326,7 +324,7 @@
 	          <AbsDimension x="10" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="104.434132003386" y="115.894746451198" />
 	            </Offset>
@@ -343,7 +341,7 @@
 	          <AbsDimension x="50" y="50" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-133.701530612245" y="186.161989795918" />
 	            </Offset>
@@ -360,7 +358,7 @@
 	          <AbsDimension x="80" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="106.692062620882" y="143.923469387754" />
 	            </Offset>
@@ -381,7 +379,7 @@
 	          <AbsDimension x="80" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="106.692062620882" y="134.424056091837" />
 	            </Offset>
@@ -402,7 +400,7 @@
 	          <AbsDimension x="80" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="106.692062620882" y="124.743622448979" />
 	            </Offset>
@@ -423,7 +421,7 @@
 	          <AbsDimension x="80" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="106.692062620882" y="124.743622448979" />
 	            </Offset>
@@ -444,7 +442,7 @@
 	          <AbsDimension x="70" y="10" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="101.692062620882" y="115.136479591837" />
 	            </Offset>
@@ -465,7 +463,7 @@
 	          <AbsDimension x="330" y="150" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.77703772830472" y="-4.02938884847367" />
 	            </Offset>
@@ -482,7 +480,7 @@
 	          <AbsDimension x="330" y="130" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.77703772830472" y="-138.873123884264" />
 	            </Offset>
@@ -499,7 +497,7 @@
 	          <AbsDimension x="335" y="70" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.19142112703241" y="-75.3038727631253" />
 	            </Offset>
@@ -516,7 +514,7 @@
 	          <AbsDimension x="64" y="64" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-98.7200501529818" y="15.2890262751159" />
 	            </Offset>
@@ -533,7 +531,7 @@
 	          <AbsDimension x="320" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.43362114657401" y="-72.9664889384057" />
 	            </Offset>
@@ -550,7 +548,7 @@
 	          <AbsDimension x="320" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.43365510204086" y="-72.9665" />
 	            </Offset>
@@ -567,7 +565,7 @@
 	          <AbsDimension x="320" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.43365510204086" y="-72.9665" />
 	            </Offset>
@@ -584,7 +582,7 @@
 	          <AbsDimension x="320" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.43365510204086" y="-72.9665" />
 	            </Offset>
@@ -601,7 +599,7 @@
 	          <AbsDimension x="120" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-5.58114489795918" y="35.5834" />
 	            </Offset>
@@ -626,7 +624,7 @@
 	          <AbsDimension x="120" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-5.58114489795918" y="35.5834" />
 	            </Offset>
@@ -651,7 +649,7 @@
 	          <AbsDimension x="220" y="24" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="44.4188551020408" y="13.4074322962167" />
 	            </Offset>
@@ -672,7 +670,7 @@
 	          <AbsDimension x="200" y="16" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="34.4188551020408" y="-7.42450104159681" />
 	            </Offset>
@@ -693,7 +691,7 @@
 	          <AbsDimension x="200" y="16" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="34.4188551020408" y="-24.2244472817688" />
 	            </Offset>
@@ -714,7 +712,7 @@
 	          <AbsDimension x="80" y="16" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-25.5811448979592" y="-40.3523956723339" />
 	            </Offset>
@@ -735,7 +733,7 @@
 	          <AbsDimension x="140" y="16" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="85.8105593490674" y="-40.3523956723339" />
 	            </Offset>
@@ -756,7 +754,7 @@
 	          <AbsDimension x="280" y="90" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.39302356929568" y="-106.567312450917" />
 	            </Offset>
@@ -773,7 +771,7 @@
 	          <AbsDimension x="217" y="13" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.32819145668691" y="-105.488724992264" />
 	            </Offset>
@@ -787,7 +785,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155612244899" y="-122.455357142857" />
 	            </Offset>
@@ -804,7 +802,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155612244899" y="-142.238520408163" />
 	            </Offset>
@@ -825,7 +823,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155612244899" y="-160.702806122449" />
 	            </Offset>
@@ -846,7 +844,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155551020409" y="-122.4554" />
 	            </Offset>
@@ -863,7 +861,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155551020409" y="-142.2385" />
 	            </Offset>
@@ -884,7 +882,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.7155551020409" y="-160.7028" />
 	            </Offset>
@@ -905,7 +903,7 @@
 	          <AbsDimension x="64" y="64" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="8.78651560040475" y="-116.47113746082" />
 	            </Offset>
@@ -922,7 +920,7 @@
 	          <AbsDimension x="280" y="18" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="7.96588947913386" y="-146.521869337794" />
 	            </Offset>
@@ -947,7 +945,7 @@
 	          <AbsDimension x="116" y="18" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-72.0341105208661" y="-162.279724933452" />
 	            </Offset>
@@ -968,7 +966,7 @@
 	          <AbsDimension x="159" y="18" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="67.9658894791339" y="-162.279724933452" />
 	            </Offset>
@@ -989,7 +987,7 @@
 	          <AbsDimension x="130" y="18" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="-70.0341105208661" y="-174.377272179609" />
 	            </Offset>
@@ -1010,7 +1008,7 @@
 	          <AbsDimension x="154" y="18" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="74.9658894791339" y="-174.377272179609" />
 	            </Offset>
@@ -1031,7 +1029,7 @@
 	          <AbsDimension x="80" y="80" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="9.28407007014562" y="-128.25308419241" />
 	            </Offset>
@@ -1048,7 +1046,7 @@
 	          <AbsDimension x="280" y="20" />
 	        </Size>
 	        <Anchors>
-	          <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
 	              <AbsDimension x="10.71556122449" y="-171.723997816471" />
 	            </Offset>
@@ -1062,4 +1060,5 @@
 	      </Frame>
 	    </Frames>
 	  </Frame>
+	<Frame name="NativeHuntsFrameInitializer" parent="UIParent"><Scripts><OnLoad function="NativeHuntsFrame_OnLoad"/><OnEvent function="NativeHuntsFrame_OnEvent"/></Scripts></Frame>
 </Ui>
