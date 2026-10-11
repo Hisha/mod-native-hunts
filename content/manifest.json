@@ -64,61 +64,6 @@
       "type": "file",
       "source": "client/Interface/NativeHunts/hunt_trail_prints.tga",
       "target": "Interface/NativeHunts/hunt_trail_prints.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_header.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_header.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.tga"
-    },
-    {
-      "type": "file",
-      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.tga",
-      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.tga"
     }
   ],
   "clientFrameXml": {
