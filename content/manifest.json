@@ -15,27 +15,111 @@
       "source": "client/Interface/FrameXML/NativeHuntsFrame.lua",
       "target": "Interface/FrameXML/NativeHuntsFrame.lua"
     },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_divider.tga", "target": "Interface/NativeHunts/hunt_divider.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_icon_elite.tga", "target": "Interface/NativeHunts/hunt_icon_elite.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_icon_seal.tga", "target": "Interface/NativeHunts/hunt_icon_seal.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_icon_standard.tga", "target": "Interface/NativeHunts/hunt_icon_standard.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_icon_turnin.tga", "target": "Interface/NativeHunts/hunt_icon_turnin.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_panel_identity.tga", "target": "Interface/NativeHunts/hunt_panel_identity.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_panel_idle.tga", "target": "Interface/NativeHunts/hunt_panel_idle.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_panel_record.tga", "target": "Interface/NativeHunts/hunt_panel_record.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_panel_state.tga", "target": "Interface/NativeHunts/hunt_panel_state.tga" },
-    { "type": "file", "source": "client/Interface/NativeHunts/hunt_trail_prints.tga", "target": "Interface/NativeHunts/hunt_trail_prints.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_header.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_header.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.tga" },
-    { "type": "file", "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.tga", "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.tga" }
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_divider.tga",
+      "target": "Interface/NativeHunts/hunt_divider.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_elite.tga",
+      "target": "Interface/NativeHunts/hunt_icon_elite.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_seal.tga",
+      "target": "Interface/NativeHunts/hunt_icon_seal.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_standard.tga",
+      "target": "Interface/NativeHunts/hunt_icon_standard.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_icon_turnin.tga",
+      "target": "Interface/NativeHunts/hunt_icon_turnin.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_identity.tga",
+      "target": "Interface/NativeHunts/hunt_panel_identity.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_idle.tga",
+      "target": "Interface/NativeHunts/hunt_panel_idle.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_record.tga",
+      "target": "Interface/NativeHunts/hunt_panel_record.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_panel_state.tga",
+      "target": "Interface/NativeHunts/hunt_panel_state.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/NativeHunts/hunt_trail_prints.tga",
+      "target": "Interface/NativeHunts/hunt_trail_prints.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_header.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_header.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.tga"
+    },
+    {
+      "type": "file",
+      "source": "client/Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.tga",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.tga"
+    }
   ],
   "clientFrameXml": {
     "stockTocSource": "upstream/FrameXML.toc",
@@ -44,6 +128,10 @@
       {
         "target": "Interface/FrameXML/NativeHuntsFrame.xml",
         "after": "Interface/FrameXML/LFDFrame.xml"
+      },
+      {
+        "target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
+        "after": "Interface/FrameXML/NativeHuntsFrame.xml"
       }
     ]
   },
@@ -655,6 +743,12 @@
       "y": 548.9488,
       "z": 651.6386,
       "orientation": 0.8435841
+    }
+  ],
+  "frameForgeWowUi": [
+    {
+      "source": "WoWUI",
+      "layoutTarget": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml"
     }
   ]
 }

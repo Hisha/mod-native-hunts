@@ -237,12 +237,12 @@
 	      </Frame>
 	      <Frame name="Hunt_Seals__FFLayer" frameStrata="MEDIUM" frameLevel="8">
 	        <Size>
-	          <AbsDimension x="120" y="10" />
+	          <AbsDimension x="150" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="38.7181122448986" y="115.136479591837" />
+	              <AbsDimension x="20" y="106" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -250,7 +250,7 @@
 	          <Layer level="BACKGROUND">
 	            <FontString name="Hunt_Seals" setAllPoints="true" text="Huntmaster's Seals:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -258,12 +258,12 @@
 	      </Frame>
 	      <Frame name="Elite_Today__FFLayer" frameStrata="MEDIUM" frameLevel="9">
 	        <Size>
-	          <AbsDimension x="120" y="10" />
+	          <AbsDimension x="150" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="38.7181122448986" y="124.743622448979" />
+	              <AbsDimension x="20" y="119" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -271,7 +271,7 @@
 	          <Layer level="BACKGROUND">
 	            <FontString name="Elite_Today" setAllPoints="true" text="Elite Today:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -279,12 +279,12 @@
 	      </Frame>
 	      <Frame name="Elite_Hunts__FFLayer" frameStrata="MEDIUM" frameLevel="10">
 	        <Size>
-	          <AbsDimension x="120" y="10" />
+	          <AbsDimension x="150" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="38.7181122448986" y="134.191326530612" />
+	              <AbsDimension x="20" y="132" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -292,7 +292,7 @@
 	          <Layer level="BACKGROUND">
 	            <FontString name="Elite_Hunts" setAllPoints="true" text="Elite Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -300,12 +300,12 @@
 	      </Frame>
 	      <Frame name="Standard_Hunts__FFLayer" frameStrata="MEDIUM" frameLevel="11">
 	        <Size>
-	          <AbsDimension x="120" y="10" />
+	          <AbsDimension x="150" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="38.7181122448986" y="143.923469387754" />
+	              <AbsDimension x="20" y="145" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -313,7 +313,7 @@
 	          <Layer level="BORDER">
 	            <FontString name="Standard_Hunts" setAllPoints="true" text="Standard Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -355,12 +355,12 @@
 	      </Frame>
 	      <Frame name="Standard_Hunts_Value__FFLayer" frameStrata="MEDIUM" frameLevel="14">
 	        <Size>
-	          <AbsDimension x="80" y="10" />
+	          <AbsDimension x="70" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="106.692062620882" y="143.923469387754" />
+	              <AbsDimension x="110" y="145" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -368,7 +368,7 @@
 	          <Layer level="BORDER">
 	            <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -376,12 +376,12 @@
 	      </Frame>
 	      <Frame name="Elite_Hunts_Value__FFLayer" frameStrata="MEDIUM" frameLevel="15">
 	        <Size>
-	          <AbsDimension x="80" y="10" />
+	          <AbsDimension x="70" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="106.692062620882" y="134.424056091837" />
+	              <AbsDimension x="110" y="132" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -389,7 +389,7 @@
 	          <Layer level="BORDER">
 	            <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -397,12 +397,12 @@
 	      </Frame>
 	      <Frame name="Elite_Today_Available__FFLayer" frameStrata="MEDIUM" frameLevel="16">
 	        <Size>
-	          <AbsDimension x="80" y="10" />
+	          <AbsDimension x="70" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="106.692062620882" y="124.743622448979" />
+	              <AbsDimension x="110" y="119" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -410,7 +410,7 @@
 	          <Layer level="BORDER">
 	            <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -418,12 +418,12 @@
 	      </Frame>
 	      <Frame name="Elite_Today_Unavailable__FFLayer" frameStrata="MEDIUM" frameLevel="17">
 	        <Size>
-	          <AbsDimension x="80" y="10" />
+	          <AbsDimension x="70" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="106.692062620882" y="124.743622448979" />
+	              <AbsDimension x="110" y="119" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -431,7 +431,7 @@
 	          <Layer level="BORDER">
 	            <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
@@ -439,12 +439,12 @@
 	      </Frame>
 	      <Frame name="Hunt_Seal_Value__FFLayer" frameStrata="MEDIUM" frameLevel="18">
 	        <Size>
-	          <AbsDimension x="70" y="10" />
+	          <AbsDimension x="70" y="13" />
 	        </Size>
 	        <Anchors>
 	          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
 	            <Offset>
-	              <AbsDimension x="101.692062620882" y="115.136479591837" />
+	              <AbsDimension x="110" y="106" />
 	            </Offset>
 	          </Anchor>
 	        </Anchors>
@@ -452,7 +452,7 @@
 	          <Layer level="BORDER">
 	            <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
 	              <FontHeight>
-	                <AbsValue val="8" />
+	                <AbsValue val="10" />
 	              </FontHeight>
 	            </FontString>
 	          </Layer>
