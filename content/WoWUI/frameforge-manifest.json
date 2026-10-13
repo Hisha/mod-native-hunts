@@ -20,7 +20,6 @@
       "id": "idle",
       "name": "Idle",
       "show": [
-        "Header_Text__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Panel_Idle__FFLayer",
         "No_Active_Hunt__FFLayer",
@@ -78,7 +77,6 @@
       "name": "Tracking",
       "show": [
         "Elite_Hunt_Icon__FFLayer",
-        "Header_Text__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -135,7 +133,6 @@
       "name": "Located",
       "show": [
         "Elite_Hunt_Icon__FFLayer",
-        "Header_Text__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -192,7 +189,6 @@
       "name": "Fight",
       "show": [
         "Elite_Hunt_Icon__FFLayer",
-        "Header_Text__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -249,7 +245,6 @@
       "name": "Turnin",
       "show": [
         "Elite_Hunt_Icon__FFLayer",
-        "Header_Text__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -315,15 +310,6 @@
         "fight",
         "turnin"
       ],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject",
-      "runtimeId": "Header_Text",
-      "visibilityRuntimeId": "Header_Text__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
       "runtimeValueRequired": false
     },
     {

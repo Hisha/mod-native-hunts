@@ -1388,35 +1388,15 @@
       }
     },
     {
-      "name": "DesignObject",
-      "parent": null,
-      "width": 270,
-      "height": 18,
-      "point": "CENTER",
-      "relativeTo": null,
-      "relativePoint": "CENTER",
-      "offsetX": -304.79179809481786,
-      "offsetY": 334.15773621621463,
-      "visible": true,
-      "kind": "FONTSTRING",
-      "visual": {
-        "text": {
-          "text": "Text",
-          "justifyH": "CENTER",
-          "justifyV": "MIDDLE"
-        }
-      }
-    },
-    {
       "name": "DesignObject2",
       "parent": null,
-      "width": 300,
-      "height": 105,
+      "width": 285,
+      "height": 130,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -306.6360419360943,
-      "offsetY": 290.341412068919,
+      "offsetX": -299.60290384248907,
+      "offsetY": 303.79279537315176,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1514,8 +1494,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.41964285714226,
-      "offsetY": 277.5189351716104,
+      "offsetX": -287.96239401186114,
+      "offsetY": 286.6360520896269,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1535,8 +1515,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.303228476123,
-      "offsetY": 287.56820368066144,
+      "offsetX": -287.96239401186114,
+      "offsetY": 299.6593599309157,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1556,8 +1536,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.41964285714226,
-      "offsetY": 298.19132653061206,
+      "offsetX": -287.96239401186114,
+      "offsetY": 312.79558276062016,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1577,8 +1557,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.41964285714226,
-      "offsetY": 308.69279677935526,
+      "offsetX": -287.96239401186114,
+      "offsetY": 326.3596473536783,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1598,8 +1578,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -233.07154093907474,
-      "offsetY": 277.7223794025898,
+      "offsetX": -233.3167272691256,
+      "offsetY": 287.8341284698067,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1635,7 +1615,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -230.4456924811592,
-      "offsetY": 308.69279677935526,
+      "offsetY": 326.3596473536783,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1656,7 +1636,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -230.44569248115923,
-      "offsetY": 298.42405609183675,
+      "offsetY": 312.79558276062016,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1677,7 +1657,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -230.33946589278526,
-      "offsetY": 287.56820368066144,
+      "offsetY": 299.6593599309157,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1698,7 +1678,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -230.4456924811592,
-      "offsetY": 287.56820368066144,
+      "offsetY": 299.6593599309157,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1719,7 +1699,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -235.27346442717953,
-      "offsetY": 277.5189351716104,
+      "offsetY": 286.6360520896269,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2034,7 +2014,7 @@
     {
       "name": "DesignObject33",
       "parent": null,
-      "width": 140,
+      "width": 120,
       "height": 16,
       "point": "CENTER",
       "relativeTo": null,
@@ -2387,14 +2367,12 @@
     }
   ],
   "editor": {
-    "activeDesignState": "idle",
+    "activeDesignState": "located",
     "lockedElements": [
       "DesignObject3",
       "DesignObject5",
       "DesignObject4",
       "DesignObject6",
-      "DesignObject9",
-      "DesignObject14",
       "DesignObject22",
       "DesignObject18",
       "DesignObject20",
@@ -2410,14 +2388,11 @@
       "DesignObject31",
       "DesignObject30",
       "DesignObject29",
-      "DesignObject33",
       "DesignObject34",
       "DesignObject38",
       "DesignObject37",
       "DesignObject36",
       "DesignObject39",
-      "DesignObject40",
-      "DesignObject41",
       "DesignObject35",
       "DesignObject42",
       "DesignObject45",
@@ -2426,15 +2401,20 @@
       "DesignObject48",
       "DesignObject44",
       "DesignObject49",
+      "DesignObject33",
+      "DesignObject40",
+      "DesignObject41",
       "DesignObject2",
-      "DesignObject7",
-      "DesignObject17",
-      "DesignObject11",
+      "DesignObject10",
+      "DesignObject9",
       "DesignObject8",
+      "DesignObject7",
+      "DesignObject13",
+      "DesignObject14",
       "DesignObject16",
       "DesignObject15",
-      "DesignObject10",
-      "DesignObject13"
+      "DesignObject17",
+      "DesignObject11"
     ],
     "groups": [
       {
@@ -2531,16 +2511,6 @@
       {
         "frame": "LFDParentFrame",
         "displayName": "Blizzard Dungeon Finder Frame"
-      },
-      {
-        "frame": "DesignObject",
-        "displayName": "Header_Text",
-        "textOverride": "Native Hunt",
-        "textStyle": {
-          "baseStyle": "GameFontNormal",
-          "size": 12,
-          "justifyH": "CENTER"
-        }
       },
       {
         "frame": "DesignObject2",
@@ -2974,7 +2944,7 @@
       {
         "frame": "DesignObject40",
         "displayName": "Located2_Text",
-        "textOverride": "Travel to the marked location on your map to activate",
+        "textOverride": "Travel to the marked location on your map to",
         "textStyle": {
           "baseStyle": "GameFontHighlight",
           "size": 10
@@ -2986,7 +2956,7 @@
       {
         "frame": "DesignObject41",
         "displayName": "Located3_Text",
-        "textOverride": "the crystal and dispatch your prey.",
+        "textOverride": "activate the crystal and dispatch your prey.",
         "textStyle": {
           "baseStyle": "GameFontHighlight",
           "size": 10
@@ -3090,7 +3060,6 @@
     ],
     "designOrder": [
       "DesignObject23",
-      "DesignObject",
       "DesignObject2",
       "DesignObject3",
       "DesignObject4",
