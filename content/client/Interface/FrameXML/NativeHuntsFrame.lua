@@ -49,7 +49,6 @@ end
 -- State codes here are module-owned: I=Idle, T=Tracking, L=Located, F=Fight, R=Turnin.
 local PRESENTATION = {
 	{"Elite_Hunt_Icon", "Elite_Hunt_Icon__FFLayer", "TLFR"},
-	{"Header_Text", "Header_Text__FFLayer", "*"},
 	{"Hunt_Panel_Record", "Hunt_Panel_Record__FFLayer", "*"},
 	{"Hunt_Panel_Idle", "Hunt_Panel_Idle__FFLayer", "I"},
 	{"No_Active_Hunt", "No_Active_Hunt__FFLayer", "I"},
