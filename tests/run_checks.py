@@ -293,6 +293,8 @@ def run_functional_ui_checks() -> None:
         'LFDParentFrame:HookScript("OnHide",ApplyStockGeometry)',
         r'Interface\\NativeHunts\\hunt_icon_standard.tga',
         r'Interface\\NativeHunts\\hunt_icon_elite.tga',
+        "LFDParentFramePortraitTexture", "SetBlizzardPortraitArtworkVisible(false)",
+        "SetBlizzardPortraitArtworkVisible(true)",
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -1045,7 +1047,7 @@ def run_frameforge_functional_ui_checks() -> None:
             if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
                 controls[name] = controls.FrameForgeTestControl()
         for name in ("LFDParentFrame", "LFDQueueFrame", "LFDQueueFrameTitleText",
-                     "LFDParentFramePortraitIcon"):
+                     "LFDParentFramePortraitTexture", "LFDParentFramePortraitIcon"):
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
@@ -1061,13 +1063,15 @@ def run_frameforge_functional_ui_checks() -> None:
                            "Final_Fight_Icon", "Final_Fight_Text")
         if any(getattr(controls, name).drawLayer != "OVERLAY" for name in overlay_regions):
             raise AssertionError("Fight/Turnin body regions were not normalized to a persistent draw layer")
-        if not controls.LFDParentFramePortraitIcon.visible:
-            raise AssertionError("initial Dungeon Finder portrait icon was not preserved")
+        if (not controls.LFDParentFramePortraitTexture.visible or
+                not controls.LFDParentFramePortraitIcon.visible):
+            raise AssertionError("initial Dungeon Finder portrait artwork was not preserved")
         controls.NativeHuntsFrame_SelectTab(2)
         if (controls.LFDParentFrame.selectedTab != 2 or controls.LFDQueueFrame.visible or
                 not controls.NativeHuntsFrame.visible or
                 not controls.FrameForge_Dungeon_Finder_UI.visible or
-                controls.LFDParentFramePortraitIcon.visible or
+                (controls.LFDParentFramePortraitTexture.visible or
+                 controls.LFDParentFramePortraitIcon.visible) or
                 controls.LFDParentFrame.width != 355 or controls.LFDParentFrame.height != 440 or
                 controls.LFDQueueFrameTitleText.text != "Dungeon Finder" or
                 controls.FrameForgeTestRequests != 1):
@@ -1075,19 +1079,22 @@ def run_frameforge_functional_ui_checks() -> None:
         controls.NativeHuntsFrame_SelectTab(1)
         if (controls.LFDParentFrame.selectedTab != 1 or not controls.LFDQueueFrame.visible or
                 controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
-                not controls.LFDParentFramePortraitIcon.visible or
+                (not controls.LFDParentFramePortraitTexture.visible or
+                 not controls.LFDParentFramePortraitIcon.visible) or
                 controls.LFDQueueFrameTitleText.text != "Dungeon Finder"):
             raise AssertionError("Dungeon Finder tab selection did not restore Blizzard's panel state")
         controls.FrameForgeTestTime = 12
         controls.NativeHuntsFrame_SelectTab(2)
         controls.LFDParentFrame.hooks["OnHide"]()
         if (controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFramePortraitTexture.visible or
                 controls.LFDParentFramePortraitIcon.visible):
             raise AssertionError("closing Dungeon Finder left Native Hunts presentation visible")
         controls.FrameForgeTestTime = 14
         controls.LFDParentFrame.hooks["OnShow"]()
         if (controls.LFDQueueFrame.visible or not controls.NativeHuntsFrame.visible or
                 not controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFramePortraitTexture.visible or
                 controls.LFDParentFramePortraitIcon.visible or
                 controls.FrameForgeTestRequests != 3):
             raise AssertionError("reopening Dungeon Finder did not restore Hunts selection")
@@ -1096,6 +1103,7 @@ def run_frameforge_functional_ui_checks() -> None:
         controls.LFDParentFrame.hooks["OnShow"]()
         if (not controls.LFDQueueFrame.visible or controls.NativeHuntsFrame.visible or
                 controls.FrameForge_Dungeon_Finder_UI.visible or
+                not controls.LFDParentFramePortraitTexture.visible or
                 not controls.LFDParentFramePortraitIcon.visible):
             raise AssertionError("reopening Dungeon Finder did not restore its stock portrait icon")
 
@@ -1295,7 +1303,7 @@ def run_source_safety_checks() -> None:
     required_turn_in_safety = (
         "SaveInventoryAndGoldToDB(transaction)",
         "CommitCharacterTransactionAndWait(transaction)",
-        "DestroyItemCount(_resources.SealItemEntry",
+        "DestroyItemCount(resources.SealItemEntry",
         "duplicate rewards are blocked until recovery",
         "provisional rewards were removed",
     )
@@ -1376,6 +1384,24 @@ def run_source_safety_checks() -> None:
                   "SaveInventoryAndGoldToDB(transaction)"):
         if token not in manager:
             raise AssertionError(f"reward behavior missing: {token}")
+    reward_delivery_contract = (
+        "pool[urand(0, static_cast<std::uint32_t>(pool.size()-1))]",
+        "PlanRewardDelivery(rewardItem != 0, seals != 0",
+        "CanStoreRewardBundle(player, rewardItem",
+        "player->CanStoreItems(",
+        'MailDraft draft("Huntmaster\'s Reward — "',
+        "Your quarry has fallen, hunter. Your reward awaits you.",
+        "MailSender(MAIL_CREATURE, runtime.HuntmasterEntry)",
+        "item->SaveToDB(transaction)",
+        "provisional.MailId = player->GetMails().front()->messageID",
+        "RemoveProvisionalRewards(player, _resources, provisional)",
+        "ResolveRewardCommit(false, persistence)",
+    )
+    for token in reward_delivery_contract:
+        if token not in manager:
+            raise AssertionError(f"atomic reward-delivery contract missing: {token}")
+    if "SelectDeliverableReward" in manager:
+        raise AssertionError("inventory availability still changes equipment selection")
     aura_contract = (
         'resolveAura("active-standard-hunt"',
         'resolveAura("active-elite-hunt"',

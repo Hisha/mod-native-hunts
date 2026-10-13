@@ -9,7 +9,7 @@
    eligibility, Local/Continent/World filtering, zone deduplication, ambush
    thresholds/pending tracking exclusion, crystal ownership/location checks,
    failed-spawn recovery, final
-   prey identity, Return Rift ownership, turn-in bag-space refusal, managed
+   prey identity, Return Rift ownership, reward mail fallback planning, managed
    resource unavailability, abandonment, snapshots, all 195 unique authored
    sites, regional counts, and per-zone site pools;
 3. the functional client contract of the known-working version-18 package:

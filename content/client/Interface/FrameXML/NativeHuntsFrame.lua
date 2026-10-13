@@ -117,9 +117,13 @@ local function NormalizePresentationDrawLayers()
 	end
 end
 
-local function SetBlizzardPortraitIconVisible(visible)
-	if not LFDParentFramePortraitIcon then return; end
-	if visible then LFDParentFramePortraitIcon:Show(); else LFDParentFramePortraitIcon:Hide(); end
+local function SetBlizzardPortraitArtworkVisible(visible)
+	local function SetRegionVisible(region)
+		if not region then return; end
+		if visible then region:Show(); else region:Hide(); end
+	end
+	SetRegionVisible(LFDParentFramePortraitTexture);
+	SetRegionVisible(LFDParentFramePortraitIcon);
 end
 
 local function ReportInitializationFailure(message)
@@ -129,7 +133,7 @@ local function ReportInitializationFailure(message)
 	if NativeHuntsFrame then NativeHuntsFrame:Hide(); end
 	if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
 	if LFDQueueFrame then LFDQueueFrame:Show(); end
-	SetBlizzardPortraitIconVisible(true);
+	SetBlizzardPortraitArtworkVisible(true);
 	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
 		DEFAULT_CHAT_FRAME:AddMessage("|cffff2020Native Hunts:|r " .. message);
 	end
@@ -138,7 +142,8 @@ end
 local function ValidateFrameForgeControls()
 	local required = {"LFDParentFrame", "LFDQueueFrame", "NativeHuntsFrame",
 		"FrameForge_Dungeon_Finder_UI", "Tracker_Hunt_Progress",
-		"LFDParentFrameTab1", "LFDParentFrameTab2", "LFDParentFramePortraitIcon"};
+		"LFDParentFrameTab1", "LFDParentFrameTab2", "LFDParentFramePortraitTexture",
+		"LFDParentFramePortraitIcon"};
 	for _, name in ipairs(required) do
 		if not _G[name] then return nil, name; end
 	end
@@ -351,11 +356,11 @@ function NativeHuntsFrame_SelectTab(tab)
 	PositionTabs();
 	if tab == NATIVE_HUNTS_HUNTS_TAB then
 		selectedTab = tab; LFDQueueFrame:Hide(); NativeHuntsFrame:Show();
-		FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitIconVisible(false); RequestSnapshot();
+		FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitArtworkVisible(false); RequestSnapshot();
 	else
 		selectedTab = NATIVE_HUNTS_DUNGEON_TAB; NativeHuntsFrame:Hide();
 		if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
-		LFDQueueFrame:Show(); SetBlizzardPortraitIconVisible(true); tab = selectedTab;
+		LFDQueueFrame:Show(); SetBlizzardPortraitArtworkVisible(true); tab = selectedTab;
 	end
 	if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame, tab); end
 end
@@ -384,9 +389,9 @@ function NativeHuntsFrame_OnLoad(self)
 	if hooksecurefunc and type(LFDFrame_OnEvent)=="function" then hooksecurefunc("LFDFrame_OnEvent",function(frame,event) if event=="LFG_OPEN_FROM_GOSSIP" then NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB); end end); end
 	LFDParentFrame:HookScript("OnShow",function()
 		if selectedTab == NATIVE_HUNTS_HUNTS_TAB then
-			LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitIconVisible(false); RequestSnapshot();
+			LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitArtworkVisible(false); RequestSnapshot();
 		else
-			NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide(); LFDQueueFrame:Show(); SetBlizzardPortraitIconVisible(true);
+			NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide(); LFDQueueFrame:Show(); SetBlizzardPortraitArtworkVisible(true);
 		end
 		PositionTabs();
 	end);

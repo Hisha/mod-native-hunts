@@ -95,6 +95,8 @@ struct ProvisionalTurnIn {
 	std::uint32_t EquipmentEntry = 0;
 	std::uint32_t Money = 0;
 	ObjectGuid EquipmentGuid;
+	std::uint32_t MailId = 0;
+	std::vector<ObjectGuid> MailItemGuids;
 };
 
 class NativeHuntsManager {

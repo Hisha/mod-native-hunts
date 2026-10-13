@@ -132,6 +132,40 @@ void TestRewardRules() {
 			"Elite health tuning");
 	}
 	Check(GuardLocatorSeeds().size()==14, "ten-city authoritative guard seeds");
+
+	auto fullBags = PlanRewardDelivery(true,true,4,4,4);
+	Check(!fullBags.EquipmentToInventory && !fullBags.SealsToInventory,
+		"full bags mail equipment and Seals");
+
+	auto oneFreeSlot = PlanRewardDelivery(true,true,0,0,4);
+	Check(oneFreeSlot.EquipmentToInventory && !oneFreeSlot.SealsToInventory,
+		"one free slot stores equipment and mails Seals without double-booking");
+
+	auto uniqueRestriction = PlanRewardDelivery(true,true,17,0,17);
+	Check(!uniqueRestriction.EquipmentToInventory &&
+		uniqueRestriction.SealsToInventory,
+		"unique-item restriction mails equipment without changing selection");
+
+	auto noUpgrade = PlanRewardDelivery(false,true,0,0,0);
+	Check(!noUpgrade.EquipmentToInventory && noUpgrade.SealsToInventory &&
+		EliteSealReward(true,80,80,1,true,1)==2,
+		"no eligible upgrade keeps the bonus Seal path");
+
+	auto success = PlanRewardDelivery(true,true,0,0,0);
+	Check(success.EquipmentToInventory && success.SealsToInventory,
+		"successful bundle delivery stores both rewards directly");
+
+	Check(ResolveRewardCommit(true,AssignmentPersistence::Unknown)==
+			RewardCommitResolution::Complete &&
+		ResolveRewardCommit(false,AssignmentPersistence::Missing)==
+			RewardCommitResolution::Complete,
+		"acknowledged and atomically committed rewards complete");
+	Check(ResolveRewardCommit(false,AssignmentPersistence::Present)==
+			RewardCommitResolution::RollBack,
+		"interrupted transaction with retained assignment rolls back rewards");
+	Check(ResolveRewardCommit(false,AssignmentPersistence::Unknown)==
+			RewardCommitResolution::AwaitRecovery,
+		"unreadable transaction state blocks duplicate rewards");
 }
 
 void TestInvalidAndDuplicateEvents() {

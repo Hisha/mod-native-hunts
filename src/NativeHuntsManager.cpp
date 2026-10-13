@@ -17,6 +17,8 @@
 #include "Group.h"
 #include "Item.h"
 #include "Log.h"
+#include "Mail.h"
+#include "MailMgr.h"
 #include "Map.h"
 #include "MapMgr.h"
 #include "MotionMaster.h"
@@ -110,6 +112,66 @@ std::optional<bool> AssignmentExists(std::uint32_t guid) {
 	if (!result)
 		return std::nullopt;
 	return result->Fetch()[0].Get<std::uint64_t>() != 0;
+}
+
+InventoryResult CanStoreRewardBundle(Player *player,
+		std::uint32_t equipmentEntry, std::uint32_t sealEntry,
+		std::uint32_t sealCount) {
+	Item *probes[2] = {};
+	int probeCount = 0;
+	auto cleanup = [&]() {
+		for (int index = 0; index < probeCount; ++index) {
+			probes[index]->RemoveFromUpdateQueueOf(player);
+			delete probes[index];
+		}
+	};
+
+	probes[probeCount] = Item::CreateItem(equipmentEntry, 1, player);
+	if (!probes[probeCount])
+		return EQUIP_ERR_ITEM_NOT_FOUND;
+	++probeCount;
+	if (sealCount) {
+		probes[probeCount] = Item::CreateItem(sealEntry, sealCount, player);
+		if (!probes[probeCount]) {
+			cleanup();
+			return EQUIP_ERR_ITEM_NOT_FOUND;
+		}
+		++probeCount;
+	}
+
+	std::uint32_t limitedCategory = 0;
+	InventoryResult const result = player->CanStoreItems(
+		probes, probeCount, &limitedCategory);
+	cleanup();
+	return result;
+}
+
+void RemoveProvisionalRewards(Player *player, ManagedResources const &resources,
+		ProvisionalTurnIn const &provisional) {
+	if (provisional.SealCount)
+		player->DestroyItemCount(resources.SealItemEntry,
+			provisional.SealCount, true);
+	if (!provisional.EquipmentGuid.IsEmpty()) {
+		if (Item *item = player->GetItemByGuid(provisional.EquipmentGuid))
+			player->DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
+	} else if (provisional.EquipmentEntry)
+		player->DestroyItemCount(provisional.EquipmentEntry, 1, true);
+	if (provisional.Money)
+		player->ModifyMoney(-static_cast<std::int32_t>(provisional.Money));
+
+	if (provisional.MailId) {
+		if (Mail *mail = player->GetMail(provisional.MailId)) {
+			player->RemoveMail(provisional.MailId);
+			delete mail;
+		}
+		for (ObjectGuid const &itemGuid : provisional.MailItemGuids)
+			if (Item *item = player->GetMItem(itemGuid.GetCounter())) {
+				player->RemoveMItem(itemGuid.GetCounter());
+				delete item;
+			}
+		sMailMgr->RecountMailCount(player->GetGUID().GetCounter());
+		player->UpdateNextMailTimeAndUnreads();
+	}
 }
 
 bool IsSpecCompatibleEquipment(uint32 spec, ItemTemplate const& item)
@@ -2015,13 +2077,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 			return true;
 		}
 		auto const provisional = uncertain->second;
-		if (provisional.SealCount) player->DestroyItemCount(_resources.SealItemEntry,provisional.SealCount,true);
-		if (!provisional.EquipmentGuid.IsEmpty()) {
-			if (Item *item=player->GetItemByGuid(provisional.EquipmentGuid))
-				player->DestroyItem(item->GetBagSlot(),item->GetSlot(),true);
-		} else if (provisional.EquipmentEntry)
-			player->DestroyItemCount(provisional.EquipmentEntry,1,true);
-		if (provisional.Money) player->ModifyMoney(-static_cast<std::int32_t>(provisional.Money));
+		RemoveProvisionalRewards(player, _resources, provisional);
 		_uncertainTurnIns.erase(uncertain);
 		message = "The earlier completion rolled back; provisional rewards were removed.";
 		return false;
@@ -2088,41 +2144,129 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		}
 		if (pool.empty()) pool.push_back(scored.front().id);
 	}
-	std::uint32_t rewardItem = pool.empty() ? 0 : pool[urand(0, static_cast<std::uint32_t>(pool.size()-1))];
 	bool const noUpgrade = endgameElite && _config.EliteRewardRequireUpgrade && pool.empty();
 	std::uint32_t const seals = EliteSealReward(elite, level,
 		_config.EliteSealMinimumLevel, _config.EliteSealsPerCompletion,
 		noUpgrade, _config.EliteNoUpgradeBonusSeals);
+	std::uint32_t const rewardItem = pool.empty() ? 0 :
+		pool[urand(0, static_cast<std::uint32_t>(pool.size()-1))];
+	ItemPosCountVec equipmentDest;
 	ItemPosCountVec sealDest;
-	if (seals && player->CanStoreNewItem(NULL_BAG,NULL_SLOT,sealDest,
-		_resources.SealItemEntry,seals) != EQUIP_ERR_OK) {
-		message = "Make room for the physical Huntmaster's Seal before turning in.";
-		return false;
+	InventoryResult equipmentResult = EQUIP_ERR_OK;
+	InventoryResult sealResult = EQUIP_ERR_OK;
+	InventoryResult combinedResult = EQUIP_ERR_OK;
+	if (rewardItem)
+		equipmentResult = player->CanStoreNewItem(NULL_BAG, NULL_SLOT,
+			equipmentDest, rewardItem, 1);
+	if (seals)
+		sealResult = player->CanStoreNewItem(NULL_BAG, NULL_SLOT,
+			sealDest, _resources.SealItemEntry, seals);
+	if (rewardItem && seals)
+		combinedResult = CanStoreRewardBundle(player, rewardItem,
+			_resources.SealItemEntry, seals);
+	auto plan = PlanRewardDelivery(rewardItem != 0, seals != 0,
+		static_cast<std::uint32_t>(equipmentResult),
+		static_cast<std::uint32_t>(sealResult),
+		static_cast<std::uint32_t>(combinedResult));
+	if (rewardItem && !plan.EquipmentToInventory)
+		LOG_INFO("module.native_hunts",
+			"Mailing Native Hunt reward item {} to character {}: inventory "
+			"result {}.", rewardItem, guid,
+			static_cast<std::uint32_t>(equipmentResult));
+	if (seals && !plan.SealsToInventory)
+		LOG_INFO("module.native_hunts",
+			"Mailing {} Native Hunt Seal(s) to character {}: inventory "
+			"result {} (bundle result {}).", seals, guid,
+			static_cast<std::uint32_t>(sealResult),
+			static_cast<std::uint32_t>(combinedResult));
+
+	Item *equipment = nullptr;
+	if (plan.EquipmentToInventory) {
+		equipment = player->StoreNewItem(equipmentDest, rewardItem, true);
+		if (!equipment) {
+			LOG_WARN("module.native_hunts",
+				"Native Hunt reward item {} passed inventory preflight but "
+				"storage failed for character {}; falling back to mail.",
+				rewardItem, guid);
+			plan.EquipmentToInventory = false;
+		}
+		if (equipment && endgameElite)
+			equipment->SetBinding(true);
 	}
-	std::uint32_t storedItem = 0;
-	ObjectGuid storedItemGuid;
-	if (seals) {
-		if (Item *seal = player->StoreNewItem(sealDest,_resources.SealItemEntry,true))
-			player->SendNewItem(seal,seals,true,false);
-		else {
-			message = "The Seal could not be created; your Hunt remains ready.";
-			return false;
+	Item *seal = nullptr;
+	if (plan.SealsToInventory) {
+		sealDest.clear();
+		InventoryResult const currentResult = player->CanStoreNewItem(
+			NULL_BAG, NULL_SLOT, sealDest, _resources.SealItemEntry, seals);
+		if (currentResult == EQUIP_ERR_OK)
+			seal = player->StoreNewItem(sealDest, _resources.SealItemEntry,
+				true);
+		if (!seal) {
+			LOG_WARN("module.native_hunts",
+				"Native Hunt Seal storage failed for character {}; falling back "
+				"to mail.", guid);
+			plan.SealsToInventory = false;
 		}
 	}
-	if (rewardItem) {
-		ItemPosCountVec itemDest;
-		if (player->CanStoreNewItem(NULL_BAG,NULL_SLOT,itemDest,rewardItem,1) == EQUIP_ERR_OK)
-			if (Item *item = player->StoreNewItem(itemDest,rewardItem,true)) {
-				storedItem = rewardItem;
-				storedItemGuid = item->GetGUID();
-				if (endgameElite) item->SetBinding(true);
-				player->SendNewItem(item,1,true,false);
-			}
+	bool const mailedEquipment = rewardItem && !plan.EquipmentToInventory;
+	bool const mailedSeals = seals && !plan.SealsToInventory;
+	std::vector<Item *> mailItems;
+	auto createMailItem = [&](std::uint32_t itemEntry,
+			std::uint32_t count, bool bind) {
+		Item *item = Item::CreateItem(itemEntry, count, player);
+		if (!item)
+			return false;
+		item->RemoveFromUpdateQueueOf(player);
+		if (bind)
+			item->SetBinding(true);
+		mailItems.push_back(item);
+		return true;
+	};
+	if ((mailedEquipment && !createMailItem(rewardItem, 1, endgameElite)) ||
+		(mailedSeals && !createMailItem(_resources.SealItemEntry, seals, false))) {
+		for (Item *item : mailItems)
+			delete item;
+		ProvisionalTurnIn direct;
+		direct.SealCount = seal ? seals : 0;
+		direct.EquipmentEntry = equipment ? rewardItem : 0;
+		direct.EquipmentGuid = equipment ? equipment->GetGUID() : ObjectGuid();
+		RemoveProvisionalRewards(player, _resources, direct);
+		message = "The mailed reward could not be created; your Hunt remains ready.";
+		return false;
 	}
+
+	ProvisionalTurnIn provisional;
+	provisional.SealCount = seal ? seals : 0;
+	provisional.EquipmentEntry = equipment ? rewardItem : 0;
+	provisional.EquipmentGuid = equipment ? equipment->GetGUID() : ObjectGuid();
 	std::uint32_t const money = HuntMoneyReward(level,prey->RewardMultiplier,
 		elite ? _config.EliteGoldMultiplier : 1.0f);
-	player->ModifyMoney(static_cast<std::int32_t>(money));
+	provisional.Money = money;
 	auto transaction = CharacterDatabase.BeginTransaction();
+	if (!mailItems.empty()) {
+		std::size_t const previousMailCount = player->GetMailSize();
+		MailDraft draft("Huntmaster's Reward — " +
+			runtime.Aggregate.Identity.PreyName,
+			"Your quarry has fallen, hunter. Your reward awaits you. May your "
+			"next hunt be just as successful.");
+		for (Item *item : mailItems) {
+			item->SaveToDB(transaction);
+			provisional.MailItemGuids.push_back(item->GetGUID());
+			draft.AddItem(item);
+		}
+		draft.SendMailTo(transaction, MailReceiver(player),
+			MailSender(MAIL_CREATURE, runtime.HuntmasterEntry),
+			MAIL_CHECK_MASK_HAS_BODY);
+		if (player->GetMailSize() != previousMailCount + 1) {
+			RemoveProvisionalRewards(player, _resources, provisional);
+			for (Item *item : mailItems)
+				delete item;
+			message = "The reward mail could not be prepared; your Hunt remains ready.";
+			return false;
+		}
+		provisional.MailId = player->GetMails().front()->messageID;
+	}
+	player->ModifyMoney(static_cast<std::int32_t>(money));
 	transaction->Append("INSERT IGNORE INTO `native_hunt_stats` (`character_guid`) VALUES ("+
 		std::to_string(guid)+")");
 	transaction->Append("INSERT INTO `native_hunt_stats` (`character_guid`) SELECT "+
@@ -2130,7 +2274,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		std::to_string(guid)+" AND `state`="+std::to_string(static_cast<std::uint32_t>(HuntState::ReadyToTurnIn))+
 		" AND `revision`="+std::to_string(runtime.Aggregate.Revision)+")");
 	player->SaveInventoryAndGoldToDB(transaction);
-	std::string qualityColumn = storedItem ? (quality == ITEM_QUALITY_EPIC ? "epics_received" :
+	std::string qualityColumn = rewardItem ? (quality == ITEM_QUALITY_EPIC ? "epics_received" :
 		quality == ITEM_QUALITY_RARE ? "blues_received" : "greens_received") : "";
 	std::ostringstream stats;
 	stats << "INSERT INTO `native_hunt_stats` (`character_guid`,`lifetime_completed`,`standard_completed`,`daily_standard_completed`,`daily_standard_reset_date`,`greens_received`,`blues_received`,`epics_received`,`elite_completed`,`last_completed_at`) VALUES ("
@@ -2148,25 +2292,30 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 	transaction->Append("DELETE FROM `native_hunt_assignment` WHERE `character_guid`="+
 		std::to_string(guid)+" AND `state`="+std::to_string(static_cast<std::uint32_t>(HuntState::ReadyToTurnIn))+
 		" AND `revision`="+std::to_string(runtime.Aggregate.Revision));
-	if (!CommitCharacterTransactionAndWait(transaction)) {
-		auto assignment = AssignmentExists(guid);
-		if (assignment && !*assignment) {
-			// Commit succeeded but its async acknowledgement was lost.
-		} else if (!assignment) {
-			_uncertainTurnIns[guid] = {seals,storedItem,money,storedItemGuid};
-			message = "The database result is unreadable; duplicate rewards are blocked until recovery.";
-			return false;
-		} else {
-		if (seals) player->DestroyItemCount(_resources.SealItemEntry,seals,true);
-		if (!storedItemGuid.IsEmpty()) {
-			if (Item *item=player->GetItemByGuid(storedItemGuid))
-				player->DestroyItem(item->GetBagSlot(),item->GetSlot(),true);
-		}
-		player->ModifyMoney(-static_cast<std::int32_t>(money));
-		message = "Hunt completion could not be committed; provisional rewards were removed.";
-		return false;
+	bool const commitAcknowledged = CommitCharacterTransactionAndWait(transaction);
+	if (!commitAcknowledged) {
+		auto const assignment = AssignmentExists(guid);
+		AssignmentPersistence const persistence = !assignment ?
+			AssignmentPersistence::Unknown : *assignment ?
+			AssignmentPersistence::Present : AssignmentPersistence::Missing;
+		switch (ResolveRewardCommit(false, persistence)) {
+			case RewardCommitResolution::Complete:
+				// Commit succeeded but its async acknowledgement was lost.
+				break;
+			case RewardCommitResolution::AwaitRecovery:
+				_uncertainTurnIns[guid] = provisional;
+				message = "The database result is unreadable; duplicate rewards are blocked until recovery.";
+				return false;
+			case RewardCommitResolution::RollBack:
+				RemoveProvisionalRewards(player, _resources, provisional);
+				message = "Hunt completion could not be committed; provisional rewards were removed.";
+				return false;
 		}
 	}
+	if (equipment)
+		player->SendNewItem(equipment, 1, true, false);
+	if (seal)
+		player->SendNewItem(seal, seals, true, false);
 	std::uint32_t const xp = HuntXpReward(player->GetUInt32Value(PLAYER_NEXT_LEVEL_XP),
 		level >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL), _config.XpMultiplier,
 		prey->RewardMultiplier, elite ? _config.EliteXpMultiplier : 1.0f);
@@ -2178,8 +2327,17 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 	QueueUiState(player);
 	std::ostringstream out;
 	out << "Hunt complete: " << xp << " XP, " << money/10000 << "g " << (money/100)%100 << "s " << money%100 << "c";
-	if (storedItem) if (auto const *t=sObjectMgr->GetItemTemplate(storedItem)) out << ", " << t->Name1;
+	if (rewardItem) if (auto const *t=sObjectMgr->GetItemTemplate(rewardItem)) out << ", " << t->Name1;
 	if (seals) out << ", " << seals << " physical Huntmaster's Seal" << (seals==1?"":"s");
+	if (mailedEquipment || mailedSeals) {
+		out << ". Direct inventory delivery was unavailable; the Huntmaster mailed ";
+		if (mailedEquipment && mailedSeals)
+			out << "the equipment and Seals";
+		else if (mailedEquipment)
+			out << "the equipment";
+		else
+			out << "the Seals";
+	}
 	message=out.str()+".";
 	return true;
 }
@@ -2350,23 +2508,14 @@ void NativeHuntsManager::OnLogout(Player *player) {
 		// alongside a retained assignment. If the database cannot be read, favor
 		// removing the provisional item over creating a repeatable reward.
 		auto const provisional = uncertain->second;
-		if (provisional.SealCount)
-			player->DestroyItemCount(_resources.SealItemEntry, provisional.SealCount, true);
-		if (provisional.EquipmentEntry)
-			if (!provisional.EquipmentGuid.IsEmpty()) {
-				if (Item *item=player->GetItemByGuid(provisional.EquipmentGuid))
-					player->DestroyItem(item->GetBagSlot(),item->GetSlot(),true);
-			} else
-				player->DestroyItemCount(provisional.EquipmentEntry, 1, true);
-		if (provisional.Money)
-			player->ModifyMoney(-static_cast<std::int32_t>(provisional.Money));
+		RemoveProvisionalRewards(player, _resources, provisional);
 		if (assignment.has_value()) {
 			auto cleanup = CharacterDatabase.BeginTransaction();
 			player->SaveInventoryAndGoldToDB(cleanup);
 			CommitCharacterTransactionAndWait(cleanup);
 		} else
 			LOG_ERROR("module.native_hunts",
-				"Removed the provisional Native Hunt Seal for character {} on "
+				"Removed provisional Native Hunt rewards for character {} on "
 				"logout because the commit result remained unreadable.",
 				guid);
 		_uncertainTurnIns.erase(uncertain);

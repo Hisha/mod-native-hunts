@@ -44,4 +44,25 @@ std::uint32_t EliteSealReward(bool elite, std::uint32_t level,
 		return 0;
 	return perCompletion + (noUpgradeAtEndgame ? noUpgradeBonus : 0);
 }
+
+RewardDeliveryPlan PlanRewardDelivery(bool hasEquipment, bool hasSeals,
+		std::uint32_t equipmentResult, std::uint32_t sealResult,
+		std::uint32_t combinedResult) {
+	RewardDeliveryPlan plan;
+	if (hasEquipment && equipmentResult == 0) {
+		plan.EquipmentToInventory = true;
+		plan.SealsToInventory = hasSeals && combinedResult == 0;
+	} else
+		plan.SealsToInventory = hasSeals && sealResult == 0;
+	return plan;
+}
+
+RewardCommitResolution ResolveRewardCommit(bool commitAcknowledged,
+		AssignmentPersistence assignment) {
+	if (commitAcknowledged || assignment == AssignmentPersistence::Missing)
+		return RewardCommitResolution::Complete;
+	if (assignment == AssignmentPersistence::Present)
+		return RewardCommitResolution::RollBack;
+	return RewardCommitResolution::AwaitRecovery;
+}
 } // namespace native_hunts
