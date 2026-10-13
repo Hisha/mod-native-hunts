@@ -353,6 +353,63 @@ bool IsSpecCompatibleEquipment(uint32 spec, ItemTemplate const& item)
     return true;
 }
 
+bool IsSpecForClass(Player const *player, std::uint32_t spec) {
+	if (!player)
+		return false;
+	switch (player->getClass()) {
+	case CLASS_WARRIOR:
+		return spec == TALENT_TREE_WARRIOR_ARMS || spec == TALENT_TREE_WARRIOR_FURY || spec == TALENT_TREE_WARRIOR_PROTECTION;
+	case CLASS_PALADIN:
+		return spec == TALENT_TREE_PALADIN_HOLY || spec == TALENT_TREE_PALADIN_PROTECTION || spec == TALENT_TREE_PALADIN_RETRIBUTION;
+	case CLASS_HUNTER:
+		return spec == TALENT_TREE_HUNTER_BEAST_MASTERY || spec == TALENT_TREE_HUNTER_MARKSMANSHIP || spec == TALENT_TREE_HUNTER_SURVIVAL;
+	case CLASS_ROGUE:
+		return spec == TALENT_TREE_ROGUE_ASSASSINATION || spec == TALENT_TREE_ROGUE_COMBAT || spec == TALENT_TREE_ROGUE_SUBTLETY;
+	case CLASS_PRIEST:
+		return spec == TALENT_TREE_PRIEST_DISCIPLINE || spec == TALENT_TREE_PRIEST_HOLY || spec == TALENT_TREE_PRIEST_SHADOW;
+	case CLASS_DEATH_KNIGHT:
+		return spec == TALENT_TREE_DEATH_KNIGHT_BLOOD || spec == TALENT_TREE_DEATH_KNIGHT_FROST || spec == TALENT_TREE_DEATH_KNIGHT_UNHOLY;
+	case CLASS_SHAMAN:
+		return spec == TALENT_TREE_SHAMAN_ELEMENTAL || spec == TALENT_TREE_SHAMAN_ENHANCEMENT || spec == TALENT_TREE_SHAMAN_RESTORATION;
+	case CLASS_MAGE:
+		return spec == TALENT_TREE_MAGE_ARCANE || spec == TALENT_TREE_MAGE_FIRE || spec == TALENT_TREE_MAGE_FROST;
+	case CLASS_WARLOCK:
+		return spec == TALENT_TREE_WARLOCK_AFFLICTION || spec == TALENT_TREE_WARLOCK_DEMONOLOGY || spec == TALENT_TREE_WARLOCK_DESTRUCTION;
+	case CLASS_DRUID:
+		return spec == TALENT_TREE_DRUID_BALANCE || spec == TALENT_TREE_DRUID_FERAL_COMBAT || spec == TALENT_TREE_DRUID_RESTORATION;
+	default:
+		return false;
+	}
+}
+
+bool MatchesSealStoreSlot(ItemTemplate const &item, SealStoreSlot slot) {
+	switch (slot) {
+	case SealStoreSlot::Weapon:
+		return item.Class == ITEM_CLASS_WEAPON && item.InventoryType != INVTYPE_WEAPONOFFHAND &&
+			item.InventoryType != INVTYPE_RANGED && item.InventoryType != INVTYPE_RANGEDRIGHT &&
+			item.InventoryType != INVTYPE_THROWN && item.InventoryType != INVTYPE_RELIC;
+	case SealStoreSlot::Head: return item.InventoryType == INVTYPE_HEAD;
+	case SealStoreSlot::Neck: return item.InventoryType == INVTYPE_NECK;
+	case SealStoreSlot::Shoulder: return item.InventoryType == INVTYPE_SHOULDERS;
+	case SealStoreSlot::Back: return item.InventoryType == INVTYPE_CLOAK;
+	case SealStoreSlot::Chest: return item.InventoryType == INVTYPE_CHEST || item.InventoryType == INVTYPE_ROBE;
+	case SealStoreSlot::Wrist: return item.InventoryType == INVTYPE_WRISTS;
+	case SealStoreSlot::Hands: return item.InventoryType == INVTYPE_HANDS;
+	case SealStoreSlot::Waist: return item.InventoryType == INVTYPE_WAIST;
+	case SealStoreSlot::Legs: return item.InventoryType == INVTYPE_LEGS;
+	case SealStoreSlot::Feet: return item.InventoryType == INVTYPE_FEET;
+	case SealStoreSlot::Ring: return item.InventoryType == INVTYPE_FINGER;
+	case SealStoreSlot::Trinket: return item.InventoryType == INVTYPE_TRINKET;
+	case SealStoreSlot::OffHand:
+		return item.InventoryType == INVTYPE_SHIELD || item.InventoryType == INVTYPE_HOLDABLE ||
+			item.InventoryType == INVTYPE_WEAPONOFFHAND;
+	case SealStoreSlot::Relic:
+		return item.InventoryType == INVTYPE_RELIC || item.InventoryType == INVTYPE_RANGED ||
+			item.InventoryType == INVTYPE_RANGEDRIGHT || item.InventoryType == INVTYPE_THROWN;
+	}
+	return false;
+}
+
 
 char const *StateName(HuntState state) {
 	switch (state) {
@@ -952,6 +1009,153 @@ void NativeHuntsManager::Configure(NativeHuntsConfig config) {
 
 bool NativeHuntsManager::IsEnabled() const {
 	return _config.Enabled && _resources.Ready;
+}
+
+bool NativeHuntsManager::IsSealStoreAvailable(Player const *player) const {
+	if (!IsEnabled() || !player || !_resources.SealItemEntry)
+		return false;
+	std::uint32_t const requiredLevel = std::max(
+		_config.EliteSealMinimumLevel, _config.EliteEndgameRewardLevel);
+	return player->GetLevel() >= requiredLevel;
+}
+
+std::uint32_t NativeHuntsManager::GetSealBalance(Player const *player) const {
+	return player && _resources.Ready && _resources.SealItemEntry
+		? player->GetItemCount(_resources.SealItemEntry, false) : 0;
+}
+
+std::uint32_t NativeHuntsManager::GetSealStoreTierCost(std::uint8_t tier) const {
+	return tier >= 1 && tier <= 4 ? _config.SealStoreTierCost[tier - 1] : 0;
+}
+
+std::uint32_t NativeHuntsManager::GetSealStoreTierMinItemLevel(
+		std::uint8_t tier) const {
+	return tier >= 1 && tier <= 4
+		? _config.SealStoreTierMinItemLevel[tier - 1] : 0;
+}
+
+std::uint32_t NativeHuntsManager::GetSealStoreTierMaxItemLevel(
+		std::uint8_t tier) const {
+	return tier >= 1 && tier <= 4
+		? _config.SealStoreTierMaxItemLevel[tier - 1] : 0;
+}
+
+bool NativeHuntsManager::IsSealStoreItemEligible(Player *player,
+		std::uint32_t spec, std::uint8_t tier, SealStoreSlot slot,
+		std::uint32_t itemId) const {
+	if (!IsSealStoreAvailable(player) || !IsSpecForClass(player, spec) ||
+		tier < 1 || tier > 4)
+		return false;
+	ItemTemplate const *item = sObjectMgr->GetItemTemplate(itemId);
+	if (!item || item->Quality != ITEM_QUALITY_EPIC ||
+		(item->Class != ITEM_CLASS_WEAPON && item->Class != ITEM_CLASS_ARMOR) ||
+		!IsSpecCompatibleEquipment(spec, *item) ||
+		!MatchesSealStoreSlot(*item, slot) || item->RequiredLevel > player->GetLevel() ||
+		item->ItemLevel < GetSealStoreTierMinItemLevel(tier) ||
+		item->ItemLevel > GetSealStoreTierMaxItemLevel(tier) ||
+		item->HasFlag(ITEM_FLAG_HEROIC_TOOLTIP) ||
+		player->CanUseItem(item) != EQUIP_ERR_OK)
+		return false;
+	for (std::uint32_t index = 0;
+		 index < item->StatsCount && index < MAX_ITEM_PROTO_STATS; ++index)
+		if (item->ItemStat[index].ItemStatType == ITEM_MOD_RESILIENCE_RATING &&
+			item->ItemStat[index].ItemStatValue > 0)
+			return false;
+	if (item->Class == ITEM_CLASS_ARMOR && GetArmorPreference(player, *item) < 0.0f)
+		return false;
+	RewardRole const role = GetRewardRole(player, spec);
+	return ScoreRewardItem(player, spec, role, *item) > 0.0f;
+}
+
+std::vector<SealStoreItem> NativeHuntsManager::BuildSealStoreItems(
+		Player *player, std::uint32_t spec, std::uint8_t tier,
+		SealStoreSlot slot) const {
+	std::vector<SealStoreItem> items;
+	if (!IsSealStoreAvailable(player) || !IsSpecForClass(player, spec) ||
+		tier < 1 || tier > 4 || !GetSealStoreTierCost(tier))
+		return items;
+	RewardRole const role = GetRewardRole(player, spec);
+	for (auto const &[itemId, item] : *sObjectMgr->GetItemTemplateStore()) {
+		if (!IsSealStoreItemEligible(player, spec, tier, slot, itemId))
+			continue;
+		items.push_back({itemId, item.Name1, item.ItemLevel,
+			ScoreRewardItem(player, spec, role, item)});
+	}
+	std::sort(items.begin(), items.end(), [](SealStoreItem const &left,
+			SealStoreItem const &right) {
+		if (std::fabs(left.Score - right.Score) > 0.01f)
+			return left.Score > right.Score;
+		if (left.ItemLevel != right.ItemLevel)
+			return left.ItemLevel > right.ItemLevel;
+		return left.ItemId < right.ItemId;
+	});
+	if (items.size() > 20)
+		items.resize(20);
+	return items;
+}
+
+bool NativeHuntsManager::PurchaseSealStoreItem(Player *player,
+		std::uint32_t spec, std::uint8_t tier, std::uint32_t itemId,
+		std::string &message) {
+	if (!IsSealStoreAvailable(player)) {
+		message = "Huntmaster's Seal rewards are reserved for level-cap hunters.";
+		return false;
+	}
+	std::uint32_t const cost = GetSealStoreTierCost(tier);
+	if (!cost) {
+		message = "That Huntmaster reward tier is disabled.";
+		return false;
+	}
+	if (!IsSpecForClass(player, spec)) {
+		message = "That reward specialization is not valid for your class.";
+		return false;
+	}
+	bool eligible = false;
+	for (std::uint8_t raw = static_cast<std::uint8_t>(SealStoreSlot::Weapon);
+		raw <= static_cast<std::uint8_t>(SealStoreSlot::Relic); ++raw)
+		if (IsSealStoreItemEligible(player, spec, tier,
+				static_cast<SealStoreSlot>(raw), itemId)) {
+			eligible = true;
+			break;
+		}
+	if (!eligible) {
+		message = "That item is not an eligible Huntmaster's Seal reward for this specialization and tier.";
+		return false;
+	}
+	std::uint32_t const balance = GetSealBalance(player);
+	if (balance < cost) {
+		message = "You need " + std::to_string(cost) +
+			" Huntmaster's Seals, but you only have " +
+			std::to_string(balance) + ".";
+		return false;
+	}
+	ItemPosCountVec destination;
+	if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, destination, itemId, 1) !=
+		EQUIP_ERR_OK) {
+		message = "Make room in your bags before purchasing this reward.";
+		return false;
+	}
+
+	// WorldSession handles a player's gossip packet serially. Revalidate every
+	// input and create the item before consuming currency so an exceptional
+	// creation failure cannot produce a partial transaction. The already-
+	// validated carried Seal count cannot change during this handler.
+	Item *item = player->StoreNewItem(destination, itemId, true);
+	if (!item) {
+		message = "The purchase could not be completed; no Huntmaster's Seals were consumed.";
+		return false;
+	}
+	player->DestroyItemCount(_resources.SealItemEntry, cost, true);
+	item->SetBinding(true);
+	player->SendNewItem(item, 1, true, false);
+	QueueUiState(player);
+	ItemTemplate const *itemTemplate = sObjectMgr->GetItemTemplate(itemId);
+	std::uint32_t const remaining = GetSealBalance(player);
+	message = "Purchased " + std::string(itemTemplate ? itemTemplate->Name1 :
+		"Huntmaster reward") + " for " + std::to_string(cost) +
+		" Huntmaster's Seals. " + std::to_string(remaining) + " Seal" +
+		(remaining == 1 ? " remains." : "s remain.");
+	return true;
 }
 
 ManagedResources const &NativeHuntsManager::Resources() const {

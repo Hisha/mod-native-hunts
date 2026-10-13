@@ -43,6 +43,25 @@ NativeHunts.Elite.RewardRequireUpgrade = 1
 NativeHunts.Elite.RewardUpgradePoolPct = 0.70
 NativeHunts.Elite.NoUpgradeBonusSeals = 1
 
+# Huntmaster's Seal store. Cost = 0 disables a tier. Item-level bounds are
+# normalized if configured in reverse order. The catalog is generated from the
+# loaded item templates; Epic Heroic-tooltip and resilience items are excluded.
+NativeHunts.SealStore.Tier1.Cost = 5
+NativeHunts.SealStore.Tier1.MinItemLevel = 213
+NativeHunts.SealStore.Tier1.MaxItemLevel = 219
+
+NativeHunts.SealStore.Tier2.Cost = 10
+NativeHunts.SealStore.Tier2.MinItemLevel = 226
+NativeHunts.SealStore.Tier2.MaxItemLevel = 232
+
+NativeHunts.SealStore.Tier3.Cost = 20
+NativeHunts.SealStore.Tier3.MinItemLevel = 245
+NativeHunts.SealStore.Tier3.MaxItemLevel = 251
+
+NativeHunts.SealStore.Tier4.Cost = 30
+NativeHunts.SealStore.Tier4.MinItemLevel = 264
+NativeHunts.SealStore.Tier4.MaxItemLevel = 264
+
 # Active-Hunt visual aura is intentionally absent: the installed generic
 # Content Manager supports Item, CurrencyTypes, CurrencyCategory, and
 # ItemExtendedCost DBC rows, but not Spell.dbc/SpellIcon.dbc managed content.

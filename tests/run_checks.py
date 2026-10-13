@@ -1529,6 +1529,96 @@ def run_source_safety_checks() -> None:
     print("PASS native-only source and persistence safety checks", flush=True)
 
 
+def run_seal_vendor_checks() -> None:
+    manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
+    header = (ROOT / "src" / "NativeHuntsManager.h").read_text(encoding="utf-8")
+    module = (ROOT / "src" / "NativeHuntsModule.cpp").read_text(encoding="utf-8")
+    config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
+    manifest = json.loads((ROOT / "content" / "manifest.json").read_text(encoding="utf-8"))
+
+    expected_tiers = ((1, 5, 213, 219), (2, 10, 226, 232),
+                      (3, 20, 245, 251), (4, 30, 264, 264))
+    for tier, cost, minimum, maximum in expected_tiers:
+        for suffix, value in (("Cost", cost), ("MinItemLevel", minimum),
+                              ("MaxItemLevel", maximum)):
+            line = f"NativeHunts.SealStore.Tier{tier}.{suffix} = {value}"
+            if line not in config:
+                raise AssertionError(f"Seal tier default missing: {line}")
+    for token in ("SealStoreTierCost{{5, 10, 20, 30}}",
+                  "SealStoreTierMinItemLevel{{213, 226, 245, 264}}",
+                  "SealStoreTierMaxItemLevel{{219, 232, 251, 264}}",
+                  "std::min(minimum, maximum)", "std::max(minimum, maximum)"):
+        if token not in header + module:
+            raise AssertionError(f"Seal tier configuration contract missing: {token}")
+
+    catalog_contract = (
+        "GetItemTemplateStore()", "ITEM_QUALITY_EPIC", "ITEM_CLASS_WEAPON",
+        "ITEM_CLASS_ARMOR", "IsSpecForClass(player, spec)",
+        "IsSpecCompatibleEquipment(spec, *item)", "MatchesSealStoreSlot(*item, slot)",
+        "ITEM_FLAG_HEROIC_TOOLTIP", "ITEM_MOD_RESILIENCE_RATING",
+        "player->CanUseItem(item)", "GetArmorPreference(player, *item) < 0.0f",
+        "ScoreRewardItem(player, spec, role, *item) > 0.0f",
+        "if (items.size() > 20)", "items.resize(20)",
+    )
+    for token in catalog_contract:
+        if token not in manager:
+            raise AssertionError(f"dynamic Seal catalog contract missing: {token}")
+    for slot in ("Weapon", "Head", "Neck", "Shoulder", "Back", "Chest",
+                 "Wrist", "Hands", "Waist", "Legs", "Feet", "Ring",
+                 "Trinket", "OffHand", "Relic"):
+        if f"SealStoreSlot::{slot}" not in manager + module:
+            raise AssertionError(f"Seal equipment category missing: {slot}")
+    for class_name in ("WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
+                       "DEATH_KNIGHT", "SHAMAN", "MAGE", "WARLOCK", "DRUID"):
+        if f"CLASS_{class_name}" not in manager or f"CLASS_{class_name}" not in module:
+            raise AssertionError(f"Seal class/spec coverage missing: {class_name}")
+
+    purchase_contract = (
+        "GetItemCount(_resources.SealItemEntry, false)",
+        "balance < cost", "CanStoreNewItem(NULL_BAG, NULL_SLOT, destination",
+        "StoreNewItem(destination, itemId, true)",
+        "DestroyItemCount(_resources.SealItemEntry, cost, true)",
+        "item->SetBinding(true)", "QueueUiState(player)",
+        "That item is not an eligible Huntmaster's Seal reward",
+        "no Huntmaster's Seals were consumed",
+    )
+    for token in purchase_contract:
+        if token not in manager:
+            raise AssertionError(f"server-authoritative Seal purchase contract missing: {token}")
+    purchase_body = manager[manager.index("bool NativeHuntsManager::PurchaseSealStoreItem"):]
+    if purchase_body.index("StoreNewItem(destination, itemId, true)") > purchase_body.index(
+            "DestroyItemCount(_resources.SealItemEntry, cost, true)"):
+        raise AssertionError("Seal deduction can precede failed item creation")
+    if purchase_body.count("DestroyItemCount(_resources.SealItemEntry, cost, true)") != 1:
+        raise AssertionError("Seal purchase does not have exactly one deduction site")
+
+    gossip_contract = (
+        "ShowSealSpecMenu", "ShowSealTierMenu", "ShowSealSlotMenu",
+        "ShowSealItemMenu", "ShowSealConfirmation", "ActionSealBuyConfirm",
+        "SealStoreContexts.erase(guid);", "PendingItemId",
+        "Browse Huntmaster's Seal rewards.", "GOSSIP_ICON_VENDOR",
+    )
+    for token in gossip_contract:
+        if token not in module:
+            raise AssertionError(f"Seal gossip/duplicate-prevention contract missing: {token}")
+    consume = module.index("// Consume the one-shot server selection")
+    purchase = module.index("sNativeHunts.PurchaseSealStoreItem", consume)
+    if module.index("SealStoreContexts.erase(guid);", consume) > purchase:
+        raise AssertionError("Seal confirmation is not consumed before purchase")
+
+    currencies = manifest.get("currencies", [])
+    if not any(row.get("symbol") == "huntmaster-seal-currency" and
+               row.get("item") == "huntmaster-seal" and
+               row.get("category", {}).get("symbol") == "hunts"
+               for row in currencies):
+        raise AssertionError("existing Hunts physical currency declaration regressed")
+    if manifest.get("extendedCosts"):
+        raise AssertionError("unused static extended costs were added for the dynamic gossip store")
+    if "SelectDeliverableReward" in manager:
+        raise AssertionError("Elite reward selection behavior regressed")
+    print("PASS Huntmaster Seal vendor parity and transaction contracts", flush=True)
+
+
 def main() -> None:
     checks = (
         run_function_shadow_guard,
@@ -1536,6 +1626,7 @@ def main() -> None:
         run_functional_ui_checks,
         run_frameforge_functional_ui_checks,
         run_frameforge_package_checks,
+        run_seal_vendor_checks,
         run_source_safety_checks,
     )
     failures = []

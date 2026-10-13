@@ -1,6 +1,6 @@
 # Native Hunts checks
 
-`run_checks.py` performs six database-free check groups:
+`run_checks.py` performs seven database-free check groups:
 
 1. a duplicate-definition guard that parses every `tests/*.py` script and
    rejects top-level functions or classes defined more than once (a later
@@ -30,7 +30,12 @@
    `frameForgeWowUi` (currently package version 19): deterministic EPF member
    set and hashes, portable source artwork, and layout-only load entries;
    it is skipped for packages with functional FrameXML content;
-6. native-only source/persistence safety checks that reject legacy package,
+6. Huntmaster's Seal vendor checks for all four configurable tiers, every class
+   and equipment category, specialization and Heroic/PvP filtering, carried
+   physical-currency validation, inventory-first delivery, exactly-once
+   deduction, binding, forged-request revalidation, one-shot confirmation, and
+   preservation of the managed Hunts currency and Elite reward paths;
+7. native-only source/persistence safety checks that reject legacy package,
    table, protocol, migration, world-database assignment placement, undocumented
    configuration reads, and hard-coded allocated identities, and require
    the single-transaction inventory/statistics/assignment turn-in safeguards.

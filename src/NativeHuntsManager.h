@@ -7,6 +7,7 @@
 
 #include "ObjectGuid.h"
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <string>
@@ -18,6 +19,31 @@ class GameObject;
 class Player;
 
 namespace native_hunts {
+enum class SealStoreSlot : std::uint8_t {
+	Weapon = 0,
+	Head,
+	Neck,
+	Shoulder,
+	Back,
+	Chest,
+	Wrist,
+	Hands,
+	Waist,
+	Legs,
+	Feet,
+	Ring,
+	Trinket,
+	OffHand,
+	Relic
+};
+
+struct SealStoreItem {
+	std::uint32_t ItemId = 0;
+	std::string Name;
+	std::uint32_t ItemLevel = 0;
+	float Score = 0.0f;
+};
+
 struct NativeHuntsConfig {
 	bool Enabled = true;
 	bool Debug = false;
@@ -45,6 +71,9 @@ struct NativeHuntsConfig {
 	bool EliteRewardRequireUpgrade = true;
 	float EliteRewardUpgradePoolPct = 0.70f;
 	std::uint32_t EliteNoUpgradeBonusSeals = 1;
+	std::array<std::uint32_t, 4> SealStoreTierCost{{5, 10, 20, 30}};
+	std::array<std::uint32_t, 4> SealStoreTierMinItemLevel{{213, 226, 245, 264}};
+	std::array<std::uint32_t, 4> SealStoreTierMaxItemLevel{{219, 232, 251, 264}};
 	bool ReturnRiftEnabled = true;
 	std::uint32_t ReturnRiftDurationSeconds = 120;
 	float ReturnRiftArrivalDistance = 3.0f;
@@ -132,6 +161,15 @@ public:
 	std::uint32_t LifetimeCompletions(Player const *player) const;
 	bool IsEliteUnlocked(Player const *player) const;
 	bool IsEliteAvailableToday(Player const *player) const;
+	bool IsSealStoreAvailable(Player const *player) const;
+	std::uint32_t GetSealBalance(Player const *player) const;
+	std::uint32_t GetSealStoreTierCost(std::uint8_t tier) const;
+	std::uint32_t GetSealStoreTierMinItemLevel(std::uint8_t tier) const;
+	std::uint32_t GetSealStoreTierMaxItemLevel(std::uint8_t tier) const;
+	std::vector<SealStoreItem> BuildSealStoreItems(Player *player,
+		std::uint32_t spec, std::uint8_t tier, SealStoreSlot slot) const;
+	bool PurchaseSealStoreItem(Player *player, std::uint32_t spec,
+		std::uint8_t tier, std::uint32_t itemId, std::string &message);
 	bool IsGuardLocator(std::uint32_t entry) const;
 	bool SendHuntmasterLocation(Player *player, std::uint32_t guardEntry,
 		std::string &message) const;
@@ -166,6 +204,8 @@ private:
 	void QueueUiState(Player *player);
 	void PublishUiState(Player *player, std::uint32_t nonce = 0,
 		bool force = false);
+	bool IsSealStoreItemEligible(Player *player, std::uint32_t spec,
+		std::uint8_t tier, SealStoreSlot slot, std::uint32_t itemId) const;
 
 	NativeHuntsConfig _config;
 	ManagedResources _resources;
