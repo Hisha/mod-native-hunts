@@ -9,9 +9,10 @@
   "project": "Dungeon Finder UI",
   "layout": "FrameForgeLayout.xml",
   "rootRuntimeId": "FrameForge_Dungeon_Finder_UI",
-  "rootParentRuntimeId": "UIParent",
+  "rootParentRuntimeId": "LFDParentFrame",
   "stockFoundation": {
     "identity": "wow-3.3.5a-12340:Interface/FrameXML/LFDFrame.xml:LFDParentFrame",
+    "runtimeParent": "LFDParentFrame",
     "strategy": "artwork-and-template-reference-only"
   },
   "states": [

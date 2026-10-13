@@ -77,6 +77,14 @@ void TestLegalTransitions() {
 }
 
 void TestRewardRules() {
+	Check(MatchesManagedHuntmaster(100, 200, 100, 201),
+		"Huntmaster matches the active managed creature entry");
+	Check(MatchesManagedHuntmaster(99, 200, 100, 200),
+		"Huntmaster matches the exact managed spawn when its live entry is stale");
+	Check(!MatchesManagedHuntmaster(99, 199, 100, 200),
+		"unmanaged creature identity is rejected");
+	Check(!MatchesManagedHuntmaster(0, 0, 0, 0),
+		"empty Huntmaster identity is rejected");
 	Check(StandardRewardQuality(0,10)==RewardQuality::Epic &&
 		StandardRewardQuality(0,11)==RewardQuality::Rare &&
 		StandardRewardQuality(0,201)==RewardQuality::Uncommon, "first daily rarity");

@@ -107,7 +107,7 @@ public:
 	void Shutdown();
 
 	bool IsEnabled() const;
-	bool IsHuntmaster(std::uint32_t entry) const;
+	bool IsHuntmaster(Creature const *creature) const;
 	bool IsElitePrey(std::uint32_t entry) const;
 	bool IsTrailCrystal(std::uint32_t entry) const;
 	bool IsReturnRift(std::uint32_t entry) const;
@@ -136,6 +136,8 @@ public:
 
 private:
 	NativeHuntsManager() = default;
+	HuntmasterDefinition const *ResolveHuntmaster(
+		Creature const *creature) const;
 	bool ResolveManagedResources();
 	void ResolveGuardLocators();
 	void LoadAssignments();

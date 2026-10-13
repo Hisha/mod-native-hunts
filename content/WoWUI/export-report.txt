@@ -5,11 +5,13 @@ Runtime bindings: 0
 States: Idle, Tracking, Located, Fight, Turnin
 Project assets: 11
 Packaged source files: 11
-Root: FrameForge_Dungeon_Finder_UI, parent UIParent, size 355x440
-Stock foundation: geometry provenance only; not a runtime parent; not copied
+Generated texture format: Blp2Dxt5
+Resolution policy: Conservative (2 source texels per largest displayed UI pixel; never upscale)
+Generated textures: 11 (11 resized; 8 power-of-two padded)
+Root: FrameForge_Dungeon_Finder_UI, parent LFDParentFrame, size 355x440, initially hidden
+Stock foundation: runtime parent LFDParentFrame; stock definitions and artwork not copied
 StatusBar defaultValue: editor preview metadata only; omitted from FrameXML runtime initialization
+Independent DXT5 decode: PASS (11/11; worst premultiplied RGB MAE 5.406; worst alpha MAE 0.917)
 
 Diagnostics:
-WARNING NAME_SANITIZED [DesignObject]: Runtime name 'Header Text' was mapped to WoW-safe 'Header_Text'.
-WARNING STOCK_OVERRIDE_CONTRACT [LFDQueueFrameTitleText]: 'LFDQueueFrameTitleText' is client-owned stock UI. Its authored override is recorded as a diagnostic contract and is not flattened into generated XML.
 Round-trip self-check: PASS (49/49 runtime identities)

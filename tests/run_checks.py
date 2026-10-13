@@ -757,28 +757,36 @@ def run_functional_ui_checks() -> None:
 
 
 def run_frameforge_functional_ui_checks() -> None:
-    """Verify package-20 functional FrameXML composition and module-owned presentation."""
+    """Verify the PTR2 explicit BLP2 package and runtime presentation."""
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "20":
-        print("SKIP functional FrameForge package-20 contract", flush=True)
+    if manifest.get("version") != "21-ptr2":
+        print("SKIP functional FrameForge PTR2 contract", flush=True)
         return
+    if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
+        raise AssertionError("invalid Native Hunts PTR2 package identity")
     if "frameForgeWowUi" in manifest or not manifest.get("content"):
         raise AssertionError("functional package must use explicit managed content, not static FrameForge staging")
     expected_frame_xml = {
         "stockTocSource": "upstream/FrameXML.toc",
         "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
-        "loadEntries": [{
-            "target": "Interface/FrameXML/NativeHuntsFrame.xml",
-            "after": "Interface/FrameXML/LFDFrame.xml",
-        }],
+        "loadEntries": [
+            {"target": "Interface/FrameXML/NativeHuntsFrame.xml",
+             "after": "Interface/FrameXML/LFDFrame.xml"},
+            {"target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
+             "after": "Interface/FrameXML/NativeHuntsFrame.xml"},
+            {"target": "Interface/FrameXML/NativeHuntsInitializer.xml",
+             "after": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml"},
+        ],
     }
     if manifest.get("clientFrameXml") != expected_frame_xml:
         raise AssertionError("functional FrameXML load order no longer follows LFDFrame.xml")
     required_targets = {
         "Interface/FrameXML/NativeHuntsFrame.xml",
         "Interface/FrameXML/NativeHuntsFrame.lua",
+        "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
+        "Interface/FrameXML/NativeHuntsInitializer.xml",
     }
     targets = {entry["target"] for entry in manifest["content"]}
     if not required_targets <= targets:
@@ -798,11 +806,10 @@ def run_frameforge_functional_ui_checks() -> None:
 
     exported_manifest = json.loads((content_root / "WoWUI/frameforge-manifest.json").read_text())
     assets_manifest = json.loads((content_root / "WoWUI/assets-manifest.json").read_text())
-    inventory = exported_manifest.get("controlInventory", [])
-    if (exported_manifest.get("exportMode") != "functional-source-composition" or
-            len(inventory) != 49 or exported_manifest.get("valueSources") != [] or
-            exported_manifest.get("stateProbes") != []):
-        raise AssertionError("authoritative zero-mapping 49-object FrameForge contract is incorrect")
+    inventory = exported_manifest.get("bindings", [])
+    if (exported_manifest.get("schema") != "frameforge-wow335-manifest" or
+            exported_manifest.get("version") != 2 or len(inventory) != 49):
+        raise AssertionError("authoritative 49-object FrameForge contract is incorrect")
     if [state["id"] for state in exported_manifest.get("states", [])] != [
             "idle", "tracking", "located", "fight", "turnin"]:
         raise AssertionError("FrameForge visual state order or identity regressed")
@@ -812,72 +819,58 @@ def run_frameforge_functional_ui_checks() -> None:
     ui_xml = xml_source.read_text(encoding="utf-8")
     ui_lua = lua_source.read_text(encoding="utf-8")
     xml_root = ET.fromstring(ui_xml)
-    exported_xml_root = ET.parse(content_root / "WoWUI/NativeHuntsFrame.xml").getroot()
-    integrated_subtree = next((element for element in xml_root.iter()
-                               if element.get("name") == "FrameForge_Dungeon_Finder_UI"), None)
-    exported_subtree = next((element for element in exported_xml_root.iter()
-                             if element.get("name") == "FrameForge_Dungeon_Finder_UI"), None)
-    if integrated_subtree is None or exported_subtree is None:
-        raise AssertionError("generated FrameForge presentation subtree is missing")
-    exported_anchors = [element for element in exported_subtree.iter()
-                        if element.tag.endswith("Anchor") and
-                        element.get("relativeTo") == "UIParent"]
-    integrated_anchors = [element for element in integrated_subtree.iter()
-                          if element.tag.endswith("Anchor")]
-    if len(exported_anchors) != 49 or len(integrated_anchors) != 49:
-        raise AssertionError("FrameForge composition must retain exactly 49 authored anchors")
-    if any(anchor.get("relativeTo") != "FrameForge_Dungeon_Finder_UI"
-           for anchor in integrated_anchors):
-        raise AssertionError("FrameForge controls are not anchored to the PvE composition root")
-    # The only permitted generated-subtree transformation is the uniform coordinate-space
-    # conversion from screen-relative UIParent anchors to the integrated composition root.
-    for anchor in exported_anchors:
-        anchor.set("relativeTo", "FrameForge_Dungeon_Finder_UI")
-    integrated_subtree.tail = None
-    exported_subtree.tail = None
-    if ET.tostring(integrated_subtree) != ET.tostring(exported_subtree):
-        raise AssertionError("FrameForge geometry, artwork, or non-root-relative anchors changed")
-    names = {element.get("name") for element in xml_root.iter() if element.get("name")}
-    inventory_names = {entry["exportedName"] for entry in inventory}
+    layout_root = ET.parse(content_root / "WoWUI/FrameForgeLayout.xml").getroot()
+    names = {element.get("name") for element in layout_root.iter() if element.get("name")}
+    inventory_names = {entry["runtimeId"] for entry in inventory}
     if len(inventory_names) != 49 or not inventory_names <= names:
         raise AssertionError("integrated FrameXML lost an authored control identity")
-    wrappers = {entry["parentPath"].split("/")[-1] for entry in inventory
+    wrappers = {entry["visibilityRuntimeId"] for entry in inventory
                 if entry["type"] in {"Texture", "FontString"}}
     if not wrappers <= names:
         raise AssertionError("integrated FrameXML lost a generated presentation wrapper")
-    named = {element.get("name"): element for element in xml_root.iter() if element.get("name")}
-    native_frame = named["NativeHuntsFrame"]
+    named = {element.get("name"): element for element in layout_root.iter()
+             if element.get("name")}
     frameforge_root = named["FrameForge_Dungeon_Finder_UI"]
-    if (native_frame.get("parent") != "LFDParentFrame" or
-            frameforge_root.get("parent") != "NativeHuntsFrame" or
-            frameforge_root.get("setAllPoints") != "true"):
-        raise AssertionError("FrameForge root is not coupled to the Native Hunts PvE content area")
-    parent_by_child = {child: parent for parent in xml_root.iter() for child in parent}
-    presentation_nodes = {
-        entry["exportedName"] if entry["type"] == "StatusBar"
-        else entry["parentPath"].split("/")[-1]
-        for entry in inventory
-    }
-    for node_name in presentation_nodes:
-        node = named.get(node_name)
-        ancestor = node
-        while ancestor is not None and ancestor is not frameforge_root:
-            ancestor = parent_by_child.get(ancestor)
-        if node is None or ancestor is not frameforge_root:
-            raise AssertionError(f"FrameForge visibility escaped its PvE root: {node_name}")
-    top_level_names = [element.get("name") for element in list(xml_root)]
-    if top_level_names.index("NativeHuntsFrameInitializer") < top_level_names.index(
-            "FrameForge_Dungeon_Finder_UI"):
-        raise AssertionError("Native Hunts initializer runs before the FrameForge root exists")
-    if (named.get("$parentContentPanel") is None or
-            named["$parentContentPanel"].get("hidden") != "true"):
+    size = next(element for element in frameforge_root if element.tag.endswith("Size"))
+    dimensions = next(element for element in size if element.tag.endswith("AbsDimension"))
+    if (frameforge_root.get("parent") != "LFDParentFrame" or
+            dimensions.get("x") != "355" or dimensions.get("y") != "440"):
+        raise AssertionError("authoritative FrameForge root parent or dimensions changed")
+    if frameforge_root.get("hidden") != "true":
+        raise AssertionError("FrameForge root must remain hidden until the Hunts tab is selected")
+    host_named = {element.get("name"): element for element in xml_root.iter()
+                  if element.get("name")}
+    if (host_named.get("NativeHuntsFrame") is None or
+            host_named["NativeHuntsFrame"].get("parent") != "LFDParentFrame" or
+            host_named.get("$parentContentPanel") is None or
+            host_named["$parentContentPanel"].get("hidden") != "true"):
         raise AssertionError("legacy Native Hunts presentation was not suppressed")
-    for required in ("NativeHuntsFrame", "NativeHuntsFrameInitializer",
-                     "FrameForge_Dungeon_Finder_UI", "LFDParentFrameTab1", "LFDParentFrameTab2"):
-        if required not in names:
-            raise AssertionError(f"functional FrameXML controller identity is missing: {required}")
-    if ('<Script file="NativeHuntsFrame.lua"/>' not in ui_xml or
-            'parent="LFDParentFrame"' not in ui_xml):
+    if not {"LFDParentFrameTab1", "LFDParentFrameTab2"} <= host_named.keys():
+        raise AssertionError("Dungeon Finder and Hunts tabs must both remain defined")
+    native_frame = host_named["NativeHuntsFrame"]
+    shell_layers = next(element for element in native_frame
+                        if element.tag.endswith("Layers"))
+    shell_titles = [element.get("text") for element in shell_layers.iter()
+                    if element.tag.endswith("FontString")]
+    if shell_titles != ["Native Hunts"] or "Player vs. Environment" in ui_xml:
+        raise AssertionError("Hunts shell title is incorrect")
+    shell_bottoms = []
+    for texture in (element for element in shell_layers.iter()
+                    if element.tag.endswith("Texture")):
+        size = next(element for element in texture if element.tag.endswith("Size"))
+        anchor = next(element for element in texture.iter()
+                      if element.tag.endswith("Anchor"))
+        if anchor.get("point") != "TOPLEFT":
+            raise AssertionError("shell artwork must retain simple TOPLEFT geometry")
+        offset = next((element for element in anchor.iter()
+                       if element.tag.endswith("AbsDimension")), None)
+        offset_y = float(offset.get("y")) if offset is not None else 0.0
+        shell_bottoms.append(-offset_y + float(size.get("y")))
+    if not shell_bottoms or max(shell_bottoms) != 440 or any(bottom > 440 for bottom in shell_bottoms):
+        raise AssertionError("Native Hunts shell artwork exceeds the 440px Blizzard parent")
+    script_files = {element.get("file") for element in xml_root.iter()
+                    if element.tag.endswith("Script")}
+    if "NativeHuntsFrame.lua" not in script_files:
         raise AssertionError("functional host or Lua relationship regressed")
 
     presentation_rows = re.findall(
@@ -888,15 +881,15 @@ def run_frameforge_functional_ui_checks() -> None:
     state_code = {"idle": "I", "tracking": "T", "located": "L", "fight": "F", "turnin": "R"}
     for state in exported_manifest["states"]:
         expected_show = set(state["show"])
-        actual_show = {name for name, _, memberships in presentation_rows
+        actual_show = {wrapper for _, wrapper, memberships in presentation_rows
                        if memberships == "*" or state_code[state["id"]] in memberships}
         if actual_show != expected_show:
             raise AssertionError(f"Lua state membership differs from FrameForge state {state['id']}")
     for entry in inventory:
         if entry["type"] in {"Texture", "FontString"}:
-            expected_wrapper = entry["parentPath"].split("/")[-1]
-            if row_by_name[entry["exportedName"]][1] != expected_wrapper:
-                raise AssertionError(f"Lua wrapper differs from inventory: {entry['exportedName']}")
+            expected_wrapper = entry["visibilityRuntimeId"]
+            if row_by_name[entry["runtimeId"]][1] != expected_wrapper:
+                raise AssertionError(f"Lua wrapper differs from inventory: {entry['runtimeId']}")
 
     required_lua = (
         "Standard_Hunts_Value:SetText", "Elite_Hunts_Value:SetText",
@@ -907,10 +900,11 @@ def run_frameforge_functional_ui_checks() -> None:
         "Tracker_Hunt_Progress:SetValue", 'snapshot.state == "T" and "T"',
         'snapshot.state == "F" and "L"', 'snapshot.state == "P" and "F"',
         'snapshot.state == "R" and "R"', "LFDQueueFrame:Hide()", "NativeHuntsFrame:Show()",
+        "FrameForge_Dungeon_Finder_UI:Show()", "FrameForge_Dungeon_Finder_UI:Hide()",
         'RegisterAddonMessagePrefix(PREFIX)', 'self:RegisterEvent("CHAT_MSG_ADDON")',
-        'LFDQueueFrameTitleText:SetText("Player vs. Environment")',
         'LFDParentFrame.numTabs = 2', 'InitializeTabs();',
-        'type(LFDParentFrame.numTabs) ~= "number"',
+        'type(LFDParentFrame.numTabs) ~= "number"', "ValidateFrameForgeControls",
+        "NativeHuntsFrameInitializationError", "required exported control is missing",
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -922,26 +916,86 @@ def run_frameforge_functional_ui_checks() -> None:
     for token in ("C_ChatInfo", "table.unpack", "bit32.", "utf8.", "goto ", "//"):
         if token in ui_lua:
             raise AssertionError(f"modern Lua/WoW API token found: {token}")
+    for forbidden in ("LFDParentFrame:SetWidth", "LFDParentFrame:SetHeight",
+                      "LFDQueueFrameTitleText:SetText", "PositionCloseButton",
+                      "HUNTS_PARENT_HEIGHT"):
+        if forbidden in ui_lua:
+            raise AssertionError(f"Blizzard geometry/title mutation remains: {forbidden}")
 
     target_by_logical = {entry["target"].replace("/", "\\").lower(): entry
                          for entry in manifest["content"]}
+    legacy_entries = [entry for entry in manifest["content"]
+                      if entry["source"].startswith("client/Interface/NativeHunts/")]
+    if len(legacy_entries) != 10 or any(not entry["source"].endswith(".tga")
+                                       for entry in legacy_entries):
+        raise AssertionError("all ten legacy Native Hunts TGA sources must remain packaged")
+    legacy_references = set(re.findall(r"Interface\\NativeHunts\\[^\"<]+\.tga", ui_xml))
+    expected_legacy_references = {
+        r"Interface\NativeHunts\hunt_divider.tga",
+        r"Interface\NativeHunts\hunt_icon_seal.tga",
+        r"Interface\NativeHunts\hunt_icon_turnin.tga",
+        r"Interface\NativeHunts\hunt_panel_identity.tga",
+        r"Interface\NativeHunts\hunt_panel_idle.tga",
+        r"Interface\NativeHunts\hunt_panel_record.tga",
+        r"Interface\NativeHunts\hunt_panel_state.tga",
+        r"Interface\NativeHunts\hunt_trail_prints.tga",
+    }
+    if legacy_references != expected_legacy_references:
+        raise AssertionError("legacy Native Hunts TGA references changed")
+    for entry in legacy_entries:
+        data = (content_root / entry["source"]).read_bytes()
+        if len(data) < 18 or data[2] != 2 or data[16] != 32 or data[17] != 0x28:
+            raise AssertionError(f"legacy artwork is not a 32-bit top-origin TGA: {entry['source']}")
+
     asset_rows = assets_manifest.get("assets", [])
     if len(asset_rows) != 11:
         raise AssertionError("FrameForge export must retain all 11 authored assets")
+    frameforge_entries = [entry for entry in manifest["content"]
+                          if entry["source"].startswith("WoWUI/textures/")]
+    if (len(frameforge_entries) != 11 or
+            any(not entry["source"].endswith(".blp") or
+                not entry["target"].endswith(".blp") for entry in frameforge_entries)):
+        raise AssertionError("EPF manifest must package all 11 FrameForge textures as BLP")
     for row in asset_rows:
-        source = content_root / "WoWUI" / row["source"]
-        if hashlib.sha256(source.read_bytes()).hexdigest().upper() != row["contentSha256"]:
-            raise AssertionError(f"authoritative FrameForge asset hash mismatch: {source.name}")
-        target = (row["logicalTexture"] + ".tga").lower()
+        source = content_root / "WoWUI" / row["generatedFile"]
+        if hashlib.sha256(source.read_bytes()).hexdigest().upper() != row["generatedContentSha256"]:
+            raise AssertionError(f"generated FrameForge asset hash mismatch: {source.name}")
+        target = row["requiredMpqDestination"].replace("/", "\\").lower()
         entry = target_by_logical.get(target)
         if not entry:
             raise AssertionError(f"runtime FrameForge artwork is not packaged: {target}")
         data = (content_root / entry["source"]).read_bytes()
-        if len(data) < 18 or data[2] != 2 or data[16] != 32 or data[17] != 0x28:
-            raise AssertionError(f"runtime artwork is not a 32-bit top-origin TGA: {entry['source']}")
-        width, height = struct.unpack_from("<HH", data, 12)
+        if (len(data) < 148 or data[:4] != b"BLP2" or
+                struct.unpack_from("<I", data, 4)[0] != 1 or data[8:12] != bytes((2, 8, 7, 1))):
+            raise AssertionError(f"runtime artwork is not BLP2/DXT5: {entry['source']}")
+        width, height = struct.unpack_from("<II", data, 12)
         if (width & (width - 1)) or (height & (height - 1)):
             raise AssertionError(f"runtime FrameForge texture is not power-of-two: {entry['source']}")
+        offsets = struct.unpack_from("<16I", data, 20)
+        lengths = struct.unpack_from("<16I", data, 84)
+        mip_count = 0
+        mip_width, mip_height = width, height
+        payload_end = 148
+        for offset, length in zip(offsets, lengths):
+            if not offset and not length:
+                continue
+            expected_length = max(1, (mip_width + 3) // 4) * max(1, (mip_height + 3) // 4) * 16
+            if offset < 148 or length != expected_length or offset + length > len(data):
+                raise AssertionError(f"invalid BLP2 mip table: {entry['source']}")
+            payload_end = max(payload_end, offset + length)
+            mip_count += 1
+            mip_width, mip_height = max(1, mip_width // 2), max(1, mip_height // 2)
+        if mip_count != row["mipCount"] or payload_end != len(data):
+            raise AssertionError(f"incomplete or trailing BLP2 payload: {entry['source']}")
+        if data != packaged[entry["source"]]:
+            raise AssertionError(f"FrameForge texture was reconverted in the EPF: {entry['source']}")
+
+    forbidden_members = [member for member in expected_members
+                         if member != "manifest.json" and
+                         (member.endswith(".png") or member.endswith(".json") or
+                          member.endswith("export-report.txt"))]
+    if forbidden_members:
+        raise AssertionError(f"development-only FrameForge files entered EPF: {forbidden_members}")
 
     try:
         from lupa.lua51 import LuaError, LuaRuntime
@@ -978,22 +1032,21 @@ def run_frameforge_functional_ui_checks() -> None:
                 for index=1,frame.numTabs do end
                 frame.selectedTab=selected
             end
+            FrameForgeTestTime=10
+            FrameForgeTestRequests=0
+            function GetTime() return FrameForgeTestTime end
+            function UnitName() return "Tester" end
+            function SendAddonMessage() FrameForgeTestRequests=FrameForgeTestRequests+1 end
+            function RegisterAddonMessagePrefix() end
         """)
         controls = lua.globals()
-        for name in names:
+        for name in names | set(host_named) | {"NativeHuntsFrameInitializer"}:
             if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
                 controls[name] = controls.FrameForgeTestControl()
-        for name in ("LFDParentFrame", "LFDQueueFrame", "LFDParentFramePortrait",
-                     "LFDParentFrameCloseButton", "LFDQueueFrameTitleText"):
+        for name in ("LFDParentFrame", "LFDQueueFrame", "LFDQueueFrameTitleText"):
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
-        controls.LFDParentFrameCloseButton.objectType = "Button"
-        controls.LFDParentFrameCloseButton.SetPoint(
-            controls.LFDParentFrameCloseButton, "TOPRIGHT", controls.LFDParentFrame,
-            "TOPRIGHT", 2, -8)
-        controls.LFDParentFrame.children = lua.table_from([
-            controls.LFDParentFrameCloseButton, controls.LFDQueueFrame, controls.NativeHuntsFrame,
-            controls.LFDParentFrameTab1, controls.LFDParentFrameTab2, controls.LFDParentFramePortrait])
+        controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
             raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
@@ -1002,12 +1055,28 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError("FrameForge StatusBar was not initialized before the first snapshot")
         controls.NativeHuntsFrame_SelectTab(2)
         if (controls.LFDParentFrame.selectedTab != 2 or controls.LFDQueueFrame.visible or
-                not controls.NativeHuntsFrame.visible):
+                not controls.NativeHuntsFrame.visible or
+                not controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFrame.width != 355 or controls.LFDParentFrame.height != 440 or
+                controls.LFDQueueFrameTitleText.text != "Dungeon Finder" or
+                controls.FrameForgeTestRequests != 1):
             raise AssertionError("Hunts tab selection did not update Blizzard's panel state")
         controls.NativeHuntsFrame_SelectTab(1)
         if (controls.LFDParentFrame.selectedTab != 1 or not controls.LFDQueueFrame.visible or
-                controls.NativeHuntsFrame.visible):
+                controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDQueueFrameTitleText.text != "Dungeon Finder"):
             raise AssertionError("Dungeon Finder tab selection did not restore Blizzard's panel state")
+        controls.FrameForgeTestTime = 12
+        controls.NativeHuntsFrame_SelectTab(2)
+        controls.LFDParentFrame.hooks["OnHide"]()
+        if controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible:
+            raise AssertionError("closing Dungeon Finder left Native Hunts presentation visible")
+        controls.FrameForgeTestTime = 14
+        controls.LFDParentFrame.hooks["OnShow"]()
+        if (controls.LFDQueueFrame.visible or not controls.NativeHuntsFrame.visible or
+                not controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.FrameForgeTestRequests != 3):
+            raise AssertionError("reopening Dungeon Finder did not restore Hunts selection")
 
         def lua_table(value):
             if isinstance(value, dict):
@@ -1040,6 +1109,21 @@ def run_frameforge_functional_ui_checks() -> None:
                 standard.Elite_Hunt_Icon__FFLayer.visible or
                 not standard.Standard_Hunt_Icon__FFLayer.visible):
             raise AssertionError("Tracking state or dynamic FrameForge values regressed")
+        for tier, expected in {
+                "S": (True, True, False, False),
+                "E": (False, False, True, True),
+                "N": (False, False, False, False),
+                "X": (False, False, False, False),
+        }.items():
+            tier_controls = rendered(tier=tier)
+            actual = (
+                tier_controls.Standard_Hunt_Icon__FFLayer.visible,
+                tier_controls.Tracker_Standard_Hunt__FFLayer.visible,
+                tier_controls.Elite_Hunt_Icon__FFLayer.visible,
+                tier_controls.Tracker_Elite_Hunt__FFLayer.visible,
+            )
+            if actual != expected:
+                raise AssertionError(f"tier {tier} visibility regressed: {actual}")
         located = rendered(state="F", progress=100)
         if (not located.Trail_Located_Text__FFLayer.visible or
                 not located.Located_Text__FFLayer.visible or
@@ -1065,84 +1149,33 @@ def run_frameforge_functional_ui_checks() -> None:
         for malformed in ("%", "%GG", "%00", "%1F"):
             if decode(malformed) is not None:
                 raise AssertionError(f"Lua decoder accepted malformed data: {malformed}")
+        controls.Tracker_Target_Name = None
+        controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
+        if (controls.NativeHuntsFrame.visible or
+                controls.FrameForge_Dungeon_Finder_UI.visible or
+                not controls.LFDQueueFrame.visible or
+                "Tracker_Target_Name" not in controls.NativeHuntsFrameInitializationError):
+            raise AssertionError("missing exported control did not fail safely with a diagnostic")
+        controls.NativeHuntsFrame_SelectTab(2)
+        if controls.LFDParentFrame.selectedTab != 1:
+            raise AssertionError("failed initialization allowed the Hunts tab to activate")
         print("PASS direct Lua 5.1 FrameForge state and value vectors", flush=True)
     print("PASS functional FrameForge Native Hunts client contract", flush=True)
 
 
 def run_frameforge_package_checks() -> None:
-    """Verify the static FrameForge WoWUI EPF packaging contract.
-
-    Package version 19 intentionally proves static FrameForge rendering only;
-    this contract never validates runtime Lua/state binding. It applies only
-    to packages that declare frameForgeWowUi; packages with functional
-    FrameXML content are covered by run_functional_ui_checks.
-    """
+    """Verify deterministic explicit-content rebuilds for the PTR2 package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
-    manifest_source = (ROOT / "content" / "manifest.json").read_bytes()
-    manifest = json.loads(manifest_source)
-    if "frameForgeWowUi" not in manifest:
-        print("SKIP static FrameForge WoWUI EPF contract (no frameForgeWowUi declaration)",
-              flush=True)
+    manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
+    if manifest.get("version") != "21-ptr2":
+        print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
-    if (manifest.get("schema"), manifest.get("package"), manifest.get("version")) != (
-            3, "mod-native-hunts", "19"):
-        raise AssertionError("invalid Native Hunts EPF identity/version")
-    declaration = manifest.get("frameForgeWowUi")
-    if declaration != [{
-            "source": "WoWUI",
-            "layoutTarget": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
-    }]:
-        raise AssertionError("generic FrameForge WoWUI declaration is incorrect")
-    load_entries = manifest.get("clientFrameXml", {}).get("loadEntries")
-    if load_entries != [{
-            "target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
-            "after": "Interface/FrameXML/LFDFrame.xml",
-    }]:
-        raise AssertionError("FrameForge layout is not loaded after stock LFDFrame.xml")
-
-    expected = tuple(sorted({"manifest.json",
-        manifest["clientFrameXml"]["stockTocSource"], *(
-            path.relative_to(ROOT / "content").as_posix()
-            for path in (ROOT / "content" / "WoWUI").rglob("*") if path.is_file())}))
-    with zipfile.ZipFile(epf) as archive:
-        if tuple(archive.namelist()) != expected:
-            raise AssertionError("EPF member set or deterministic order is incorrect")
-        packaged = {member: archive.read(member) for member in expected}
-    if packaged["manifest.json"] != manifest_source:
-        raise AssertionError("EPF manifest is not synchronized with content/manifest.json")
-    if any(member.endswith(".fforge.json") for member in expected):
-        raise AssertionError("authoring .fforge source must not be embedded")
-
-    frame = json.loads(packaged["WoWUI/frameforge-manifest.json"])
-    assets = json.loads(packaged["WoWUI/assets-manifest.json"])
-    if (frame.get("schema"), frame.get("version"), frame.get("layout")) != (
-            "frameforge-wow335-manifest", 2, "FrameForgeLayout.xml"):
-        raise AssertionError("unsupported FrameForge manifest")
-    rows = assets.get("assets", [])
-    if assets.get("schema") != "frameforge-wow335-assets" or assets.get("version") != 2:
-        raise AssertionError("unsupported FrameForge assets manifest")
-    if len(rows) != 11:
-        raise AssertionError("Native Hunts FrameForge package must contain 11 project assets")
-    for row in rows:
-        member = "WoWUI/" + row["source"]
-        if member not in packaged:
-            raise AssertionError(f"missing portable source asset: {member}")
-        if hashlib.sha256(packaged[member]).hexdigest().upper() != row["contentSha256"]:
-            raise AssertionError(f"portable source asset hash mismatch: {member}")
-        if (not row["logicalTexture"].startswith("Interface\\FrameForge\\") or
-                not row["packagingTarget"].endswith(".tga")):
-            raise AssertionError(f"invalid runtime texture declaration: {member}")
-    layout = packaged["WoWUI/FrameForgeLayout.xml"]
-    ET.fromstring(layout)
-    if b"Interface\\TargetingFrame\\UI-StatusBar" not in layout:
-        raise AssertionError("stock StatusBar logical reference is missing")
-    forbidden = (b".blp", b"Fonts\\", b".MPQ", b".mpq")
-    for member, body in packaged.items():
-        if member.startswith("WoWUI/assets/") and not member.endswith(".png"):
-            raise AssertionError(f"unexpected portable artwork member: {member}")
-        if any(token in body for token in forbidden) and member.startswith("WoWUI/assets/"):
-            raise AssertionError(f"Blizzard/runtime content embedded as source artwork: {member}")
-    print("PASS static package-19 FrameForge WoWUI EPF contract", flush=True)
+    before = epf.read_bytes()
+    subprocess.run(["python3", str(ROOT / "content" / "build_epf.py")],
+                   cwd=ROOT, check=True)
+    if epf.read_bytes() != before:
+        raise AssertionError("repeated explicit-content EPF build was not byte deterministic")
+    print("PASS explicit FrameForge EPF deterministic rebuild contract", flush=True)
 
 
 def run_function_shadow_guard() -> None:
@@ -1259,6 +1292,15 @@ def run_source_safety_checks() -> None:
     record = menu.index("ActionStats);", ready)
     if not idle < standard < elite < ready < record or "if (!runtime &&" in menu:
         raise AssertionError("Huntmaster idle/Elite gossip can dereference a null runtime")
+    hello = module[module.index("bool OnGossipHello(Player *player, Creature *creature)"):menu_start]
+    if ("sNativeHunts.IsHuntmaster(creature)" not in hello or
+            "sender != GOSSIP_SENDER_MAIN" not in hello or
+            "case ActionRequest: sNativeHunts.RequestHunt(player, creature, message);" not in hello or
+            "case ActionRequestElite: sNativeHunts.RequestEliteHunt(player, creature, message);" not in hello):
+        raise AssertionError("standard/Elite gossip selections do not preserve validated sender and Huntmaster identity")
+    if (manager.count("auto const *huntmaster = ResolveHuntmaster(giver);") != 2 or
+            "MatchesManagedHuntmaster(creature->GetEntry(), creature->GetSpawnId()," not in manager):
+        raise AssertionError("standard/Elite requests do not share managed Huntmaster resolution")
     config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
     config_reads = set(re.findall(r'"(NativeHunts\.[A-Za-z0-9.]+)"', module))
     config_entries = set(re.findall(r'^(NativeHunts\.[A-Za-z0-9.]+)\s*=', config, re.MULTILINE))

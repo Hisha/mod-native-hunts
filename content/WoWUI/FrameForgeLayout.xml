@@ -1,12 +1,12 @@
 <Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
-  <Frame name="FrameForge_Dungeon_Finder_UI" parent="NativeHuntsFrame">
+  <Frame name="FrameForge_Dungeon_Finder_UI" parent="LFDParentFrame" hidden="true">
     <Size>
       <AbsDimension x="355" y="440" />
     </Size>
     <Anchors>
-      <Anchor point="TOPLEFT" relativeTo="NativeHuntsFrame" relativePoint="TOPLEFT">
+      <Anchor point="TOPLEFT" relativeTo="LFDParentFrame" relativePoint="TOPLEFT">
         <Offset>
-          <AbsDimension x="-2.63775510204084" y="0" />
+          <AbsDimension x="0" y="0" />
         </Offset>
       </Anchor>
     </Anchors>
@@ -30,12 +30,12 @@
       </Frame>
       <Frame name="Header_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="2">
         <Size>
-          <AbsDimension x="270" y="24" />
+          <AbsDimension x="270" y="18" />
         </Size>
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="32.345957007223" y="168.189577879064" />
+              <AbsDimension x="32.345957007223" y="170.157736216215" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -43,7 +43,7 @@
           <Layer level="BACKGROUND">
             <FontString name="Header_Text" setAllPoints="true" text="Native Hunt" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE">
               <FontHeight>
-                <AbsValue val="14" />
+                <AbsValue val="12" />
               </FontHeight>
             </FontString>
           </Layer>
@@ -51,18 +51,20 @@
       </Frame>
       <Frame name="Hunt_Panel_Record__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="3">
         <Size>
-          <AbsDimension x="300" y="95" />
+          <AbsDimension x="300" y="105" />
         </Size>
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="30.5017131659466" y="126.777873939374" />
+              <AbsDimension x="30.5017131659466" y="126.341412068919" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <Texture name="Hunt_Panel_Record" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_record" />
+            <Texture name="Hunt_Panel_Record" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_record">
+              <TexCoords left="0" right="0.5859375" top="0" bottom="0.5859375" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -79,7 +81,9 @@
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <Texture name="Hunt_Panel_Idle" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_idle" />
+            <Texture name="Hunt_Panel_Idle" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_idle">
+              <TexCoords left="0" right="0.7646484375" top="0" bottom="0.576171875" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -157,7 +161,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="38.7181122448986" y="115.136479591837" />
+              <AbsDimension x="38.7181122448986" y="113.51893517161" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -178,7 +182,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="38.7181122448986" y="124.743622448979" />
+              <AbsDimension x="38.8345266259178" y="123.568203680661" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -220,7 +224,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="38.7181122448986" y="143.923469387754" />
+              <AbsDimension x="38.7181122448986" y="144.692796779355" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -241,13 +245,15 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="104.434132003386" y="115.894746451198" />
+              <AbsDimension x="104.066214162966" y="113.72237940259" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <Texture name="Hunt_Seal" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_seal" />
+            <Texture name="Hunt_Seal" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_seal">
+              <TexCoords left="0" right="0.84375" top="0" bottom="0.625" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -264,7 +270,9 @@
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <Texture name="Hunt_Circle_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_circle_icon" />
+            <Texture name="Hunt_Circle_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_circle_icon">
+              <TexCoords left="0" right="0.63671875" top="0" bottom="0.78125" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -275,7 +283,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.692062620882" y="143.923469387754" />
+              <AbsDimension x="106.692062620882" y="144.692796779355" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -317,7 +325,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.692062620882" y="124.743622448979" />
+              <AbsDimension x="106.798289209256" y="123.568203680661" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -338,7 +346,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.692062620882" y="124.743622448979" />
+              <AbsDimension x="106.692062620882" y="123.568203680661" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -359,7 +367,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="101.692062620882" y="115.136479591837" />
+              <AbsDimension x="101.864290674861" y="113.51893517161" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -386,7 +394,9 @@
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <Texture name="Hunt_Panel_Top" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active" />
+            <Texture name="Hunt_Panel_Top" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active">
+              <TexCoords left="0" right="0.64453125" top="0" bottom="0.953125" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -403,7 +413,9 @@
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <Texture name="Hunt_Panel_Bottom" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active" />
+            <Texture name="Hunt_Panel_Bottom" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active">
+              <TexCoords left="0" right="0.64453125" top="0" bottom="0.953125" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -420,7 +432,9 @@
         </Anchors>
         <Layers>
           <Layer level="ARTWORK">
-            <Texture name="Hunt_Header" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_header" />
+            <Texture name="Hunt_Header" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_header">
+              <TexCoords left="0" right="0.654296875" top="0" bottom="0.953125" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -677,7 +691,9 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <Texture name="Tracker_Progress_Surround" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_progress_empty" />
+            <Texture name="Tracker_Progress_Surround" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_progress_empty">
+              <TexCoords left="0" right="0.546875" top="0" bottom="0.796875" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>
@@ -952,7 +968,9 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <Texture name="Final_Fight_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_finalfight" />
+            <Texture name="Final_Fight_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_finalfight">
+              <TexCoords left="0" right="0.6796875" top="0" bottom="0.625" />
+            </Texture>
           </Layer>
         </Layers>
       </Frame>

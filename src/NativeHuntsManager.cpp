@@ -1123,13 +1123,24 @@ void NativeHuntsManager::ReconcileHuntAura(Player *player,
 			decision.AddSpell, player->GetGUID().GetCounter());
 }
 
-bool NativeHuntsManager::IsHuntmaster(std::uint32_t entry) const {
+HuntmasterDefinition const *NativeHuntsManager::ResolveHuntmaster(
+		Creature const *creature) const {
+	if (!creature)
+		return nullptr;
 	for (auto const &huntmaster : Huntmasters()) {
-		auto const it = _resources.CreatureEntries.find(huntmaster.Symbol);
-		if (it != _resources.CreatureEntries.end() && it->second == entry)
-			return true;
+		auto const entry = _resources.CreatureEntries.find(huntmaster.Symbol);
+		auto const spawn = _resources.CreatureSpawns.find(huntmaster.SpawnSymbol);
+		if (entry != _resources.CreatureEntries.end() &&
+			spawn != _resources.CreatureSpawns.end() &&
+			MatchesManagedHuntmaster(creature->GetEntry(), creature->GetSpawnId(),
+				entry->second, spawn->second))
+			return &huntmaster;
 	}
-	return false;
+	return nullptr;
+}
+
+bool NativeHuntsManager::IsHuntmaster(Creature const *creature) const {
+	return ResolveHuntmaster(creature) != nullptr;
 }
 
 bool NativeHuntsManager::IsElitePrey(std::uint32_t entry) const {
@@ -1161,7 +1172,8 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 		message = "Native Hunts content is unavailable: " + _resources.Reason;
 		return false;
 	}
-	if (!player || !giver || !IsHuntmaster(giver->GetEntry())) {
+	auto const *huntmaster = ResolveHuntmaster(giver);
+	if (!player || !huntmaster) {
 		message = "That creature is not an active Huntmaster.";
 		return false;
 	}
@@ -1172,17 +1184,6 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 	std::uint32_t const guid = player->GetGUID().GetCounter();
 	if (_runtimes.count(guid)) {
 		message = "You already have an active Hunt.";
-		return false;
-	}
-
-	HuntmasterDefinition const *huntmaster = nullptr;
-	for (auto const &candidate : Huntmasters())
-		if (_resources.CreatureEntries.at(candidate.Symbol) == giver->GetEntry()) {
-			huntmaster = &candidate;
-			break;
-		}
-	if (!huntmaster) {
-		message = "The Huntmaster's managed identity cannot be resolved.";
 		return false;
 	}
 
@@ -1244,7 +1245,8 @@ bool NativeHuntsManager::IsEliteAvailableToday(Player const *player) const {
 
 bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 		std::string &message) {
-	if (!IsEnabled() || !player || !giver || !IsHuntmaster(giver->GetEntry())) {
+	auto const *huntmaster = ResolveHuntmaster(giver);
+	if (!IsEnabled() || !player || !huntmaster) {
 		message = "Elite Hunts are unavailable.";
 		return false;
 	}
@@ -1261,16 +1263,6 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 	std::uint32_t const guid = player->GetGUID().GetCounter();
 	if (_runtimes.count(guid)) {
 		message = "You already have an active Hunt.";
-		return false;
-	}
-	HuntmasterDefinition const *huntmaster = nullptr;
-	for (auto const &candidate : Huntmasters())
-		if (_resources.CreatureEntries.at(candidate.Symbol) == giver->GetEntry()) {
-			huntmaster = &candidate;
-			break;
-		}
-	if (!huntmaster) {
-		message = "The Huntmaster's managed identity cannot be resolved.";
 		return false;
 	}
 	auto zones = EligibleZonesForAssignment(player->GetLevel(),

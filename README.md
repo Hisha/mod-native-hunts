@@ -68,13 +68,13 @@ runtime objects.
 
 ## Managed content
 
-Package version 20 preserves the protected, functional FrameXML/Lua
-architecture and composes the 49-object FrameForge design into its existing PvE
-host. Module-owned Lua maps the existing Native Hunts snapshot to the exported
-visual states and dynamic values. Content Manager loads the functional XML
-after stock `LFDFrame.xml`, and all eleven project-owned PNG sources are
-converted to runtime TGA. The `.fforge` authoring source and Blizzard-owned
-assets are not packaged.
+Package version 21 preserves the protected, functional FrameXML/Lua
+architecture and packages the authoritative 49-object FrameForge layout plus
+its eleven generated TGAs as explicit files. Module-owned Lua maps the existing
+Native Hunts snapshot to the exported visual states and dynamic values. The
+load chain is stock `LFDFrame.xml`, the preserved Native Hunts host, the
+unchanged FrameForge layout, then the initializer. The PNG sources, FrameForge
+metadata, `.fforge` authoring source, and Blizzard-owned assets are not packaged.
 
 `content/mod-native-hunts.epf` declares, without authored allocated IDs:
 
@@ -112,7 +112,7 @@ generation, guard directions, or a Seal equipment vendor. The client is a
 presentation-only consumer: it requests and renders the existing server
 snapshot protocol but cannot accept, advance, abandon, complete, or otherwise
 mutate Hunt gameplay. Static checks cannot prove protected-FrameXML behavior or
-final visual placement in the 3.3.5a client, so package 20 still requires PTR
+final visual placement in the 3.3.5a client, so package 21 still requires PTR
 installation and in-game validation before activation.
 
 ## Checks

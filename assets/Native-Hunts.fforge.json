@@ -110,32 +110,6 @@
       }
     },
     {
-      "name": "LFDQueueFrameTitleText",
-      "parent": "LFDQueueFrame",
-      "width": 0,
-      "height": 0,
-      "point": "TOP",
-      "relativeTo": null,
-      "relativePoint": "TOP",
-      "offsetX": 12,
-      "offsetY": -17,
-      "visible": true,
-      "stratum": "MEDIUM",
-      "kind": "FONTSTRING",
-      "sourceName": "$parentTitleText",
-      "inherits": "GameFontNormal",
-      "sourceLocation": {
-        "line": 906,
-        "column": 8
-      },
-      "visual": {
-        "text": {
-          "text": "LOOKING_FOR_DUNGEON",
-          "font": "GameFontNormal"
-        }
-      }
-    },
-    {
       "name": "LFDQueueFrameRoleButtonTank",
       "parent": "LFDQueueFrame",
       "width": 0,
@@ -1417,12 +1391,12 @@
       "name": "DesignObject",
       "parent": null,
       "width": 270,
-      "height": 24,
+      "height": 18,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -304.79179809481786,
-      "offsetY": 332.18957787906436,
+      "offsetY": 334.15773621621463,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1437,12 +1411,12 @@
       "name": "DesignObject2",
       "parent": null,
       "width": 300,
-      "height": 95,
+      "height": 105,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -306.6360419360943,
-      "offsetY": 290.77787393937393,
+      "offsetY": 290.341412068919,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1541,7 +1515,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -298.41964285714226,
-      "offsetY": 279.1364795918366,
+      "offsetY": 277.5189351716104,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1561,8 +1535,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -298.41964285714226,
-      "offsetY": 288.7436224489793,
+      "offsetX": -298.303228476123,
+      "offsetY": 287.56820368066144,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1604,7 +1578,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -298.41964285714226,
-      "offsetY": 307.9234693877544,
+      "offsetY": 308.69279677935526,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1624,8 +1598,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -232.70362309865516,
-      "offsetY": 279.8947464511982,
+      "offsetX": -233.07154093907474,
+      "offsetY": 277.7223794025898,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1661,7 +1635,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -230.4456924811592,
-      "offsetY": 307.9234693877544,
+      "offsetY": 308.69279677935526,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1702,8 +1676,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -230.4456924811592,
-      "offsetY": 288.7436224489793,
+      "offsetX": -230.33946589278526,
+      "offsetY": 287.56820368066144,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1724,7 +1698,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -230.4456924811592,
-      "offsetY": 288.7436224489793,
+      "offsetY": 287.56820368066144,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1744,8 +1718,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -235.4456924811592,
-      "offsetY": 279.1364795918366,
+      "offsetX": -235.27346442717953,
+      "offsetY": 277.5189351716104,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2412,33 +2386,15 @@
       }
     }
   ],
-  "functionalExport": {
-    "source": {
-      "fileName": "NativeHuntsFrame.xml",
-      "referencePath": "../content/client/Interface/FrameXML/NativeHuntsFrame.xml",
-      "sha256": "42673D3FC3F2046315DE8CB1CB630AD018769734CF383E5C5B0BDB9EAFDA47C0"
-    },
-    "hostFrame": "NativeHuntsFrame"
-  },
   "editor": {
     "activeDesignState": "idle",
     "lockedElements": [
       "DesignObject3",
-      "DesignObject2",
-      "DesignObject",
       "DesignObject5",
       "DesignObject4",
       "DesignObject6",
-      "DesignObject11",
-      "DesignObject10",
       "DesignObject9",
-      "DesignObject8",
-      "DesignObject7",
-      "DesignObject13",
       "DesignObject14",
-      "DesignObject15",
-      "DesignObject16",
-      "DesignObject17",
       "DesignObject22",
       "DesignObject18",
       "DesignObject20",
@@ -2469,7 +2425,16 @@
       "DesignObject47",
       "DesignObject48",
       "DesignObject44",
-      "DesignObject49"
+      "DesignObject49",
+      "DesignObject2",
+      "DesignObject7",
+      "DesignObject17",
+      "DesignObject11",
+      "DesignObject8",
+      "DesignObject16",
+      "DesignObject15",
+      "DesignObject10",
+      "DesignObject13"
     ],
     "groups": [
       {
@@ -2483,7 +2448,6 @@
           "LFDQueueFrame",
           "LFDQueueFrameBackground",
           "LFDQueueFrameLayout",
-          "LFDQueueFrameTitleText",
           "LFDQueueFrameRoleButtonTank",
           "LFDQueueFrameRoleButtonHealer",
           "LFDQueueFrameRoleButtonDPS",
@@ -2569,16 +2533,12 @@
         "displayName": "Blizzard Dungeon Finder Frame"
       },
       {
-        "frame": "LFDQueueFrameTitleText",
-        "textOverride": "Player vs. Environment"
-      },
-      {
         "frame": "DesignObject",
-        "displayName": "Header Text",
+        "displayName": "Header_Text",
         "textOverride": "Native Hunt",
         "textStyle": {
           "baseStyle": "GameFontNormal",
-          "size": 14,
+          "size": 12,
           "justifyH": "CENTER"
         }
       },

@@ -66,6 +66,10 @@ struct HuntAuraDecision {
 	std::uint32_t AddSpell = 0;
 };
 
+bool MatchesManagedHuntmaster(std::uint32_t creatureEntry,
+	std::uint32_t creatureSpawn, std::uint32_t managedEntry,
+	std::uint32_t managedSpawn);
+
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context);
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,
 								 std::uint8_t count);

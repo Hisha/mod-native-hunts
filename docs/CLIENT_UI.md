@@ -3,18 +3,18 @@
 ## Functional FrameForge integration
 
 The editable design remains `assets/Native-Hunts.fforge.json` and the authoritative FrameForge
-export remains `content/WoWUI/`. Do not hand-edit either as part of module integration. Package 20
-uses the exported `NativeHuntsFrame.xml` composition as the visual source, while the checked-in
-runtime copy at `content/client/Interface/FrameXML/NativeHuntsFrame.xml` adds one integration-only
-presentation change: the legacy `$parentContentPanel` is hidden. It also applies two host-integration
-fixes: all 49 screen-relative `UIParent` anchors are uniformly retargeted to the set-all-points
-`FrameForge_Dungeon_Finder_UI` root, and the initializer is declared after that root so its `OnLoad`
-can safely initialize the composition.
+export remains `content/WoWUI/`. Do not hand-edit either as part of module integration. Package 21
+ships `FrameForgeLayout.xml` byte-for-byte at
+`Interface/FrameXML/NativeHuntsFrameForgeLayout.xml`. Its `FrameForge_Dungeon_Finder_UI` root stays
+parented to `LFDParentFrame` at its authored 355 x 440 dimensions. The preserved host at
+`content/client/Interface/FrameXML/NativeHuntsFrame.xml` still supplies the tabs, backdrop, and
+hidden legacy presentation subtree.
 
 The functional host, `NativeHuntsFrame.lua`, both PvE tabs, and the initializer/event frame remain
-active. `FrameForge_Dungeon_Finder_UI` is the only visible Native Hunts presentation. Blizzard's
-`LFDParentFrame`, `LFDQueueFrame`, templates, close button, microbutton, and load order remain owned
-by the stock client.
+active. Hunts selection shows the host and `FrameForge_Dungeon_Finder_UI`; Dungeon Finder selection
+hides both and restores `LFDQueueFrame`. Blizzard's `LFDParentFrame`, title, geometry, close button,
+templates, and microbutton remain stock-owned. Initialization validates every exported control and
+falls back to Dungeon Finder with a diagnostic if any required global is absent.
 
 The PvE tab contract explicitly establishes `LFDParentFrame.numTabs = 2` before calling Blizzard's
 `PanelTemplates_SetTab`. Optional tab-resize support is independent, matching the 3.3.5a API where
@@ -24,7 +24,7 @@ the selection helper requires a numeric `numTabs` field.
 
 The server continues to send the versioned `NHUNTS` snapshot over the existing same-player addon
 message channel. FrameForge has zero runtime bindings; module Lua consumes its actual
-`controlInventory` identities:
+`bindings` identities:
 
 | Control | Snapshot source |
 | --- | --- |
@@ -44,13 +44,12 @@ No values are invented. Missing optional strings use bounded `Unknown ...` fallb
 the functional client. Content or snapshot failure uses the Idle composition with an unavailable
 message.
 
-`LFDQueueFrameTitleText` is Blizzard-owned. The FrameForge stock override contract is implemented at
-runtime by setting it to `Player vs. Environment`; Blizzard XML is not modified.
+`LFDQueueFrameTitleText` is Blizzard-owned and is not changed by Native Hunts.
 
 ## Visual states
 
 Lua carries the exact state memberships from `frameforge-manifest.json` and addresses region wrapper
-frames using the actual `controlInventory.parentPath` identities. The authoritative server lifecycle
+frames using the exported `bindings.visibilityRuntimeId` identities. The authoritative server lifecycle
 maps as follows:
 
 | FrameForge state | Module condition |
@@ -70,21 +69,19 @@ initialized to `0..100` and value `0` before the first server response.
 Run:
 
 ```bash
-python3 tools/prepare_ui_assets.py
 python3 content/build_epf.py
 python3 tests/run_checks.py
 ```
 
-The asset preparation tool retains the historical source textures needed by the preserved functional
-XML and converts all eleven `content/WoWUI/assets/*.png` files to deterministic uncompressed 32-bit,
-top-origin TGA files under `content/client/Interface/FrameForge/Dungeon_Finder_UI/`. Complete source
-images are resampled to power-of-two canvases; FrameXML scales them into the unchanged authored
-geometry.
+The FrameForge export already contains eleven uncompressed 32-bit, top-origin, power-of-two TGAs in
+`content/WoWUI/textures/`, including the padding and corresponding texture-coordinate adjustments.
+Package 21 declares those generated files directly at the exact MPQ destinations from
+`assets-manifest.json`; integration does not reconvert or resize them. Original PNGs and development
+metadata are excluded from the EPF and final MPQ content set.
 
-Package 20 explicitly includes functional XML, Lua, and every required TGA. Its
-`clientFrameXml.loadEntries` inserts only `Interface/FrameXML/NativeHuntsFrame.xml` immediately after
-stock `Interface/FrameXML/LFDFrame.xml`. The broken package-19 static-layout declaration and empty
-content array are not used.
+`clientFrameXml.loadEntries` establishes the exact order: stock `LFDFrame.xml`,
+`NativeHuntsFrame.xml`, `NativeHuntsFrameForgeLayout.xml`, and `NativeHuntsInitializer.xml`.
+The generic `frameForgeWowUi` ingestion path is not used.
 
 ## PTR deployment and verification
 
@@ -95,7 +92,7 @@ Local implementation stops before deployment. For an authorized PTR release:
 3. Optionally run `.content stage mod-native-hunts` and inspect the staged paths, FrameXML insertion,
    Lua, and all `Interface/FrameForge/Dungeon_Finder_UI/*.tga` files.
 4. Run `.content build`; record the immutable build number and SHA-256. Do not activate unless the
-   reviewed build contains package version 20 and the expected protected-FrameXML requirement.
+   reviewed build contains package version 21 and the expected protected-FrameXML requirement.
 5. When authorized, run `.content activate <build-number>` and publish that exact artifact.
 6. Update the PTR Portalkeeper patch entry with the published URL and SHA-256 while retaining
    `Requirements=protected-framexml` and isolated runtime mode.

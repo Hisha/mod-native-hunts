@@ -1,6 +1,13 @@
 #include "HuntGameplay.h"
 
 namespace native_hunts {
+bool MatchesManagedHuntmaster(std::uint32_t creatureEntry,
+		std::uint32_t creatureSpawn, std::uint32_t managedEntry,
+		std::uint32_t managedSpawn) {
+	return (managedEntry && creatureEntry == managedEntry) ||
+		(managedSpawn && creatureSpawn == managedSpawn);
+}
+
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context) {
 	if (!context.HunterIsKillerOrGrouped || !context.SameMap ||
 		!context.InAssignedZone || !context.WithinCreditRadius ||

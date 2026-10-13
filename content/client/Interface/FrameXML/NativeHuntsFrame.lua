@@ -1,12 +1,10 @@
 local NATIVE_HUNTS_DUNGEON_TAB, NATIVE_HUNTS_HUNTS_TAB = 1, 2;
 local PREFIX, VERSION, MAX_MESSAGE, MAX_FRAGMENTS, MAX_RECORD = "NHUNTS", "1", 248, 8, 1024;
-local STOCK_PARENT_WIDTH, STOCK_PARENT_HEIGHT = 355, 440;
-local HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT = 355, 500;
-local parentWidth, parentHeight = STOCK_PARENT_WIDTH, STOCK_PARENT_HEIGHT;
-local parentCloseButton, parentCloseAnchor = nil, nil;
 local nonce, pendingNonce, lastSequence = 0, nil, 0;
 local assembly, hasSnapshot, timeoutGroup = nil, false, nil;
 local lastRequestAt = -100;
+local initialized, initializationError = false, nil;
+local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
 
 local function Split(value, limit)
 	local fields, start = {}, 1;
@@ -39,10 +37,6 @@ local function Number(value, maximum)
 	local result = tonumber(value);
 	if not result or result < 0 or result > maximum then return nil; end
 	return result;
-end
-
-local function NativeHuntsFrame_SetTitle()
-	if LFDQueueFrameTitleText then LFDQueueFrameTitleText:SetText("Player vs. Environment"); end
 end
 
 local function NativeHuntsFrame_UpdateMicroButtonTooltip(button)
@@ -106,6 +100,32 @@ local PRESENTATION = {
 };
 local presentationFrame = {};
 for _, entry in ipairs(PRESENTATION) do presentationFrame[entry[1]] = entry[2]; end
+
+local function ReportInitializationFailure(message)
+	if initializationError then return; end
+	initializationError = message;
+	NativeHuntsFrameInitializationError = message;
+	if NativeHuntsFrame then NativeHuntsFrame:Hide(); end
+	if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
+	if LFDQueueFrame then LFDQueueFrame:Show(); end
+	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+		DEFAULT_CHAT_FRAME:AddMessage("|cffff2020Native Hunts:|r " .. message);
+	end
+end
+
+local function ValidateFrameForgeControls()
+	local required = {"LFDParentFrame", "LFDQueueFrame", "NativeHuntsFrame",
+		"FrameForge_Dungeon_Finder_UI", "Tracker_Hunt_Progress",
+		"LFDParentFrameTab1", "LFDParentFrameTab2"};
+	for _, name in ipairs(required) do
+		if not _G[name] then return nil, name; end
+	end
+	for _, entry in ipairs(PRESENTATION) do
+		if not _G[entry[1]] then return nil, entry[1]; end
+		if not _G[entry[2]] then return nil, entry[2]; end
+	end
+	return true, nil;
+end
 
 local function SetPresentationVisible(name, visible)
 	local control = _G[presentationFrame[name]];
@@ -194,14 +214,14 @@ local function Render(snapshot)
 		Speak_Huntmaster:SetText("The authoritative Hunt state could not be displayed.");
 		begin_hunt:SetText(""); return;
 	end
+	SetPresentationVisible("Elite_Hunt_Icon", false);
+	SetPresentationVisible("Tracker_Elite_Hunt", false);
+	SetPresentationVisible("Standard_Hunt_Icon", false);
+	SetPresentationVisible("Tracker_Standard_Hunt", false);
 	if snapshot.tier == "E" then
 		SetPresentationVisible("Elite_Hunt_Icon", true);
 		SetPresentationVisible("Tracker_Elite_Hunt", true);
-		SetPresentationVisible("Standard_Hunt_Icon", false);
-		SetPresentationVisible("Tracker_Standard_Hunt", false);
 	elseif snapshot.tier == "S" then
-		SetPresentationVisible("Elite_Hunt_Icon", false);
-		SetPresentationVisible("Tracker_Elite_Hunt", false);
 		SetPresentationVisible("Standard_Hunt_Icon", true);
 		SetPresentationVisible("Tracker_Standard_Hunt", true);
 	end
@@ -279,34 +299,11 @@ local function RequestSnapshot()
 	if timeoutGroup then timeoutGroup:Stop(); timeoutGroup:Play(); end
 end
 
-local function SizeParent(width, height)
-	LFDParentFrame:SetWidth(width);
-	LFDParentFrame:SetHeight(height);
-end
-
 local function PositionTabs()
 	LFDParentFrameTab1:ClearAllPoints();
 	LFDParentFrameTab1:SetPoint("BOTTOMLEFT", LFDParentFrame, "BOTTOMLEFT", 18, -27);
 	LFDParentFrameTab2:ClearAllPoints();
 	LFDParentFrameTab2:SetPoint("LEFT", LFDParentFrameTab1, "RIGHT", -15, 0);
-end
-
-local function PositionCloseButton()
-	if not parentCloseButton or not parentCloseAnchor then return; end
-	parentCloseButton:ClearAllPoints();
-	parentCloseButton:SetPoint(parentCloseAnchor[1], parentCloseAnchor[2], parentCloseAnchor[3], parentCloseAnchor[4], parentCloseAnchor[5]);
-end
-
-local function ApplyStockGeometry()
-	SizeParent(parentWidth, parentHeight);
-	PositionCloseButton();
-	PositionTabs();
-end
-
-local function ApplyHuntsGeometry()
-	SizeParent(HUNTS_PARENT_WIDTH, HUNTS_PARENT_HEIGHT);
-	PositionCloseButton();
-	PositionTabs();
 end
 
 local function InitializeTabs()
@@ -321,32 +318,35 @@ local function InitializeTabs()
 end
 
 function NativeHuntsFrame_SelectTab(tab)
-	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame then return; end
+	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame then
+		ReportInitializationFailure("required Blizzard Dungeon Finder controls are unavailable."); return;
+	end
+	if tab == NATIVE_HUNTS_HUNTS_TAB and not initialized then
+		ReportInitializationFailure("FrameForge presentation is not initialized.");
+		tab = NATIVE_HUNTS_DUNGEON_TAB;
+	end
 	if type(LFDParentFrame.numTabs) ~= "number" then InitializeTabs(); end
-	if tab==NATIVE_HUNTS_HUNTS_TAB then ApplyHuntsGeometry(); LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); RequestSnapshot();
-	else tab=NATIVE_HUNTS_DUNGEON_TAB; ApplyStockGeometry(); NativeHuntsFrame:Hide(); LFDQueueFrame:Show(); end
-	NativeHuntsFrame_SetTitle(); if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame,tab); end
+	PositionTabs();
+	if tab == NATIVE_HUNTS_HUNTS_TAB then
+		selectedTab = tab; LFDQueueFrame:Hide(); NativeHuntsFrame:Show();
+		FrameForge_Dungeon_Finder_UI:Show(); RequestSnapshot();
+	else
+		selectedTab = NATIVE_HUNTS_DUNGEON_TAB; NativeHuntsFrame:Hide();
+		if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
+		LFDQueueFrame:Show(); tab = selectedTab;
+	end
+	if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame, tab); end
 end
 
 function NativeHuntsFrame_OnLoad(self)
-	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame or not FrameForge_Dungeon_Finder_UI or
-			not Tracker_Hunt_Progress or not LFDParentFrameTab1 or not LFDParentFrameTab2 then return; end
+	initialized = false;
+	local valid, missing = ValidateFrameForgeControls();
+	if not valid then ReportInitializationFailure("required exported control is missing: " .. missing); return; end
+	initialized = true;
+	NativeHuntsFrameInitializationError = nil;
 	Tracker_Hunt_Progress:SetMinMaxValues(0, 100);
 	Tracker_Hunt_Progress:SetValue(0);
 	RenderWaiting("Retrieving Hunt information...");
-	local width, height = LFDParentFrame:GetWidth(), LFDParentFrame:GetHeight();
-	if width and width > 0 then parentWidth = width; end
-	if height and height > 0 then parentHeight = height; end
-	local children = {LFDParentFrame:GetChildren()};
-	for index = 1, table.getn(children) do
-		local child = children[index];
-		if child ~= LFDQueueFrame and child ~= NativeHuntsFrame and child ~= LFDParentFrameTab1 and
-				child ~= LFDParentFrameTab2 and child ~= LFDParentFramePortrait and
-				child.GetObjectType and child:GetObjectType() == "Button" then
-			parentCloseButton = child; break;
-		end
-	end
-	if parentCloseButton then parentCloseAnchor = {parentCloseButton:GetPoint(1)}; end
 	if RegisterAddonMessagePrefix then RegisterAddonMessagePrefix(PREFIX); end
 	self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("CHAT_MSG_ADDON");
 	timeoutGroup=NativeHuntsFrame:CreateAnimationGroup(); local timeout=timeoutGroup:CreateAnimation("Alpha");
@@ -360,12 +360,20 @@ function NativeHuntsFrame_OnLoad(self)
 		if LFDMicroButton.HookScript then LFDMicroButton:HookScript("OnEvent",function(button,event) if event=="UPDATE_BINDINGS" then NativeHuntsFrame_UpdateMicroButtonTooltip(button); end end); end end
 	if hooksecurefunc and type(LFDFrame_OnEvent)=="function" then hooksecurefunc("LFDFrame_OnEvent",function(frame,event) if event=="LFG_OPEN_FROM_GOSSIP" then NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB); end end); end
 	LFDParentFrame:HookScript("OnShow",function()
-		if NativeHuntsFrame:IsShown() then ApplyHuntsGeometry(); RequestSnapshot(); else ApplyStockGeometry(); end
+		if selectedTab == NATIVE_HUNTS_HUNTS_TAB then
+			LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); FrameForge_Dungeon_Finder_UI:Show(); RequestSnapshot();
+		else
+			NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide(); LFDQueueFrame:Show();
+		end
+		PositionTabs();
 	end);
-	LFDParentFrame:HookScript("OnHide",ApplyStockGeometry);
+	LFDParentFrame:HookScript("OnHide",function()
+		NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide();
+	end);
 end
 
 function NativeHuntsFrame_OnEvent(self,event,...)
+	if not initialized then return; end
 	if event=="PLAYER_ENTERING_WORLD" then RequestSnapshot(); return; end
 	local prefix,message,channel,sender=...;
 	if event=="CHAT_MSG_ADDON" and prefix==PREFIX and channel=="WHISPER" and sender==UnitName("player") then HandleMessage(message); end

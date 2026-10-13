@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "20",
+  "version": "21-ptr2",
   "description": "Managed Native Hunts gameplay and protected FrameXML integration with the module-owned FrameForge presentation layer.",
   "content": [
     {
@@ -17,13 +17,73 @@
     },
     {
       "type": "file",
+      "source": "WoWUI/FrameForgeLayout.xml",
+      "target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_circle_icon.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_circle_icon.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_header.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_header.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_icon_elite.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_elite.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_icon_finalfight.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_finalfight.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_icon_standard.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_standard.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_icon_turnin.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_icon_turnin.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_panel_active.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_active.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_panel_idle.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_idle.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_panel_record.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_panel_record.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_progress_empty.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_progress_empty.blp"
+    },
+    {
+      "type": "file",
+      "source": "WoWUI/textures/hunt_seal.blp",
+      "target": "Interface/FrameForge/Dungeon_Finder_UI/hunt_seal.blp"
+    },
+    {
+      "type": "file",
       "source": "client/Interface/NativeHunts/hunt_divider.tga",
       "target": "Interface/NativeHunts/hunt_divider.tga"
     },
     {
       "type": "file",
       "source": "client/Interface/NativeHunts/hunt_icon_elite.tga",
-      "target": "Interface/NativeHunts/hunt_icon_elite.tga"
+      "target": "Interface/NativeHunts/hunt_icon_elite.blp"
     },
     {
       "type": "file",
@@ -33,12 +93,12 @@
     {
       "type": "file",
       "source": "client/Interface/NativeHunts/hunt_icon_standard.tga",
-      "target": "Interface/NativeHunts/hunt_icon_standard.tga"
+      "target": "Interface/NativeHunts/hunt_icon_standard.blp"
     },
     {
       "type": "file",
       "source": "client/Interface/NativeHunts/hunt_icon_turnin.tga",
-      "target": "Interface/NativeHunts/hunt_icon_turnin.tga"
+      "target": "Interface/NativeHunts/hunt_icon_turnin.blp"
     },
     {
       "type": "file",
@@ -48,12 +108,12 @@
     {
       "type": "file",
       "source": "client/Interface/NativeHunts/hunt_panel_idle.tga",
-      "target": "Interface/NativeHunts/hunt_panel_idle.tga"
+      "target": "Interface/NativeHunts/hunt_panel_idle.blp"
     },
     {
       "type": "file",
       "source": "client/Interface/NativeHunts/hunt_panel_record.tga",
-      "target": "Interface/NativeHunts/hunt_panel_record.tga"
+      "target": "Interface/NativeHunts/hunt_panel_record.blp"
     },
     {
       "type": "file",
@@ -697,12 +757,6 @@
       "y": 548.9488,
       "z": 651.6386,
       "orientation": 0.8435841
-    }
-  ],
-  "frameForgeWowUi": [
-    {
-      "source": "WoWUI",
-      "layoutTarget": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml"
     }
   ]
 }
