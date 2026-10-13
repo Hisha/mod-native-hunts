@@ -761,11 +761,11 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "21-ptr2":
-        print("SKIP functional FrameForge PTR2 contract", flush=True)
+    if manifest.get("version") != "21-ptr3":
+        print("SKIP functional FrameForge PTR3 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
-        raise AssertionError("invalid Native Hunts PTR2 package identity")
+        raise AssertionError("invalid Native Hunts PTR3 package identity")
     if "frameForgeWowUi" in manifest or not manifest.get("content"):
         raise AssertionError("functional package must use explicit managed content, not static FrameForge staging")
     expected_frame_xml = {
@@ -1023,6 +1023,7 @@ def run_frameforge_functional_ui_checks() -> None:
                     ClearAllPoints=function(self) self.point=nil end,
                     SetPoint=function(self,point,relative,relativePoint,x,y) self.point={point,relative,relativePoint,x,y} end,
                     Hide=function(self) self.visible=false end,Show=function(self) self.visible=true end,
+					SetDrawLayer=function(self,value) self.drawLayer=value end,
                     IsShown=function(self) return self.visible end,
                     HookScript=function(self,event,callback) self.hooks[event]=callback end,
                     RegisterEvent=function() end,CreateAnimationGroup=function() return AnimationGroup() end}
@@ -1043,7 +1044,8 @@ def run_frameforge_functional_ui_checks() -> None:
         for name in names | set(host_named) | {"NativeHuntsFrameInitializer"}:
             if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
                 controls[name] = controls.FrameForgeTestControl()
-        for name in ("LFDParentFrame", "LFDQueueFrame", "LFDQueueFrameTitleText"):
+        for name in ("LFDParentFrame", "LFDQueueFrame", "LFDQueueFrameTitleText",
+                     "LFDParentFramePortraitIcon"):
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
@@ -1053,10 +1055,19 @@ def run_frameforge_functional_ui_checks() -> None:
         if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
                 controls.Tracker_Hunt_Progress.value != 0):
             raise AssertionError("FrameForge StatusBar was not initialized before the first snapshot")
+        overlay_regions = ("Located3_Text", "Hunt_Complete_Icon", "Complete_Text",
+                           "Complete2A_Text", "Complete2B_Huntmaster_Value",
+                           "Complete3A_Text", "Complete3B_Location_Value",
+                           "Final_Fight_Icon", "Final_Fight_Text")
+        if any(getattr(controls, name).drawLayer != "OVERLAY" for name in overlay_regions):
+            raise AssertionError("Fight/Turnin body regions were not normalized to a persistent draw layer")
+        if not controls.LFDParentFramePortraitIcon.visible:
+            raise AssertionError("initial Dungeon Finder portrait icon was not preserved")
         controls.NativeHuntsFrame_SelectTab(2)
         if (controls.LFDParentFrame.selectedTab != 2 or controls.LFDQueueFrame.visible or
                 not controls.NativeHuntsFrame.visible or
                 not controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFramePortraitIcon.visible or
                 controls.LFDParentFrame.width != 355 or controls.LFDParentFrame.height != 440 or
                 controls.LFDQueueFrameTitleText.text != "Dungeon Finder" or
                 controls.FrameForgeTestRequests != 1):
@@ -1064,19 +1075,29 @@ def run_frameforge_functional_ui_checks() -> None:
         controls.NativeHuntsFrame_SelectTab(1)
         if (controls.LFDParentFrame.selectedTab != 1 or not controls.LFDQueueFrame.visible or
                 controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
+                not controls.LFDParentFramePortraitIcon.visible or
                 controls.LFDQueueFrameTitleText.text != "Dungeon Finder"):
             raise AssertionError("Dungeon Finder tab selection did not restore Blizzard's panel state")
         controls.FrameForgeTestTime = 12
         controls.NativeHuntsFrame_SelectTab(2)
         controls.LFDParentFrame.hooks["OnHide"]()
-        if controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible:
+        if (controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFramePortraitIcon.visible):
             raise AssertionError("closing Dungeon Finder left Native Hunts presentation visible")
         controls.FrameForgeTestTime = 14
         controls.LFDParentFrame.hooks["OnShow"]()
         if (controls.LFDQueueFrame.visible or not controls.NativeHuntsFrame.visible or
                 not controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFramePortraitIcon.visible or
                 controls.FrameForgeTestRequests != 3):
             raise AssertionError("reopening Dungeon Finder did not restore Hunts selection")
+        controls.NativeHuntsFrame_SelectTab(1)
+        controls.LFDParentFrame.hooks["OnHide"]()
+        controls.LFDParentFrame.hooks["OnShow"]()
+        if (not controls.LFDQueueFrame.visible or controls.NativeHuntsFrame.visible or
+                controls.FrameForge_Dungeon_Finder_UI.visible or
+                not controls.LFDParentFramePortraitIcon.visible):
+            raise AssertionError("reopening Dungeon Finder did not restore its stock portrait icon")
 
         def lua_table(value):
             if isinstance(value, dict):
@@ -1131,11 +1152,21 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError("Located state regressed")
         fight = rendered(state="P", tier="E")
         if (not fight.Final_Fight_Icon__FFLayer.visible or
+                not fight.Final_Fight_Text__FFLayer.visible or
+                not fight.Final_Confrontation_Text__FFLayer.visible or
+                fight.Hunt_Complete_Icon__FFLayer.visible or
                 fight.Tracker_Hunt_Progress.visible or not fight.Elite_Hunt_Icon__FFLayer.visible or
                 fight.Standard_Hunt_Icon__FFLayer.visible):
             raise AssertionError("Fight state regressed")
         turnin = rendered(state="R")
         if (not turnin.Hunt_Complete_Icon__FFLayer.visible or
+                not turnin.Complete_Text__FFLayer.visible or
+                not turnin.Complete2A_Text__FFLayer.visible or
+                not turnin.Complete2B_Huntmaster_Value__FFLayer.visible or
+                not turnin.Complete3A_Text__FFLayer.visible or
+                not turnin.Complete3B_Location_Value__FFLayer.visible or
+                not turnin.Hunt_Complete_Text__FFLayer.visible or
+                turnin.Final_Fight_Icon__FFLayer.visible or
                 turnin.Complete2B_Huntmaster_Value.text != "Huntmaster Varyn" or
                 turnin.Complete3B_Location_Value.text != "Dalaran"):
             raise AssertionError("Turnin state regressed")
@@ -1167,7 +1198,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the PTR2 package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "21-ptr2":
+    if manifest.get("version") != "21-ptr3":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()

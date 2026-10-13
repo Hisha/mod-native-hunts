@@ -101,6 +101,27 @@ local PRESENTATION = {
 local presentationFrame = {};
 for _, entry in ipairs(PRESENTATION) do presentationFrame[entry[1]] = entry[2]; end
 
+-- FrameForge preserves the authored z-order by assigning the final exported
+-- regions to HIGHLIGHT. Plain 3.3.5a Frames do not display that layer as a
+-- persistent content layer, so normalize those state bodies after export.
+local OVERLAY_PRESENTATION_REGIONS = {
+	"Located3_Text", "Hunt_Complete_Icon", "Complete_Text", "Complete2A_Text",
+	"Complete2B_Huntmaster_Value", "Complete3A_Text", "Complete3B_Location_Value",
+	"Final_Fight_Icon", "Final_Fight_Text",
+};
+
+local function NormalizePresentationDrawLayers()
+	for _, name in ipairs(OVERLAY_PRESENTATION_REGIONS) do
+		local region = _G[name];
+		if region and region.SetDrawLayer then region:SetDrawLayer("OVERLAY"); end
+	end
+end
+
+local function SetBlizzardPortraitIconVisible(visible)
+	if not LFDParentFramePortraitIcon then return; end
+	if visible then LFDParentFramePortraitIcon:Show(); else LFDParentFramePortraitIcon:Hide(); end
+end
+
 local function ReportInitializationFailure(message)
 	if initializationError then return; end
 	initializationError = message;
@@ -108,6 +129,7 @@ local function ReportInitializationFailure(message)
 	if NativeHuntsFrame then NativeHuntsFrame:Hide(); end
 	if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
 	if LFDQueueFrame then LFDQueueFrame:Show(); end
+	SetBlizzardPortraitIconVisible(true);
 	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
 		DEFAULT_CHAT_FRAME:AddMessage("|cffff2020Native Hunts:|r " .. message);
 	end
@@ -116,7 +138,7 @@ end
 local function ValidateFrameForgeControls()
 	local required = {"LFDParentFrame", "LFDQueueFrame", "NativeHuntsFrame",
 		"FrameForge_Dungeon_Finder_UI", "Tracker_Hunt_Progress",
-		"LFDParentFrameTab1", "LFDParentFrameTab2"};
+		"LFDParentFrameTab1", "LFDParentFrameTab2", "LFDParentFramePortraitIcon"};
 	for _, name in ipairs(required) do
 		if not _G[name] then return nil, name; end
 	end
@@ -329,11 +351,11 @@ function NativeHuntsFrame_SelectTab(tab)
 	PositionTabs();
 	if tab == NATIVE_HUNTS_HUNTS_TAB then
 		selectedTab = tab; LFDQueueFrame:Hide(); NativeHuntsFrame:Show();
-		FrameForge_Dungeon_Finder_UI:Show(); RequestSnapshot();
+		FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitIconVisible(false); RequestSnapshot();
 	else
 		selectedTab = NATIVE_HUNTS_DUNGEON_TAB; NativeHuntsFrame:Hide();
 		if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
-		LFDQueueFrame:Show(); tab = selectedTab;
+		LFDQueueFrame:Show(); SetBlizzardPortraitIconVisible(true); tab = selectedTab;
 	end
 	if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame, tab); end
 end
@@ -344,6 +366,7 @@ function NativeHuntsFrame_OnLoad(self)
 	if not valid then ReportInitializationFailure("required exported control is missing: " .. missing); return; end
 	initialized = true;
 	NativeHuntsFrameInitializationError = nil;
+	NormalizePresentationDrawLayers();
 	Tracker_Hunt_Progress:SetMinMaxValues(0, 100);
 	Tracker_Hunt_Progress:SetValue(0);
 	RenderWaiting("Retrieving Hunt information...");
@@ -361,9 +384,9 @@ function NativeHuntsFrame_OnLoad(self)
 	if hooksecurefunc and type(LFDFrame_OnEvent)=="function" then hooksecurefunc("LFDFrame_OnEvent",function(frame,event) if event=="LFG_OPEN_FROM_GOSSIP" then NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB); end end); end
 	LFDParentFrame:HookScript("OnShow",function()
 		if selectedTab == NATIVE_HUNTS_HUNTS_TAB then
-			LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); FrameForge_Dungeon_Finder_UI:Show(); RequestSnapshot();
+			LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitIconVisible(false); RequestSnapshot();
 		else
-			NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide(); LFDQueueFrame:Show();
+			NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide(); LFDQueueFrame:Show(); SetBlizzardPortraitIconVisible(true);
 		end
 		PositionTabs();
 	end);

@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "21-ptr2",
+  "version": "21-ptr3",
   "description": "Managed Native Hunts gameplay and protected FrameXML integration with the module-owned FrameForge presentation layer.",
   "content": [
     {
