@@ -1993,12 +1993,12 @@
     {
       "name": "DesignObject32",
       "parent": null,
-      "width": 80,
+      "width": 90,
       "height": 16,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -362.7189,
+      "offsetX": -357.7189,
       "offsetY": 123.64760432766613,
       "visible": true,
       "kind": "FONTSTRING",
@@ -2086,7 +2086,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -326.42219387755097,
-      "offsetY": 41.54464285714285,
+      "offsetY": 38.32184586055725,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2149,7 +2149,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -326.4222,
-      "offsetY": 41.5446,
+      "offsetY": 38.3218,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2367,7 +2367,7 @@
     }
   ],
   "editor": {
-    "activeDesignState": "tracking",
+    "activeDesignState": "located",
     "lockedElements": [
       "DesignObject5",
       "DesignObject6",
@@ -2375,14 +2375,11 @@
       "DesignObject21",
       "DesignObject28",
       "DesignObject27",
-      "DesignObject32",
       "DesignObject31",
       "DesignObject30",
       "DesignObject29",
       "DesignObject38",
       "DesignObject37",
-      "DesignObject36",
-      "DesignObject39",
       "DesignObject45",
       "DesignObject47",
       "DesignObject48",
@@ -2415,7 +2412,10 @@
       "DesignObject44",
       "DesignObject49",
       "DesignObject34",
-      "DesignObject35"
+      "DesignObject35",
+      "DesignObject32",
+      "DesignObject36",
+      "DesignObject39"
     ],
     "groups": [
       {

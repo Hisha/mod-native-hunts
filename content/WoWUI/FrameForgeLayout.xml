@@ -617,12 +617,12 @@
       </Frame>
       <Frame name="Tracker_Hunt_Ground__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="31" hidden="true">
         <Size>
-          <AbsDimension x="80" y="16" />
+          <AbsDimension x="90" y="16" />
         </Size>
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="-25.5811448979592" y="-40.3523956723339" />
+              <AbsDimension x="-20.5811448979592" y="-40.3523956723339" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -697,7 +697,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="10.7155612244899" y="-122.455357142857" />
+              <AbsDimension x="10.7155612244899" y="-125.678154139443" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -756,7 +756,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="10.7155551020409" y="-122.4554" />
+              <AbsDimension x="10.7155551020409" y="-125.6782" />
             </Offset>
           </Anchor>
         </Anchors>
