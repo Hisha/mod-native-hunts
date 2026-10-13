@@ -32,7 +32,6 @@ enum GossipAction : std::uint32_t {
 	ActionStatus,
 	ActionTurnIn,
 	ActionAbandon,
-	ActionStats,
 	ActionGuardHuntmaster
 };
 
@@ -171,10 +170,6 @@ public:
 		case ActionRequestElite: sNativeHunts.RequestEliteHunt(player, creature, message); break;
 		case ActionTurnIn: sNativeHunts.TurnIn(player, creature, message); break;
 		case ActionAbandon: sNativeHunts.Abandon(player, message); break;
-		case ActionStats:
-			message = "Lifetime completed Hunts: " +
-					  std::to_string(sNativeHunts.LifetimeCompletions(player));
-			break;
 		case ActionStatus:
 		default:
 			if (auto const *runtime = sNativeHunts.GetRuntime(player))
@@ -212,9 +207,6 @@ private:
 			AddGossipItemFor(player, GOSSIP_ICON_CHAT,
 				"I wish to abandon this Hunt.", GOSSIP_SENDER_MAIN, ActionAbandon);
 		}
-
-		AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Show me my hunting record.",
-			GOSSIP_SENDER_MAIN, ActionStats);
 		SendGossipMenuFor(player, 1, creature->GetGUID());
 	}
 };

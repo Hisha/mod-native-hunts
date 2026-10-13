@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import json
 import hashlib
@@ -810,8 +811,8 @@ def run_frameforge_functional_ui_checks() -> None:
     assets_manifest = json.loads((content_root / "WoWUI/assets-manifest.json").read_text())
     inventory = exported_manifest.get("bindings", [])
     if (exported_manifest.get("schema") != "frameforge-wow335-manifest" or
-            exported_manifest.get("version") != 2 or len(inventory) != 49):
-        raise AssertionError("authoritative 49-object FrameForge contract is incorrect")
+            exported_manifest.get("version") != 2 or len(inventory) != 48):
+        raise AssertionError("authoritative 48-object FrameForge contract is incorrect")
     if [state["id"] for state in exported_manifest.get("states", [])] != [
             "idle", "tracking", "located", "fight", "turnin"]:
         raise AssertionError("FrameForge visual state order or identity regressed")
@@ -824,7 +825,7 @@ def run_frameforge_functional_ui_checks() -> None:
     layout_root = ET.parse(content_root / "WoWUI/FrameForgeLayout.xml").getroot()
     names = {element.get("name") for element in layout_root.iter() if element.get("name")}
     inventory_names = {entry["runtimeId"] for entry in inventory}
-    if len(inventory_names) != 49 or not inventory_names <= names:
+    if len(inventory_names) != 48 or not inventory_names <= names:
         raise AssertionError("integrated FrameXML lost an authored control identity")
     wrappers = {entry["visibilityRuntimeId"] for entry in inventory
                 if entry["type"] in {"Texture", "FontString"}}
@@ -877,8 +878,8 @@ def run_frameforge_functional_ui_checks() -> None:
 
     presentation_rows = re.findall(
         r'\{"([A-Za-z0-9_]+)", "([A-Za-z0-9_]+)", "([*ITLFR]+)"\}', ui_lua)
-    if len(presentation_rows) != 49 or {row[0] for row in presentation_rows} != inventory_names:
-        raise AssertionError("Lua presentation inventory does not cover exactly 49 exported controls")
+    if len(presentation_rows) != 48 or {row[0] for row in presentation_rows} != inventory_names:
+        raise AssertionError("Lua presentation inventory does not cover exactly 48 exported controls")
     row_by_name = {row[0]: row for row in presentation_rows}
     state_code = {"idle": "I", "tracking": "T", "located": "L", "fight": "F", "turnin": "R"}
     for state in exported_manifest["states"]:
@@ -907,6 +908,7 @@ def run_frameforge_functional_ui_checks() -> None:
         'LFDParentFrame.numTabs = 2', 'InitializeTabs();',
         'type(LFDParentFrame.numTabs) ~= "number"', "ValidateFrameForgeControls",
         "NativeHuntsFrameInitializationError", "required exported control is missing",
+        "Elite_Hunt_Icon__FFLayer:SetFrameLevel(Standard_Hunt_Icon__FFLayer:GetFrameLevel())",
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -1026,6 +1028,8 @@ def run_frameforge_functional_ui_checks() -> None:
                     SetPoint=function(self,point,relative,relativePoint,x,y) self.point={point,relative,relativePoint,x,y} end,
                     Hide=function(self) self.visible=false end,Show=function(self) self.visible=true end,
 					SetDrawLayer=function(self,value) self.drawLayer=value end,
+                    SetFrameLevel=function(self,value) self.frameLevel=value end,
+                    GetFrameLevel=function(self) return self.frameLevel end,
                     IsShown=function(self) return self.visible end,
                     HookScript=function(self,event,callback) self.hooks[event]=callback end,
                     RegisterEvent=function() end,CreateAnimationGroup=function() return AnimationGroup() end}
@@ -1051,6 +1055,8 @@ def run_frameforge_functional_ui_checks() -> None:
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
+        controls.Elite_Hunt_Icon__FFLayer.frameLevel = 1
+        controls.Standard_Hunt_Icon__FFLayer.frameLevel = 21
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
             raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
@@ -1063,6 +1069,9 @@ def run_frameforge_functional_ui_checks() -> None:
                            "Final_Fight_Icon", "Final_Fight_Text")
         if any(getattr(controls, name).drawLayer != "OVERLAY" for name in overlay_regions):
             raise AssertionError("Fight/Turnin body regions were not normalized to a persistent draw layer")
+        if (controls.Elite_Hunt_Icon__FFLayer.frameLevel !=
+                controls.Standard_Hunt_Icon__FFLayer.frameLevel):
+            raise AssertionError("Elite Hunt icon remained below the active-panel wrappers")
         if (not controls.LFDParentFramePortraitTexture.visible or
                 not controls.LFDParentFramePortraitIcon.visible):
             raise AssertionError("initial Dungeon Finder portrait artwork was not preserved")
@@ -1153,6 +1162,21 @@ def run_frameforge_functional_ui_checks() -> None:
             )
             if actual != expected:
                 raise AssertionError(f"tier {tier} visibility regressed: {actual}")
+        for state in ("T", "F", "P", "R"):
+            elite_state = rendered(state=state, tier="E")
+            if (not elite_state.Elite_Hunt_Icon__FFLayer.visible or
+                    elite_state.Standard_Hunt_Icon__FFLayer.visible):
+                raise AssertionError(f"Elite icon visibility regressed in state {state}")
+            standard_state = rendered(state=state, tier="S")
+            if (not standard_state.Standard_Hunt_Icon__FFLayer.visible or
+                    standard_state.Elite_Hunt_Icon__FFLayer.visible):
+                raise AssertionError(f"Standard icon visibility regressed in state {state}")
+        rendered(state="T", tier="E")
+        controls.NativeHuntsFrame_SelectTab(1)
+        controls.NativeHuntsFrame_SelectTab(2)
+        if (not controls.Elite_Hunt_Icon__FFLayer.visible or
+                controls.Standard_Hunt_Icon__FFLayer.visible):
+            raise AssertionError("reopening the Hunts tab lost Elite icon visibility")
         located = rendered(state="F", progress=100)
         if (not located.Trail_Located_Text__FFLayer.visible or
                 not located.Located_Text__FFLayer.visible or
@@ -1210,7 +1234,7 @@ def run_frameforge_package_checks() -> None:
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
-    subprocess.run(["python3", str(ROOT / "content" / "build_epf.py")],
+    subprocess.run([sys.executable, str(ROOT / "content" / "build_epf.py")],
                    cwd=ROOT, check=True)
     if epf.read_bytes() != before:
         raise AssertionError("repeated explicit-content EPF build was not byte deterministic")
@@ -1328,8 +1352,7 @@ def run_source_safety_checks() -> None:
     standard = menu.index("ActionRequest);", idle)
     elite = menu.index("ActionRequestElite);", standard)
     ready = menu.index("} else if (runtime->Aggregate.State", elite)
-    record = menu.index("ActionStats);", ready)
-    if not idle < standard < elite < ready < record or "if (!runtime &&" in menu:
+    if not idle < standard < elite < ready or "if (!runtime &&" in menu:
         raise AssertionError("Huntmaster idle/Elite gossip can dereference a null runtime")
     hello = module[module.index("bool OnGossipHello(Player *player, Creature *creature)"):menu_start]
     if (hello.count("sNativeHunts.CanOpenHuntmasterGossip(player, creature)") != 2 or
@@ -1339,6 +1362,8 @@ def run_source_safety_checks() -> None:
             "case ActionRequest: sNativeHunts.RequestHunt(player, creature, message);" not in hello or
             "case ActionRequestElite: sNativeHunts.RequestEliteHunt(player, creature, message);" not in hello):
         raise AssertionError("standard/Elite gossip selections do not preserve validated sender and Huntmaster identity")
+    if "Show me my hunting record." in module or "ActionStats" in module:
+        raise AssertionError("redundant Huntmaster hunting-record gossip remains")
     if (manager.count("auto const *huntmaster = ResolveHuntmaster(giver);") != 2 or
             "MatchesManagedHuntmaster(creature->GetEntry(), creature->GetSpawnId()," not in manager or
             "if (IsHuntmaster(creature))" not in manager or
