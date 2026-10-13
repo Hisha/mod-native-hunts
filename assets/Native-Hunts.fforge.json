@@ -1657,7 +1657,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -234.6042162107742,
-      "offsetY": 300.6074311197608,
+      "offsetY": 301.0467856978754,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1678,7 +1678,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -234.6042162107742,
-      "offsetY": 300.6074311197608,
+      "offsetY": 301.0467856978754,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1742,10 +1742,10 @@
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
-        "drawLayer": "BORDER",
         "texture": {
           "file": "hunt_header.png"
-        }
+        },
+        "drawLayer": "BORDER"
       }
     },
     {
@@ -1780,10 +1780,10 @@
       "level": 21,
       "kind": "TEXTURE",
       "visual": {
-        "drawLayer": "ARTWORK",
         "texture": {
           "file": "hunt_icon_standard.png"
-        }
+        },
+        "drawLayer": "ARTWORK"
       }
     },
     {
@@ -1967,24 +1967,24 @@
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
-        "drawLayer": "OVERLAY",
         "text": {
           "text": "Text",
           "justifyH": "CENTER",
           "justifyV": "MIDDLE",
           "font": "GameFontNormal"
-        }
+        },
+        "drawLayer": "OVERLAY"
       }
     },
     {
       "name": "DesignObject32",
       "parent": null,
-      "width": 90,
+      "width": 100,
       "height": 16,
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -357.7189,
+      "offsetX": -352.7189,
       "offsetY": 123.64760432766613,
       "visible": true,
       "kind": "FONTSTRING",
@@ -2000,7 +2000,7 @@
     {
       "name": "DesignObject33",
       "parent": null,
-      "width": 120,
+      "width": 110,
       "height": 16,
       "point": "CENTER",
       "relativeTo": null,
@@ -2368,7 +2368,6 @@
       "DesignObject45",
       "DesignObject47",
       "DesignObject48",
-      "DesignObject33",
       "DesignObject40",
       "DesignObject41",
       "DesignObject2",
@@ -2386,8 +2385,6 @@
       "DesignObject3",
       "DesignObject13",
       "DesignObject14",
-      "DesignObject16",
-      "DesignObject15",
       "DesignObject17",
       "DesignObject11",
       "DesignObject12",
@@ -2398,9 +2395,12 @@
       "DesignObject49",
       "DesignObject34",
       "DesignObject35",
-      "DesignObject32",
       "DesignObject36",
-      "DesignObject39"
+      "DesignObject39",
+      "DesignObject16",
+      "DesignObject15",
+      "DesignObject33",
+      "DesignObject32"
     ],
     "groups": [
       {
