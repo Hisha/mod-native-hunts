@@ -116,14 +116,8 @@ local function NormalizePresentationDrawLayers()
 	end
 end
 
--- The exported Elite icon wrapper is frame level 1, below both active-panel
--- wrappers (18/19). Match the mutually exclusive Standard icon wrapper so the
--- Elite texture is not occluded without changing the authored coordinates.
-local function NormalizeTierIconFrameLevels()
-	if Elite_Hunt_Icon__FFLayer.SetFrameLevel and Standard_Hunt_Icon__FFLayer.GetFrameLevel then
-		Elite_Hunt_Icon__FFLayer:SetFrameLevel(Standard_Hunt_Icon__FFLayer:GetFrameLevel());
-	end
-end
+local STANDARD_HUNT_ICON_TEXTURE = "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_standard";
+local ELITE_HUNT_ICON_TEXTURE = "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_elite";
 
 local function SetBlizzardPortraitArtworkVisible(visible)
 	local function SetRegionVisible(region)
@@ -254,9 +248,11 @@ local function Render(snapshot)
 	SetPresentationVisible("Standard_Hunt_Icon", false);
 	SetPresentationVisible("Tracker_Standard_Hunt", false);
 	if snapshot.tier == "E" then
-		SetPresentationVisible("Elite_Hunt_Icon", true);
+		Standard_Hunt_Icon:SetTexture(ELITE_HUNT_ICON_TEXTURE);
+		SetPresentationVisible("Standard_Hunt_Icon", true);
 		SetPresentationVisible("Tracker_Elite_Hunt", true);
 	elseif snapshot.tier == "S" then
+		Standard_Hunt_Icon:SetTexture(STANDARD_HUNT_ICON_TEXTURE);
 		SetPresentationVisible("Standard_Hunt_Icon", true);
 		SetPresentationVisible("Tracker_Standard_Hunt", true);
 	end
@@ -380,7 +376,6 @@ function NativeHuntsFrame_OnLoad(self)
 	initialized = true;
 	NativeHuntsFrameInitializationError = nil;
 	NormalizePresentationDrawLayers();
-	NormalizeTierIconFrameLevels();
 	Tracker_Hunt_Progress:SetMinMaxValues(0, 100);
 	Tracker_Hunt_Progress:SetValue(0);
 	RenderWaiting("Retrieving Hunt information...");

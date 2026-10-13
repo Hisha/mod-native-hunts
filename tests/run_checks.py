@@ -908,7 +908,8 @@ def run_frameforge_functional_ui_checks() -> None:
         'LFDParentFrame.numTabs = 2', 'InitializeTabs();',
         'type(LFDParentFrame.numTabs) ~= "number"', "ValidateFrameForgeControls",
         "NativeHuntsFrameInitializationError", "required exported control is missing",
-        "Elite_Hunt_Icon__FFLayer:SetFrameLevel(Standard_Hunt_Icon__FFLayer:GetFrameLevel())",
+        "Standard_Hunt_Icon:SetTexture(ELITE_HUNT_ICON_TEXTURE)",
+        "Standard_Hunt_Icon:SetTexture(STANDARD_HUNT_ICON_TEXTURE)",
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -922,7 +923,7 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError(f"modern Lua/WoW API token found: {token}")
     for forbidden in ("LFDParentFrame:SetWidth", "LFDParentFrame:SetHeight",
                       "LFDQueueFrameTitleText:SetText", "PositionCloseButton",
-                      "HUNTS_PARENT_HEIGHT"):
+                      "HUNTS_PARENT_HEIGHT", "SetFrameLevel"):
         if forbidden in ui_lua:
             raise AssertionError(f"Blizzard geometry/title mutation remains: {forbidden}")
 
@@ -1028,8 +1029,6 @@ def run_frameforge_functional_ui_checks() -> None:
                     SetPoint=function(self,point,relative,relativePoint,x,y) self.point={point,relative,relativePoint,x,y} end,
                     Hide=function(self) self.visible=false end,Show=function(self) self.visible=true end,
 					SetDrawLayer=function(self,value) self.drawLayer=value end,
-                    SetFrameLevel=function(self,value) self.frameLevel=value end,
-                    GetFrameLevel=function(self) return self.frameLevel end,
                     IsShown=function(self) return self.visible end,
                     HookScript=function(self,event,callback) self.hooks[event]=callback end,
                     RegisterEvent=function() end,CreateAnimationGroup=function() return AnimationGroup() end}
@@ -1055,8 +1054,6 @@ def run_frameforge_functional_ui_checks() -> None:
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
-        controls.Elite_Hunt_Icon__FFLayer.frameLevel = 1
-        controls.Standard_Hunt_Icon__FFLayer.frameLevel = 21
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
             raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
@@ -1069,9 +1066,6 @@ def run_frameforge_functional_ui_checks() -> None:
                            "Final_Fight_Icon", "Final_Fight_Text")
         if any(getattr(controls, name).drawLayer != "OVERLAY" for name in overlay_regions):
             raise AssertionError("Fight/Turnin body regions were not normalized to a persistent draw layer")
-        if (controls.Elite_Hunt_Icon__FFLayer.frameLevel !=
-                controls.Standard_Hunt_Icon__FFLayer.frameLevel):
-            raise AssertionError("Elite Hunt icon remained below the active-panel wrappers")
         if (not controls.LFDParentFramePortraitTexture.visible or
                 not controls.LFDParentFramePortraitIcon.visible):
             raise AssertionError("initial Dungeon Finder portrait artwork was not preserved")
@@ -1149,7 +1143,7 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError("Tracking state or dynamic FrameForge values regressed")
         for tier, expected in {
                 "S": (True, True, False, False),
-                "E": (False, False, True, True),
+                "E": (True, False, False, True),
                 "N": (False, False, False, False),
                 "X": (False, False, False, False),
         }.items():
@@ -1162,20 +1156,26 @@ def run_frameforge_functional_ui_checks() -> None:
             )
             if actual != expected:
                 raise AssertionError(f"tier {tier} visibility regressed: {actual}")
+            if (tier == "E" and not tier_controls.Standard_Hunt_Icon.texture.endswith("hunt_icon_elite") or
+                    tier == "S" and not tier_controls.Standard_Hunt_Icon.texture.endswith("hunt_icon_standard")):
+                raise AssertionError(f"tier {tier} icon texture regressed")
         for state in ("T", "F", "P", "R"):
             elite_state = rendered(state=state, tier="E")
-            if (not elite_state.Elite_Hunt_Icon__FFLayer.visible or
-                    elite_state.Standard_Hunt_Icon__FFLayer.visible):
+            if (elite_state.Elite_Hunt_Icon__FFLayer.visible or
+                    not elite_state.Standard_Hunt_Icon__FFLayer.visible or
+                    not elite_state.Standard_Hunt_Icon.texture.endswith("hunt_icon_elite")):
                 raise AssertionError(f"Elite icon visibility regressed in state {state}")
             standard_state = rendered(state=state, tier="S")
             if (not standard_state.Standard_Hunt_Icon__FFLayer.visible or
-                    standard_state.Elite_Hunt_Icon__FFLayer.visible):
+                    standard_state.Elite_Hunt_Icon__FFLayer.visible or
+                    not standard_state.Standard_Hunt_Icon.texture.endswith("hunt_icon_standard")):
                 raise AssertionError(f"Standard icon visibility regressed in state {state}")
         rendered(state="T", tier="E")
         controls.NativeHuntsFrame_SelectTab(1)
         controls.NativeHuntsFrame_SelectTab(2)
-        if (not controls.Elite_Hunt_Icon__FFLayer.visible or
-                controls.Standard_Hunt_Icon__FFLayer.visible):
+        if (controls.Elite_Hunt_Icon__FFLayer.visible or
+                not controls.Standard_Hunt_Icon__FFLayer.visible or
+                not controls.Standard_Hunt_Icon.texture.endswith("hunt_icon_elite")):
             raise AssertionError("reopening the Hunts tab lost Elite icon visibility")
         located = rendered(state="F", progress=100)
         if (not located.Trail_Located_Text__FFLayer.visible or
@@ -1187,8 +1187,9 @@ def run_frameforge_functional_ui_checks() -> None:
                 not fight.Final_Fight_Text__FFLayer.visible or
                 not fight.Final_Confrontation_Text__FFLayer.visible or
                 fight.Hunt_Complete_Icon__FFLayer.visible or
-                fight.Tracker_Hunt_Progress.visible or not fight.Elite_Hunt_Icon__FFLayer.visible or
-                fight.Standard_Hunt_Icon__FFLayer.visible):
+                fight.Tracker_Hunt_Progress.visible or fight.Elite_Hunt_Icon__FFLayer.visible or
+                not fight.Standard_Hunt_Icon__FFLayer.visible or
+                not fight.Standard_Hunt_Icon.texture.endswith("hunt_icon_elite")):
             raise AssertionError("Fight state regressed")
         turnin = rendered(state="R")
         if (not turnin.Hunt_Complete_Icon__FFLayer.visible or
