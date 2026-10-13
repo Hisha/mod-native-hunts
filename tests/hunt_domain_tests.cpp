@@ -155,6 +155,26 @@ void TestRewardRules() {
 	Check(success.EquipmentToInventory && success.SealsToInventory,
 		"successful bundle delivery stores both rewards directly");
 
+	EquippedRewardSlot rings[] = {{1001, 200, true}, {1002, 187, true}};
+	Check(SelectBelowThresholdSlot(2001, 200, rings, 2) == 1,
+		"Elite reward targets the below-200 ring slot");
+	Check(SelectBelowThresholdSlot(1001, 200, rings, 2) == -1,
+		"already-equipped reward entry is excluded even when another slot is low");
+	EquippedRewardSlot capped[] = {{1001, 200, true}, {1002, 213, true}};
+	Check(SelectBelowThresholdSlot(2001, 200, capped, 2) == -1 &&
+		EliteSealReward(true,80,80,1,true,1)==2,
+		"all slots at 200 or higher retain the two-Seal fallback");
+	EquippedRewardSlot weapons[] = {{3001, 187, true}, {0, 0, false}};
+	Check(SelectBelowThresholdSlot(3002, 200, weapons, 2) == 0,
+		"ineligible off-hand is not treated as an upgrade target");
+	Check(ClassifyInventoryResult(4) == InventoryFailureKind::BagSpace &&
+		ClassifyInventoryResult(50) == InventoryFailureKind::BagSpace &&
+		ClassifyInventoryResult(17) == InventoryFailureKind::UniqueOrLimit &&
+		ClassifyInventoryResult(84) == InventoryFailureKind::UniqueOrLimit &&
+		ClassifyInventoryResult(23) == InventoryFailureKind::ItemValidation &&
+		ClassifyInventoryResult(40) == InventoryFailureKind::Storage,
+		"inventory failures distinguish space, limits, validation, and storage");
+
 	Check(ResolveRewardCommit(true,AssignmentPersistence::Unknown)==
 			RewardCommitResolution::Complete &&
 		ResolveRewardCommit(false,AssignmentPersistence::Missing)==

@@ -847,7 +847,7 @@ def run_frameforge_functional_ui_checks() -> None:
     grounds_label = named["Tracker_Hunt_Ground"]
     grounds_height = next(element for element in grounds_label if element.tag.endswith("FontHeight"))
     grounds_abs = next(element for element in grounds_height if element.tag.endswith("AbsValue"))
-    if (grounds_dimensions.get("x") != "90" or grounds_dimensions.get("y") != "16" or
+    if (grounds_dimensions.get("x") != "100" or grounds_dimensions.get("y") != "16" or
             grounds_label.get("text") != "Hunting Grounds:" or
             grounds_label.get("font") != r"Fonts\FRIZQT__.TTF" or grounds_abs.get("val") != "10"):
         raise AssertionError("Hunting Grounds label dimensions or effective font declaration regressed")
@@ -923,6 +923,8 @@ def run_frameforge_functional_ui_checks() -> None:
         'snapshot.state == "R" and "R"', "LFDQueueFrame:Hide()", "NativeHuntsFrame:Show()",
         "FrameForge_Dungeon_Finder_UI:Show()", "FrameForge_Dungeon_Finder_UI:Hide()",
         'RegisterAddonMessagePrefix(PREFIX)', 'self:RegisterEvent("CHAT_MSG_ADDON")',
+        'self:RegisterEvent("GOSSIP_SHOW")', 'if event=="GOSSIP_SHOW" then',
+        'HideUIPanel(LFDParentFrame)',
         'LFDParentFrame.numTabs = 2', 'InitializeTabs();',
         'type(LFDParentFrame.numTabs) ~= "number"', "ValidateFrameForgeControls",
         "NativeHuntsFrameInitializationError", "required exported control is missing",
@@ -1043,7 +1045,7 @@ def run_frameforge_functional_ui_checks() -> None:
                     Play=function(self) self.playing=true end}
             end
             function FrameForgeTestControl()
-                return {text="",value=0,min=0,max=0,visible=true,width=0,height=0,objectType="Frame",hooks={},children={},
+                return {text="",value=0,min=0,max=0,visible=true,width=0,height=0,objectType="Frame",hooks={},children={},events={},
                     SetText=function(self,value) self.text=value end,SetValue=function(self,value) self.value=value end,
                     SetMinMaxValues=function(self,min,max) self.min=min self.max=max end,
                     SetTexture=function(self,value) self.texture=value end,SetWidth=function(self,value) self.width=value end,
@@ -1056,7 +1058,7 @@ def run_frameforge_functional_ui_checks() -> None:
 					SetDrawLayer=function(self,value) self.drawLayer=value end,
                     IsShown=function(self) return self.visible end,
                     HookScript=function(self,event,callback) self.hooks[event]=callback end,
-                    RegisterEvent=function() end,CreateAnimationGroup=function() return AnimationGroup() end}
+                    RegisterEvent=function(self,event) self.events[event]=true end,CreateAnimationGroup=function() return AnimationGroup() end}
             end
             function PanelTemplates_SetNumTabs(frame,count) frame.numTabs=count end
             function PanelTemplates_SetTab(frame,selected)
@@ -1069,6 +1071,10 @@ def run_frameforge_functional_ui_checks() -> None:
             function UnitName() return "Tester" end
             function SendAddonMessage() FrameForgeTestRequests=FrameForgeTestRequests+1 end
             function RegisterAddonMessagePrefix() end
+            function HideUIPanel(frame)
+                frame:Hide()
+                if frame.hooks.OnHide then frame.hooks.OnHide() end
+            end
         """)
         controls = lua.globals()
         for name in names | set(host_named) | {"NativeHuntsFrameInitializer"}:
@@ -1080,6 +1086,8 @@ def run_frameforge_functional_ui_checks() -> None:
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
+        if not controls.NativeHuntsFrameInitializer.events["GOSSIP_SHOW"]:
+            raise AssertionError("Native Hunts did not register for gossip panel arbitration")
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
             raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
         if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
@@ -1126,6 +1134,18 @@ def run_frameforge_functional_ui_checks() -> None:
                 controls.LFDParentFramePortraitIcon.visible or
                 controls.FrameForgeTestRequests != 3):
             raise AssertionError("reopening Dungeon Finder did not restore Hunts selection")
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "GOSSIP_SHOW")
+        if (controls.LFDParentFrame.visible or controls.NativeHuntsFrame.visible or
+                controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFrame.selectedTab != 2):
+            raise AssertionError("opening gossip did not yield the Hunts panel without losing its state")
+        controls.FrameForgeTestTime = 16
+        controls.LFDParentFrame.visible = True
+        controls.LFDParentFrame.hooks["OnShow"]()
+        if (not controls.NativeHuntsFrame.visible or
+                not controls.FrameForge_Dungeon_Finder_UI.visible or
+                controls.LFDParentFrame.selectedTab != 2):
+            raise AssertionError("reopening Hunts after gossip did not preserve its selected state")
         controls.NativeHuntsFrame_SelectTab(1)
         controls.LFDParentFrame.hooks["OnHide"]()
         controls.LFDParentFrame.hooks["OnShow"]()
@@ -1435,6 +1455,11 @@ def run_source_safety_checks() -> None:
         "PlanRewardDelivery(rewardItem != 0, seals != 0",
         "CanStoreRewardBundle(player, rewardItem",
         "player->CanStoreItems(",
+        "player->CanTakeMoreSimilarItems(",
+        "GetEndgameEliteUpgradeSlot(player, item",
+        "SelectBelowThresholdSlot(candidate.ItemId",
+        "InventoryFailureName(equipmentResult)",
+        "player->GetFreeInventorySpace()",
         'MailDraft draft("Huntmaster\'s Reward — "',
         "Your quarry has fallen, hunter. Your reward awaits you.",
         "MailSender(MAIL_CREATURE, runtime.HuntmasterEntry)",

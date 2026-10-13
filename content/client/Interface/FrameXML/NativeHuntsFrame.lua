@@ -378,7 +378,7 @@ function NativeHuntsFrame_OnLoad(self)
 	Tracker_Hunt_Progress:SetValue(0);
 	RenderWaiting("Retrieving Hunt information...");
 	if RegisterAddonMessagePrefix then RegisterAddonMessagePrefix(PREFIX); end
-	self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("CHAT_MSG_ADDON");
+	self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("CHAT_MSG_ADDON"); self:RegisterEvent("GOSSIP_SHOW");
 	timeoutGroup=NativeHuntsFrame:CreateAnimationGroup(); local timeout=timeoutGroup:CreateAnimation("Alpha");
 	timeout:SetChange(0); timeout:SetDuration(5); timeout:SetOrder(1);
 	timeoutGroup:SetScript("OnFinished",function()
@@ -405,6 +405,16 @@ end
 function NativeHuntsFrame_OnEvent(self,event,...)
 	if not initialized then return; end
 	if event=="PLAYER_ENTERING_WORLD" then RequestSnapshot(); return; end
+	if event=="GOSSIP_SHOW" then
+		-- LFDParentFrame is a special-frame panel.  The stock UI closes competing
+		-- panels when gossip opens, but our Hunts child could keep that parent's
+		-- mouse-bearing presentation alive.  Close only the custom Hunts view;
+		-- selectedTab and the last snapshot remain intact for the next reopen.
+		if selectedTab==NATIVE_HUNTS_HUNTS_TAB and LFDParentFrame and LFDParentFrame:IsShown() then
+			if HideUIPanel then HideUIPanel(LFDParentFrame); else LFDParentFrame:Hide(); end
+		end
+		return;
+	end
 	local prefix,message,channel,sender=...;
 	if event=="CHAT_MSG_ADDON" and prefix==PREFIX and channel=="WHISPER" and sender==UnitName("player") then HandleMessage(message); end
 end

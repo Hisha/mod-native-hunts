@@ -114,7 +114,12 @@ std::optional<bool> AssignmentExists(std::uint32_t guid) {
 	return result->Fetch()[0].Get<std::uint64_t>() != 0;
 }
 
-InventoryResult CanStoreRewardBundle(Player *player,
+struct BundleStorageResult {
+	InventoryResult Result = EQUIP_ERR_OK;
+	std::uint32_t LimitedCategory = 0;
+};
+
+BundleStorageResult CanStoreRewardBundle(Player *player,
 		std::uint32_t equipmentEntry, std::uint32_t sealEntry,
 		std::uint32_t sealCount) {
 	Item *probes[2] = {};
@@ -128,13 +133,13 @@ InventoryResult CanStoreRewardBundle(Player *player,
 
 	probes[probeCount] = Item::CreateItem(equipmentEntry, 1, player);
 	if (!probes[probeCount])
-		return EQUIP_ERR_ITEM_NOT_FOUND;
+		return {EQUIP_ERR_ITEM_NOT_FOUND, 0};
 	++probeCount;
 	if (sealCount) {
 		probes[probeCount] = Item::CreateItem(sealEntry, sealCount, player);
 		if (!probes[probeCount]) {
 			cleanup();
-			return EQUIP_ERR_ITEM_NOT_FOUND;
+			return {EQUIP_ERR_ITEM_NOT_FOUND, 0};
 		}
 		++probeCount;
 	}
@@ -143,7 +148,18 @@ InventoryResult CanStoreRewardBundle(Player *player,
 	InventoryResult const result = player->CanStoreItems(
 		probes, probeCount, &limitedCategory);
 	cleanup();
-	return result;
+	return {result, limitedCategory};
+}
+
+char const *InventoryFailureName(InventoryResult result) {
+	switch (ClassifyInventoryResult(static_cast<std::uint32_t>(result))) {
+		case InventoryFailureKind::None: return "none";
+		case InventoryFailureKind::BagSpace: return "bag-space";
+		case InventoryFailureKind::UniqueOrLimit: return "unique-or-limit";
+		case InventoryFailureKind::ItemValidation: return "item-validation";
+		case InventoryFailureKind::Storage: return "storage";
+	}
+	return "storage";
 }
 
 void RemoveProvisionalRewards(Player *player, ManagedResources const &resources,
@@ -802,7 +818,8 @@ float GetEquippedPowerForCandidate(Player* player, uint32 spec, RewardRole role,
         {
             float mainPower = GetEquippedItemPower(player, spec, role, EQUIPMENT_SLOT_MAINHAND);
             float offPower = GetEquippedItemPower(player, spec, role, EQUIPMENT_SLOT_OFFHAND);
-            return offPower > 0.0f ? std::min(mainPower, offPower) : mainPower;
+            return player && player->CanDualWield() && offPower > 0.0f ?
+				std::min(mainPower, offPower) : mainPower;
         }
         case INVTYPE_WEAPONMAINHAND:
         case INVTYPE_2HWEAPON:
@@ -855,7 +872,8 @@ uint32 GetEquippedItemLevelForCandidate(Player* player, ItemTemplate const& cand
         {
             uint32 const mainLevel = GetEquippedItemLevel(player, EQUIPMENT_SLOT_MAINHAND);
             uint32 const offLevel = GetEquippedItemLevel(player, EQUIPMENT_SLOT_OFFHAND);
-            return offLevel ? std::min(mainLevel, offLevel) : mainLevel;
+            return player && player->CanDualWield() && offLevel ?
+				std::min(mainLevel, offLevel) : mainLevel;
         }
         case INVTYPE_WEAPONMAINHAND:
         case INVTYPE_2HWEAPON:
@@ -863,6 +881,62 @@ uint32 GetEquippedItemLevelForCandidate(Player* player, ItemTemplate const& cand
         default:
             return 0;
     }
+}
+
+std::vector<uint8> GetCandidateEquipmentSlots(Player *player,
+		ItemTemplate const &candidate) {
+	std::vector<uint8> slots;
+	auto add = [&](uint8 slot) { slots.push_back(slot); };
+	switch (candidate.InventoryType) {
+		case INVTYPE_HEAD: add(EQUIPMENT_SLOT_HEAD); break;
+		case INVTYPE_NECK: add(EQUIPMENT_SLOT_NECK); break;
+		case INVTYPE_SHOULDERS: add(EQUIPMENT_SLOT_SHOULDERS); break;
+		case INVTYPE_CLOAK: add(EQUIPMENT_SLOT_BACK); break;
+		case INVTYPE_CHEST:
+		case INVTYPE_ROBE: add(EQUIPMENT_SLOT_CHEST); break;
+		case INVTYPE_WRISTS: add(EQUIPMENT_SLOT_WRISTS); break;
+		case INVTYPE_HANDS: add(EQUIPMENT_SLOT_HANDS); break;
+		case INVTYPE_WAIST: add(EQUIPMENT_SLOT_WAIST); break;
+		case INVTYPE_LEGS: add(EQUIPMENT_SLOT_LEGS); break;
+		case INVTYPE_FEET: add(EQUIPMENT_SLOT_FEET); break;
+		case INVTYPE_FINGER:
+			add(EQUIPMENT_SLOT_FINGER1); add(EQUIPMENT_SLOT_FINGER2); break;
+		case INVTYPE_TRINKET:
+			add(EQUIPMENT_SLOT_TRINKET1); add(EQUIPMENT_SLOT_TRINKET2); break;
+		case INVTYPE_SHIELD:
+		case INVTYPE_HOLDABLE:
+		case INVTYPE_WEAPONOFFHAND: add(EQUIPMENT_SLOT_OFFHAND); break;
+		case INVTYPE_RANGED:
+		case INVTYPE_RANGEDRIGHT:
+		case INVTYPE_THROWN:
+		case INVTYPE_RELIC: add(EQUIPMENT_SLOT_RANGED); break;
+		case INVTYPE_WEAPON:
+			add(EQUIPMENT_SLOT_MAINHAND);
+			if (player && player->CanDualWield()) add(EQUIPMENT_SLOT_OFFHAND);
+			break;
+		case INVTYPE_WEAPONMAINHAND:
+		case INVTYPE_2HWEAPON: add(EQUIPMENT_SLOT_MAINHAND); break;
+		default: break;
+	}
+	return slots;
+}
+
+std::optional<uint8> GetEndgameEliteUpgradeSlot(Player *player,
+		ItemTemplate const &candidate, std::uint32_t threshold) {
+	auto const slots = GetCandidateEquipmentSlots(player, candidate);
+	std::vector<EquippedRewardSlot> states;
+	states.reserve(slots.size());
+	for (uint8 slot : slots) {
+		Item *equipped = player ?
+			player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot) : nullptr;
+		ItemTemplate const *item = equipped ? equipped->GetTemplate() : nullptr;
+		states.push_back({item ? item->ItemId : 0, item ? item->ItemLevel : 0,
+			true});
+	}
+	std::int32_t const selected = SelectBelowThresholdSlot(candidate.ItemId,
+		threshold, states.data(), states.size());
+	return selected < 0 ? std::nullopt :
+		std::optional<uint8>(slots[static_cast<std::size_t>(selected)]);
 }
 
 } // namespace
@@ -2124,12 +2198,36 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 			continue;
 		if (endgameElite && (item.ItemLevel < _config.EliteEndgameRewardMinItemLevel ||
 			item.ItemLevel > _config.EliteEndgameRewardMaxItemLevel)) continue;
+		std::uint32_t limitedCategory = 0;
+		InventoryResult const carryResult = player->CanTakeMoreSimilarItems(
+			itemId, 1, &limitedCategory);
+		if (carryResult != EQUIP_ERR_OK) {
+			LOG_DEBUG("module.native_hunts",
+				"Excluding reward item {} for character {}: carry result {} "
+				"({}), limited category {}.", itemId, guid,
+				static_cast<std::uint32_t>(carryResult),
+				InventoryFailureName(carryResult), limitedCategory);
+			continue;
+		}
+		std::optional<uint8> upgradeSlot;
+		if (endgameElite && _config.EliteRewardRequireUpgrade) {
+			upgradeSlot = GetEndgameEliteUpgradeSlot(player, item,
+				_config.EliteEndgameRewardMinItemLevel);
+			if (!upgradeSlot)
+				continue;
+		}
 		float const score = ScoreRewardItem(player, spec, role, item);
 		if (elite && score <= 0) continue;
+		float const equippedPower = upgradeSlot ?
+			GetEquippedItemPower(player, spec, role, *upgradeSlot) :
+			GetEquippedPowerForCandidate(player, spec, role, item);
+		std::uint32_t const equippedLevel = upgradeSlot ?
+			GetEquippedItemLevel(player, *upgradeSlot) :
+			GetEquippedItemLevelForCandidate(player, item);
 		float const upgrade = ScoreRewardPower(player,spec,role,item) -
-			GetEquippedPowerForCandidate(player,spec,role,item);
+			equippedPower;
 		if (elite && _config.EliteRewardRequireUpgrade &&
-			(item.ItemLevel <= GetEquippedItemLevelForCandidate(player,item) || upgrade <= 1.0f)) continue;
+			(item.ItemLevel <= equippedLevel || upgrade <= 1.0f)) continue;
 		scored.push_back({itemId,score,upgrade});
 	}
 	std::sort(scored.begin(), scored.end(), [elite](auto const &a, auto const &b) {
@@ -2155,15 +2253,21 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 	InventoryResult equipmentResult = EQUIP_ERR_OK;
 	InventoryResult sealResult = EQUIP_ERR_OK;
 	InventoryResult combinedResult = EQUIP_ERR_OK;
+	std::uint32_t equipmentNoSpaceCount = 0;
+	std::uint32_t sealNoSpaceCount = 0;
+	std::uint32_t bundleLimitedCategory = 0;
 	if (rewardItem)
 		equipmentResult = player->CanStoreNewItem(NULL_BAG, NULL_SLOT,
-			equipmentDest, rewardItem, 1);
+			equipmentDest, rewardItem, 1, &equipmentNoSpaceCount);
 	if (seals)
 		sealResult = player->CanStoreNewItem(NULL_BAG, NULL_SLOT,
-			sealDest, _resources.SealItemEntry, seals);
-	if (rewardItem && seals)
-		combinedResult = CanStoreRewardBundle(player, rewardItem,
+			sealDest, _resources.SealItemEntry, seals, &sealNoSpaceCount);
+	if (rewardItem && seals) {
+		auto const bundle = CanStoreRewardBundle(player, rewardItem,
 			_resources.SealItemEntry, seals);
+		combinedResult = bundle.Result;
+		bundleLimitedCategory = bundle.LimitedCategory;
+	}
 	auto plan = PlanRewardDelivery(rewardItem != 0, seals != 0,
 		static_cast<std::uint32_t>(equipmentResult),
 		static_cast<std::uint32_t>(sealResult),
@@ -2171,14 +2275,20 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 	if (rewardItem && !plan.EquipmentToInventory)
 		LOG_INFO("module.native_hunts",
 			"Mailing Native Hunt reward item {} to character {}: inventory "
-			"result {}.", rewardItem, guid,
-			static_cast<std::uint32_t>(equipmentResult));
+			"result {} ({}), no-space count {}, free slots {}.", rewardItem,
+			guid, static_cast<std::uint32_t>(equipmentResult),
+			InventoryFailureName(equipmentResult), equipmentNoSpaceCount,
+			player->GetFreeInventorySpace());
 	if (seals && !plan.SealsToInventory)
 		LOG_INFO("module.native_hunts",
 			"Mailing {} Native Hunt Seal(s) to character {}: inventory "
-			"result {} (bundle result {}).", seals, guid,
+			"result {} ({}, no-space count {}, free slots {}; bundle result "
+			"{} ({}, limited category {})).", seals, guid,
 			static_cast<std::uint32_t>(sealResult),
-			static_cast<std::uint32_t>(combinedResult));
+			InventoryFailureName(sealResult), sealNoSpaceCount,
+			player->GetFreeInventorySpace(),
+			static_cast<std::uint32_t>(combinedResult),
+			InventoryFailureName(combinedResult), bundleLimitedCategory);
 
 	Item *equipment = nullptr;
 	if (plan.EquipmentToInventory) {

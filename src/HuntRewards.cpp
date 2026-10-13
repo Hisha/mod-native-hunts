@@ -57,6 +57,41 @@ RewardDeliveryPlan PlanRewardDelivery(bool hasEquipment, bool hasSeals,
 	return plan;
 }
 
+std::int32_t SelectBelowThresholdSlot(std::uint32_t candidateEntry,
+		std::uint32_t threshold, EquippedRewardSlot const *slots,
+		std::size_t slotCount) {
+	if (!slots || !slotCount || !threshold)
+		return -1;
+	for (std::size_t index = 0; index < slotCount; ++index)
+		if (slots[index].ItemEntry == candidateEntry)
+			return -1;
+
+	std::int32_t selected = -1;
+	for (std::size_t index = 0; index < slotCount; ++index) {
+		if (!slots[index].Eligible || slots[index].ItemLevel >= threshold)
+			continue;
+		if (selected < 0 || slots[index].ItemLevel <
+				slots[static_cast<std::size_t>(selected)].ItemLevel)
+			selected = static_cast<std::int32_t>(index);
+	}
+	return selected;
+}
+
+InventoryFailureKind ClassifyInventoryResult(std::uint32_t result) {
+	if (result == 0)
+		return InventoryFailureKind::None;
+	if (result == 4 || result == 50 || result == 53 || result == 56 ||
+		result == 62)
+		return InventoryFailureKind::BagSpace;
+	if (result == 17 || result == 67 || result == 71 || result == 75 ||
+		result == 76 || result == 84 || result == 85 || result == 89)
+		return InventoryFailureKind::UniqueOrLimit;
+	if (result == 10 || result == 11 || result == 20 || result == 23 ||
+		result == 54)
+		return InventoryFailureKind::ItemValidation;
+	return InventoryFailureKind::Storage;
+}
+
 RewardCommitResolution ResolveRewardCommit(bool commitAcknowledged,
 		AssignmentPersistence assignment) {
 	if (commitAcknowledged || assignment == AssignmentPersistence::Missing)
