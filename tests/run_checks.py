@@ -735,6 +735,24 @@ def run_functional_ui_checks() -> None:
     spawn_symbols = {row["symbol"] for row in manifest["creatureSpawns"]}
     if spawn_symbols != {f"{symbol}-spawn" for symbol in expected_huntmasters}:
         raise AssertionError("managed Huntmaster spawn set is incomplete")
+    huntmaster_templates = [row for row in manifest["creatureTemplates"]
+                            if row["symbol"] in expected_huntmasters]
+    huntmaster_spawns = [row for row in manifest["creatureSpawns"]
+                         if row["creature"]["symbol"] in expected_huntmasters]
+    if (len(huntmaster_templates) != len(expected_huntmasters) or
+            len(huntmaster_spawns) != len(expected_huntmasters)):
+        raise AssertionError("each logical Huntmaster must have exactly one template and spawn declaration")
+    spawn_targets = [row["creature"]["symbol"] for row in huntmaster_spawns]
+    spawn_locations = [(row["map"], row["x"], row["y"], row["z"])
+                       for row in huntmaster_spawns]
+    if (len(set(spawn_targets)) != len(spawn_targets) or
+            len(set(spawn_locations)) != len(spawn_locations)):
+        raise AssertionError("Huntmaster manifest contains a duplicate target or physical location")
+    for row in huntmaster_templates:
+        overrides = row.get("overrides", {})
+        if (overrides.get("scriptName") != "mod_native_hunts_huntmaster" or
+                overrides.get("npcFlags") != 1):
+            raise AssertionError(f"Huntmaster template contract regressed: {row['symbol']}")
     objects = {row["symbol"] for row in manifest["gameobjectTemplates"]}
     if objects != {"prey-trail-crystal", "return-rift"}:
         raise AssertionError("runtime gameobject template set is incorrect")
@@ -1334,6 +1352,22 @@ def run_source_safety_checks() -> None:
     for path in world_sql:
         if path.is_file() and "native_hunt_assignment" in path.read_text(encoding="utf-8"):
             raise AssertionError("character assignment schema leaked into world SQL")
+    audit_sql_path = ROOT / "tools/audit_huntmaster_duplicates.sql"
+    if not audit_sql_path.is_file():
+        raise AssertionError("read-only Huntmaster duplicate audit SQL is missing")
+    audit_sql = audit_sql_path.read_text(encoding="utf-8")
+    scrubbed_audit = re.sub(r"--[^\n]*", "", audit_sql)
+    if re.search(r"\b(DELETE|UPDATE|INSERT|REPLACE|ALTER|DROP|TRUNCATE|CREATE)\b",
+                 scrubbed_audit, re.IGNORECASE):
+        raise AssertionError("Huntmaster duplicate audit SQL is not read-only")
+    for token in ("mod_native_hunts_huntmaster", "content_manager_allocation",
+                  "content_manager_server_resource_owner", "state` = 'ACTIVE'",
+                  "GROUP BY c.`map`, c.`position_x`, c.`position_y`, c.`position_z`"):
+        if token not in audit_sql:
+            raise AssertionError(f"Huntmaster duplicate audit coverage missing: {token}")
+    current_world_sql = [path for path in world_sql if path.is_file()]
+    if current_world_sql:
+        raise AssertionError("Native Hunts must not provision world spawns through module SQL")
     assignment = (ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql").read_text(encoding="utf-8")
     for column in ("`ambushes_completed`", "`ambush_pending`"):
         if column not in assignment:
@@ -1376,6 +1410,11 @@ def run_source_safety_checks() -> None:
         if token not in manager:
             raise AssertionError(f"turn-in consistency safeguard missing: {token}")
     module = (ROOT / "src" / "NativeHuntsModule.cpp").read_text(encoding="utf-8")
+    startup_sources = manager + module
+    for token in ("INSERT INTO creature", "INSERT INTO `creature`",
+                  "INSERT INTO creature_template", "INSERT INTO `creature_template`"):
+        if token in startup_sources:
+            raise AssertionError("Native Hunts startup must not provision Huntmaster world rows")
     protocol = (ROOT / "src" / "HuntUiProtocol.cpp").read_text(encoding="utf-8")
     protocol_header = (ROOT / "src" / "HuntUiProtocol.h").read_text(encoding="utf-8")
     for token in ('Prefix[] = "NHUNTS"', "MaxWireBytes = 255", "MaxFragments = 8",
