@@ -1324,13 +1324,18 @@ def run_source_safety_checks() -> None:
     if not idle < standard < elite < ready < record or "if (!runtime &&" in menu:
         raise AssertionError("Huntmaster idle/Elite gossip can dereference a null runtime")
     hello = module[module.index("bool OnGossipHello(Player *player, Creature *creature)"):menu_start]
-    if ("sNativeHunts.IsHuntmaster(creature)" not in hello or
+    if (hello.count("sNativeHunts.CanOpenHuntmasterGossip(player, creature)") != 2 or
+            "CloseGossipMenuFor(player);" not in hello or
+            "return false;" in hello or
             "sender != GOSSIP_SENDER_MAIN" not in hello or
             "case ActionRequest: sNativeHunts.RequestHunt(player, creature, message);" not in hello or
             "case ActionRequestElite: sNativeHunts.RequestEliteHunt(player, creature, message);" not in hello):
         raise AssertionError("standard/Elite gossip selections do not preserve validated sender and Huntmaster identity")
     if (manager.count("auto const *huntmaster = ResolveHuntmaster(giver);") != 2 or
-            "MatchesManagedHuntmaster(creature->GetEntry(), creature->GetSpawnId()," not in manager):
+            "MatchesManagedHuntmaster(creature->GetEntry(), creature->GetSpawnId()," not in manager or
+            "if (IsHuntmaster(creature))" not in manager or
+            "CanUseIssuingHuntmaster(" not in manager or
+            "MatchesIssuingHuntmaster(giver->GetEntry()," not in manager):
         raise AssertionError("standard/Elite requests do not share managed Huntmaster resolution")
     config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
     config_reads = set(re.findall(r'"(NativeHunts\.[A-Za-z0-9.]+)"', module))

@@ -1143,6 +1143,16 @@ bool NativeHuntsManager::IsHuntmaster(Creature const *creature) const {
 	return ResolveHuntmaster(creature) != nullptr;
 }
 
+bool NativeHuntsManager::CanOpenHuntmasterGossip(Player const *player,
+		Creature const *creature) const {
+	if (IsHuntmaster(creature))
+		return true;
+	auto const *runtime = GetRuntime(player);
+	return runtime && creature && CanUseIssuingHuntmaster(
+		runtime->Aggregate.State, creature->GetEntry(), creature->GetSpawnId(),
+		runtime->HuntmasterEntry, runtime->HuntmasterSpawn);
+}
+
 bool NativeHuntsManager::IsElitePrey(std::uint32_t entry) const {
 	for (auto const &prey : ElitePrey()) {
 		auto found=_resources.CreatureEntries.find(prey.Symbol);
@@ -2016,8 +2026,8 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		message = "The earlier completion rolled back; provisional rewards were removed.";
 		return false;
 	}
-	bool const correctGiver = runtime.HuntmasterEntry == giver->GetEntry() &&
-		(!runtime.HuntmasterSpawn || runtime.HuntmasterSpawn == giver->GetSpawnId());
+	bool const correctGiver = MatchesIssuingHuntmaster(giver->GetEntry(),
+		giver->GetSpawnId(), runtime.HuntmasterEntry, runtime.HuntmasterSpawn);
 	if (runtime.Aggregate.State != HuntState::ReadyToTurnIn || !correctGiver) {
 		message = "Only the issuing Huntmaster can complete a finished Hunt.";
 		return false;

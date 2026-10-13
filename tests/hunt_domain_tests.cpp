@@ -76,7 +76,7 @@ void TestLegalTransitions() {
 	Check(HuntDomain::IsValid(aggregate), "turned-in aggregate is valid");
 }
 
-void TestRewardRules() {
+void TestHuntmasterIdentity() {
 	Check(MatchesManagedHuntmaster(100, 200, 100, 201),
 		"Huntmaster matches the active managed creature entry");
 	Check(MatchesManagedHuntmaster(99, 200, 100, 200),
@@ -85,6 +85,26 @@ void TestRewardRules() {
 		"unmanaged creature identity is rejected");
 	Check(!MatchesManagedHuntmaster(0, 0, 0, 0),
 		"empty Huntmaster identity is rejected");
+	Check(MatchesIssuingHuntmaster(99, 199, 99, 199),
+		"exact persisted issuing Huntmaster identity matches");
+	Check(MatchesIssuingHuntmaster(99, 777, 99, 0),
+		"legacy assignment without a spawn retains entry-only issuer semantics");
+	Check(!MatchesIssuingHuntmaster(100, 199, 99, 199) &&
+		!MatchesIssuingHuntmaster(99, 200, 99, 199),
+		"unrelated entry or spawn cannot impersonate the issuing Huntmaster");
+	Check(CanUseIssuingHuntmaster(HuntState::Tracking, 99, 199, 99, 199),
+		"active assignment authorizes its exact historical issuer");
+	Check(CanUseIssuingHuntmaster(HuntState::ReadyToTurnIn,
+		99, 199, 99, 199),
+		"ReadyToTurnIn assignment authorizes its exact historical issuer");
+	Check(!CanUseIssuingHuntmaster(HuntState::Idle, 99, 199, 99, 199),
+		"historical issuer cannot authorize interactions without an assignment");
+	Check(!CanUseIssuingHuntmaster(HuntState::ReadyToTurnIn,
+		99, 198, 99, 199),
+		"ReadyToTurnIn rejects an unrelated creature");
+}
+
+void TestRewardRules() {
 	Check(StandardRewardQuality(0,10)==RewardQuality::Epic &&
 		StandardRewardQuality(0,11)==RewardQuality::Rare &&
 		StandardRewardQuality(0,201)==RewardQuality::Uncommon, "first daily rarity");
@@ -564,6 +584,8 @@ int main(int argc, char **argv) {
 	std::string const selection = argc > 1 ? argv[1] : "all";
 	if (selection == "all" || selection == "transitions")
 		TestLegalTransitions();
+	if (selection == "all" || selection == "identity")
+		TestHuntmasterIdentity();
 	if (selection == "all" || selection == "rewards")
 		TestRewardRules();
 	if (selection == "all" || selection == "invalid")

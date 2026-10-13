@@ -141,15 +141,26 @@ public:
 		CreatureScript("mod_native_hunts_huntmaster") {}
 
 	bool OnGossipHello(Player *player, Creature *creature) override {
-		if (!player || !sNativeHunts.IsEnabled() ||
-			!sNativeHunts.IsHuntmaster(creature))
-			return false;
+		if (!player)
+			return true;
+		if (!sNativeHunts.IsEnabled() ||
+			!sNativeHunts.CanOpenHuntmasterGossip(player, creature)) {
+			CloseGossipMenuFor(player);
+			return true;
+		}
 		ShowMenu(player, creature);
 		return true;
 	}
 
 	bool OnGossipSelect(Player *player, Creature *creature,
 						std::uint32_t sender, std::uint32_t action) override {
+		if (!player)
+			return true;
+		if (!sNativeHunts.IsEnabled() ||
+			!sNativeHunts.CanOpenHuntmasterGossip(player, creature)) {
+			CloseGossipMenuFor(player);
+			return true;
+		}
 		if (sender != GOSSIP_SENDER_MAIN) {
 			CloseGossipMenuFor(player);
 			return true;

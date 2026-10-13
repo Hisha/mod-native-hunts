@@ -108,6 +108,8 @@ public:
 
 	bool IsEnabled() const;
 	bool IsHuntmaster(Creature const *creature) const;
+	bool CanOpenHuntmasterGossip(Player const *player,
+		Creature const *creature) const;
 	bool IsElitePrey(std::uint32_t entry) const;
 	bool IsTrailCrystal(std::uint32_t entry) const;
 	bool IsReturnRift(std::uint32_t entry) const;

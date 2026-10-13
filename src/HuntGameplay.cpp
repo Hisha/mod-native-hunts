@@ -8,6 +8,20 @@ bool MatchesManagedHuntmaster(std::uint32_t creatureEntry,
 		(managedSpawn && creatureSpawn == managedSpawn);
 }
 
+bool MatchesIssuingHuntmaster(std::uint32_t creatureEntry,
+		std::uint32_t creatureSpawn, std::uint32_t issuingEntry,
+		std::uint32_t issuingSpawn) {
+	return issuingEntry && creatureEntry == issuingEntry &&
+		(!issuingSpawn || creatureSpawn == issuingSpawn);
+}
+
+bool CanUseIssuingHuntmaster(HuntState state, std::uint32_t creatureEntry,
+		std::uint32_t creatureSpawn, std::uint32_t issuingEntry,
+		std::uint32_t issuingSpawn) {
+	return state != HuntState::Idle && MatchesIssuingHuntmaster(creatureEntry,
+		creatureSpawn, issuingEntry, issuingSpawn);
+}
+
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context) {
 	if (!context.HunterIsKillerOrGrouped || !context.SameMap ||
 		!context.InAssignedZone || !context.WithinCreditRadius ||
