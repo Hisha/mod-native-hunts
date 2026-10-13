@@ -54,7 +54,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="10.71556122449" y="-65.7436224489798" />
+              <AbsDimension x="7.18076527028273" y="-66.6273214375316" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -79,7 +79,7 @@
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="No_Active_Hunt" setAllPoints="true" text="No Active Hunt" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF" outline="THICK">
+            <FontString name="No_Active_Hunt" setAllPoints="true" text="No Active Hunt" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF" outline="NORMAL">
               <FontHeight>
                 <AbsValue val="24" />
               </FontHeight>
@@ -226,7 +226,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="103.159777832915" y="123.999440969807" />
+              <AbsDimension x="103.159777832915" y="124.763535888267" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -245,7 +245,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="-133.701530612245" y="186.161989795918" />
+              <AbsDimension x="-137.380333756219" y="186.349443452838" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -264,7 +264,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.724562620882" y="162.359647353678" />
+              <AbsDimension x="102.533538891267" y="163.123742272138" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -272,7 +272,7 @@
           <Layer level="BORDER">
             <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
-                <AbsValue val="8" />
+                <AbsValue val="10" />
               </FontHeight>
             </FontString>
           </Layer>
@@ -285,7 +285,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.724562620882" y="149.17058276062" />
+              <AbsDimension x="102.533538891267" y="149.93467767908" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -293,7 +293,7 @@
           <Layer level="BORDER">
             <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
-                <AbsValue val="8" />
+                <AbsValue val="10" />
               </FontHeight>
             </FontString>
           </Layer>
@@ -306,7 +306,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.724562620882" y="136.034359930916" />
+              <AbsDimension x="102.533538891267" y="136.607431119761" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -314,7 +314,7 @@
           <Layer level="BORDER">
             <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
-                <AbsValue val="8" />
+                <AbsValue val="10" />
               </FontHeight>
             </FontString>
           </Layer>
@@ -327,7 +327,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.724562620882" y="136.034359930916" />
+              <AbsDimension x="102.533538891267" y="136.607431119761" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -335,7 +335,7 @@
           <Layer level="BORDER">
             <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
-                <AbsValue val="8" />
+                <AbsValue val="10" />
               </FontHeight>
             </FontString>
           </Layer>
@@ -348,7 +348,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="99.5499156748613" y="123.011052089627" />
+              <AbsDimension x="99.3588919452463" y="123.966170737702" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -356,7 +356,7 @@
           <Layer level="BORDER">
             <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
-                <AbsValue val="8" />
+                <AbsValue val="10" />
               </FontHeight>
             </FontString>
           </Layer>
@@ -664,7 +664,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.39302356929568" y="-106.567312450917" />
+              <AbsDimension x="5.11661986228808" y="-106.567312450917" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -683,7 +683,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.32819145668691" y="-105.488724992264" />
+              <AbsDimension x="5.05178774967919" y="-105.203631411797" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -815,7 +815,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="8.78651560040475" y="-116.47113746082" />
+              <AbsDimension x="5.36539263479864" y="-115.615856719418" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -832,7 +832,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="7.96588947913386" y="-146.521869337794" />
+              <AbsDimension x="7.96588947913386" y="-148.232430820598" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -940,7 +940,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.28407007014562" y="-128.25308419241" />
+              <AbsDimension x="5.29275994360501" y="-127.112709870542" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -959,7 +959,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="10.71556122449" y="-171.723997816471" />
+              <AbsDimension x="7.00934467841665" y="-170.298529914135" />
             </Offset>
           </Anchor>
         </Anchors>

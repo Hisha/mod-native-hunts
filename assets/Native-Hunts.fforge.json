@@ -1413,8 +1413,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -326.4221938775508,
-      "offsetY": 98.25637755102021,
+      "offsetX": -329.9569898317581,
+      "offsetY": 97.37267856246838,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1579,7 +1579,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -233.9779772691256,
-      "offsetY": 287.99944096980676,
+      "offsetY": 288.7635358882669,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1596,8 +1596,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -470.8392857142854,
-      "offsetY": 350.1619897959184,
+      "offsetX": -474.51808885826006,
+      "offsetY": 350.3494434528377,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -1614,8 +1614,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.41319248115917,
-      "offsetY": 326.3596473536783,
+      "offsetX": -234.6042162107742,
+      "offsetY": 327.1237422721385,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1635,8 +1635,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.4131924811592,
-      "offsetY": 313.17058276062016,
+      "offsetX": -234.60421621077424,
+      "offsetY": 313.9346776790803,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1656,8 +1656,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.41319248115917,
-      "offsetY": 300.0343599309157,
+      "offsetX": -234.6042162107742,
+      "offsetY": 300.6074311197608,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1677,8 +1677,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.41319248115917,
-      "offsetY": 300.0343599309157,
+      "offsetX": -234.6042162107742,
+      "offsetY": 300.6074311197608,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1698,8 +1698,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -237.58783942717952,
-      "offsetY": 287.0110520896269,
+      "offsetX": -237.77886315679456,
+      "offsetY": 287.9661707377021,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2040,8 +2040,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -327.80956364535393,
-      "offsetY": 58.511275007735975,
+      "offsetX": -332.08596735236165,
+      "offsetY": 58.796368588203165,
       "visible": true,
       "kind": "STATUSBAR",
       "visual": {
@@ -2067,8 +2067,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -327.74473153274516,
-      "offsetY": 57.43268754908268,
+      "offsetX": -332.02113523975277,
+      "offsetY": 57.43268754908269,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -2211,8 +2211,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -328.3512395016361,
-      "offsetY": 47.52886253918035,
+      "offsetX": -331.7723624672422,
+      "offsetY": 48.38414328058192,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -2230,7 +2230,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -329.171865622907,
-      "offsetY": 17.47813066220553,
+      "offsetY": 15.767569179402408,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2334,8 +2334,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -327.8536850318952,
-      "offsetY": 35.746915807589595,
+      "offsetX": -331.84499515843584,
+      "offsetY": 36.88729012945835,
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
@@ -2352,8 +2352,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -326.42219387755085,
-      "offsetY": -7.723997816471434,
+      "offsetX": -330.1284104236242,
+      "offsetY": -6.2985299141355,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -2367,11 +2367,9 @@
     }
   ],
   "editor": {
-    "activeDesignState": "located",
+    "activeDesignState": "tracking",
     "lockedElements": [
-      "DesignObject3",
       "DesignObject5",
-      "DesignObject4",
       "DesignObject6",
       "DesignObject23",
       "DesignObject21",
@@ -2381,19 +2379,13 @@
       "DesignObject31",
       "DesignObject30",
       "DesignObject29",
-      "DesignObject34",
       "DesignObject38",
       "DesignObject37",
       "DesignObject36",
       "DesignObject39",
-      "DesignObject35",
-      "DesignObject42",
       "DesignObject45",
-      "DesignObject43",
       "DesignObject47",
       "DesignObject48",
-      "DesignObject44",
-      "DesignObject49",
       "DesignObject33",
       "DesignObject40",
       "DesignObject41",
@@ -2402,19 +2394,28 @@
       "DesignObject10",
       "DesignObject8",
       "DesignObject7",
-      "DesignObject13",
-      "DesignObject14",
-      "DesignObject16",
-      "DesignObject15",
-      "DesignObject17",
-      "DesignObject11",
       "DesignObject18",
       "DesignObject19",
       "DesignObject20",
       "DesignObject24",
       "DesignObject22",
       "DesignObject25",
-      "DesignObject26"
+      "DesignObject26",
+      "DesignObject3",
+      "DesignObject13",
+      "DesignObject14",
+      "DesignObject16",
+      "DesignObject15",
+      "DesignObject17",
+      "DesignObject11",
+      "DesignObject12",
+      "DesignObject4",
+      "DesignObject43",
+      "DesignObject42",
+      "DesignObject44",
+      "DesignObject49",
+      "DesignObject34",
+      "DesignObject35"
     ],
     "groups": [
       {
@@ -2535,7 +2536,7 @@
         "textStyle": {
           "baseStyle": "GameFontNormal",
           "size": 24,
-          "outline": "THICK",
+          "outline": "NORMAL",
           "shadow": true,
           "justifyH": "CENTER"
         },
@@ -2625,7 +2626,7 @@
         "textOverride": "0",
         "textStyle": {
           "baseStyle": "GameFontHighlight",
-          "size": 8,
+          "size": 10,
           "justifyH": "RIGHT"
         }
       },
@@ -2635,7 +2636,7 @@
         "textOverride": "0",
         "textStyle": {
           "baseStyle": "GameFontHighlight",
-          "size": 8,
+          "size": 10,
           "justifyH": "RIGHT"
         }
       },
@@ -2645,7 +2646,7 @@
         "textOverride": "Available",
         "textStyle": {
           "baseStyle": "GameFontGreen",
-          "size": 8,
+          "size": 10,
           "justifyH": "RIGHT"
         }
       },
@@ -2655,7 +2656,7 @@
         "textOverride": "Unavailable",
         "textStyle": {
           "baseStyle": "GameFontDisable",
-          "size": 8,
+          "size": 10,
           "justifyH": "RIGHT"
         }
       },
@@ -2665,7 +2666,7 @@
         "textOverride": "0",
         "textStyle": {
           "baseStyle": "GameFontHighlight",
-          "size": 8,
+          "size": 10,
           "justifyH": "RIGHT"
         }
       },
