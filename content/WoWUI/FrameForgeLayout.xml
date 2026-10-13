@@ -11,20 +11,20 @@
       </Anchor>
     </Anchors>
     <Frames>
-      <Frame name="Elite_Hunt_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="1" hidden="true">
+      <Frame name="Hunt_Tier_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="21" hidden="true">
         <Size>
           <AbsDimension x="64" y="64" />
         </Size>
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="-98.7200448979592" y="15.289" />
+              <AbsDimension x="-98.7200501529818" y="15.2890262751159" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
-            <Texture name="Elite_Hunt_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_elite" />
+          <Layer level="ARTWORK">
+            <Texture name="Hunt_Tier_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_standard" />
           </Layer>
         </Layers>
       </Frame>
@@ -419,24 +419,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Standard_Hunt_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="21" hidden="true">
-        <Size>
-          <AbsDimension x="64" y="64" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="-98.7200501529818" y="15.2890262751159" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="ARTWORK">
-            <Texture name="Standard_Hunt_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_standard" />
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Hunt_Progress_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="22" hidden="true">
+      <Frame name="Hunt_Progress_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="21" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -453,7 +436,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Trail_Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="23" hidden="true">
+      <Frame name="Trail_Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="22" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -470,7 +453,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Final_Confrontation_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="24" hidden="true">
+      <Frame name="Final_Confrontation_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="23" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -487,7 +470,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="25" hidden="true">
+      <Frame name="Hunt_Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="24" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -504,7 +487,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Elite_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="26" hidden="true">
+      <Frame name="Tracker_Elite_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="25" hidden="true">
         <Size>
           <AbsDimension x="120" y="24" />
         </Size>
@@ -528,7 +511,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Standard_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="27" hidden="true">
+      <Frame name="Tracker_Standard_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="26" hidden="true">
         <Size>
           <AbsDimension x="120" y="24" />
         </Size>
@@ -552,7 +535,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Target_Name__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="28" hidden="true">
+      <Frame name="Tracker_Target_Name__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="27" hidden="true">
         <Size>
           <AbsDimension x="220" y="24" />
         </Size>
@@ -573,7 +556,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Huntmaster__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="29" hidden="true">
+      <Frame name="Tracker_Huntmaster__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="28" hidden="true">
         <Size>
           <AbsDimension x="200" y="16" />
         </Size>
@@ -594,7 +577,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Location__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="30" hidden="true">
+      <Frame name="Tracker_Location__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="29" hidden="true">
         <Size>
           <AbsDimension x="200" y="16" />
         </Size>
@@ -615,7 +598,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Hunt_Ground__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="31" hidden="true">
+      <Frame name="Tracker_Hunt_Ground__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="30" hidden="true">
         <Size>
           <AbsDimension x="90" y="16" />
         </Size>
@@ -628,7 +611,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Tracker_Hunt_Ground" setAllPoints="true" text="Hunting Ground:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+            <FontString name="Tracker_Hunt_Ground" setAllPoints="true" text="Hunting Grounds:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -636,7 +619,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Hunt_Ground_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="32" hidden="true">
+      <Frame name="Tracker_Hunt_Ground_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="31" hidden="true">
         <Size>
           <AbsDimension x="120" y="16" />
         </Size>
@@ -657,7 +640,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Progress_Surround__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="33" hidden="true">
+      <Frame name="Tracker_Progress_Surround__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="32" hidden="true">
         <Size>
           <AbsDimension x="280" y="90" />
         </Size>
@@ -676,7 +659,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <StatusBar name="Tracker_Hunt_Progress" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="34" hidden="true" minValue="0" maxValue="100">
+      <StatusBar name="Tracker_Hunt_Progress" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="33" hidden="true" minValue="0" maxValue="100">
         <Size>
           <AbsDimension x="217" y="13" />
         </Size>
@@ -690,7 +673,7 @@
         <BarTexture file="Interface\TargetingFrame\UI-StatusBar" />
         <BarColor r="0.2" g="0.8" b="0.2" a="1" />
       </StatusBar>
-      <Frame name="Tracking_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="35" hidden="true">
+      <Frame name="Tracking_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="34" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -707,7 +690,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracking2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="36" hidden="true">
+      <Frame name="Tracking2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="35" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -728,7 +711,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracking3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="37" hidden="true">
+      <Frame name="Tracking3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="36" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -749,7 +732,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="38" hidden="true">
+      <Frame name="Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="37" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -766,7 +749,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Located2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="39" hidden="true">
+      <Frame name="Located2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="38" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -787,7 +770,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Located3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="40" hidden="true">
+      <Frame name="Located3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="39" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -808,7 +791,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Complete_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="41" hidden="true">
+      <Frame name="Hunt_Complete_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="40" hidden="true">
         <Size>
           <AbsDimension x="64" y="64" />
         </Size>
@@ -825,7 +808,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="42" hidden="true">
+      <Frame name="Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="41" hidden="true">
         <Size>
           <AbsDimension x="280" y="18" />
         </Size>
@@ -849,7 +832,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete2A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="43" hidden="true">
+      <Frame name="Complete2A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="42" hidden="true">
         <Size>
           <AbsDimension x="116" y="18" />
         </Size>
@@ -870,7 +853,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete2B_Huntmaster_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="44" hidden="true">
+      <Frame name="Complete2B_Huntmaster_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="43" hidden="true">
         <Size>
           <AbsDimension x="159" y="18" />
         </Size>
@@ -891,7 +874,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete3A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="45" hidden="true">
+      <Frame name="Complete3A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="44" hidden="true">
         <Size>
           <AbsDimension x="130" y="18" />
         </Size>
@@ -912,7 +895,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete3B_Location_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="46" hidden="true">
+      <Frame name="Complete3B_Location_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="45" hidden="true">
         <Size>
           <AbsDimension x="154" y="18" />
         </Size>
@@ -933,7 +916,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Final_Fight_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="47" hidden="true">
+      <Frame name="Final_Fight_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="46" hidden="true">
         <Size>
           <AbsDimension x="80" y="80" />
         </Size>
@@ -952,7 +935,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Final_Fight_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="48" hidden="true">
+      <Frame name="Final_Fight_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="47" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>

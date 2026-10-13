@@ -1742,6 +1742,7 @@
       "visible": true,
       "kind": "TEXTURE",
       "visual": {
+        "drawLayer": "BORDER",
         "texture": {
           "file": "hunt_header.png"
         }
@@ -1776,8 +1777,10 @@
       "offsetX": -435.85780525502264,
       "offsetY": 179.28902627511593,
       "visible": true,
+      "level": 21,
       "kind": "TEXTURE",
       "visual": {
+        "drawLayer": "ARTWORK",
         "texture": {
           "file": "hunt_icon_standard.png"
         }
@@ -1801,24 +1804,6 @@
           "justifyH": "CENTER",
           "justifyV": "MIDDLE",
           "font": "GameFontNormal"
-        }
-      }
-    },
-    {
-      "name": "DesignObject23",
-      "parent": null,
-      "width": 64,
-      "height": 64,
-      "point": "CENTER",
-      "relativeTo": null,
-      "relativePoint": "CENTER",
-      "offsetX": -435.8578,
-      "offsetY": 179.289,
-      "visible": true,
-      "kind": "TEXTURE",
-      "visual": {
-        "texture": {
-          "file": "hunt_icon_elite.png"
         }
       }
     },
@@ -1982,6 +1967,7 @@
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
+        "drawLayer": "OVERLAY",
         "text": {
           "text": "Text",
           "justifyH": "CENTER",
@@ -2371,7 +2357,6 @@
     "lockedElements": [
       "DesignObject5",
       "DesignObject6",
-      "DesignObject23",
       "DesignObject21",
       "DesignObject28",
       "DesignObject27",
@@ -2705,8 +2690,11 @@
       },
       {
         "frame": "DesignObject21",
-        "displayName": "Standard_Hunt_Icon",
+        "displayName": "Hunt_Tier_Icon",
         "designAsset": "hunt_icon_standard.png",
+        "runtimeAssets": [
+          "hunt_icon_elite.png"
+        ],
         "states": [
           "tracking",
           "located",
@@ -2723,17 +2711,6 @@
         },
         "states": [
           "tracking"
-        ]
-      },
-      {
-        "frame": "DesignObject23",
-        "displayName": "Elite_Hunt_Icon",
-        "designAsset": "hunt_icon_elite.png",
-        "states": [
-          "tracking",
-          "located",
-          "fight",
-          "turnin"
         ]
       },
       {
@@ -2851,7 +2828,7 @@
       {
         "frame": "DesignObject32",
         "displayName": "Tracker_Hunt_Ground",
-        "textOverride": "Hunting Ground:",
+        "textOverride": "Hunting Grounds:",
         "textStyle": {
           "baseStyle": "GameFontHighlight",
           "size": 10,
@@ -3060,7 +3037,7 @@
       }
     ],
     "designOrder": [
-      "DesignObject23",
+      "DesignObject21",
       "DesignObject2",
       "DesignObject3",
       "DesignObject4",
@@ -3080,7 +3057,6 @@
       "DesignObject18",
       "DesignObject20",
       "DesignObject19",
-      "DesignObject21",
       "DesignObject22",
       "DesignObject24",
       "DesignObject25",

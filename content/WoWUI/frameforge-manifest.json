@@ -38,11 +38,10 @@
         "Hunt_Seal_Value__FFLayer"
       ],
       "hide": [
-        "Elite_Hunt_Icon__FFLayer",
+        "Hunt_Tier_Icon__FFLayer",
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
-        "Standard_Hunt_Icon__FFLayer",
         "Hunt_Progress_Text__FFLayer",
         "Trail_Located_Text__FFLayer",
         "Final_Confrontation_Text__FFLayer",
@@ -76,7 +75,7 @@
       "id": "tracking",
       "name": "Tracking",
       "show": [
-        "Elite_Hunt_Icon__FFLayer",
+        "Hunt_Tier_Icon__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -92,7 +91,6 @@
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
-        "Standard_Hunt_Icon__FFLayer",
         "Hunt_Progress_Text__FFLayer",
         "Tracker_Elite_Hunt__FFLayer",
         "Tracker_Standard_Hunt__FFLayer",
@@ -132,7 +130,7 @@
       "id": "located",
       "name": "Located",
       "show": [
-        "Elite_Hunt_Icon__FFLayer",
+        "Hunt_Tier_Icon__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -148,7 +146,6 @@
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
-        "Standard_Hunt_Icon__FFLayer",
         "Trail_Located_Text__FFLayer",
         "Tracker_Elite_Hunt__FFLayer",
         "Tracker_Standard_Hunt__FFLayer",
@@ -188,7 +185,7 @@
       "id": "fight",
       "name": "Fight",
       "show": [
-        "Elite_Hunt_Icon__FFLayer",
+        "Hunt_Tier_Icon__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -204,7 +201,6 @@
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
-        "Standard_Hunt_Icon__FFLayer",
         "Final_Confrontation_Text__FFLayer",
         "Tracker_Elite_Hunt__FFLayer",
         "Tracker_Standard_Hunt__FFLayer",
@@ -244,7 +240,7 @@
       "id": "turnin",
       "name": "Turnin",
       "show": [
-        "Elite_Hunt_Icon__FFLayer",
+        "Hunt_Tier_Icon__FFLayer",
         "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
@@ -260,7 +256,6 @@
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
-        "Standard_Hunt_Icon__FFLayer",
         "Hunt_Complete_Text__FFLayer",
         "Tracker_Elite_Hunt__FFLayer",
         "Tracker_Standard_Hunt__FFLayer",
@@ -299,9 +294,9 @@
   ],
   "bindings": [
     {
-      "sourceObject": "DesignObject23",
-      "runtimeId": "Elite_Hunt_Icon",
-      "visibilityRuntimeId": "Elite_Hunt_Icon__FFLayer",
+      "sourceObject": "DesignObject21",
+      "runtimeId": "Hunt_Tier_Icon",
+      "visibilityRuntimeId": "Hunt_Tier_Icon__FFLayer",
       "type": "Texture",
       "allStates": false,
       "states": [
@@ -496,20 +491,6 @@
       "sourceObject": "DesignObject19",
       "runtimeId": "Hunt_Header",
       "visibilityRuntimeId": "Hunt_Header__FFLayer",
-      "type": "Texture",
-      "allStates": false,
-      "states": [
-        "tracking",
-        "located",
-        "fight",
-        "turnin"
-      ],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject21",
-      "runtimeId": "Standard_Hunt_Icon",
-      "visibilityRuntimeId": "Standard_Hunt_Icon__FFLayer",
       "type": "Texture",
       "allStates": false,
       "states": [

@@ -1,6 +1,6 @@
 FrameForge WoW 3.3.5a export report
 Project: Dungeon Finder UI
-Objects: 48
+Objects: 47
 Runtime bindings: 0
 States: Idle, Tracking, Located, Fight, Turnin
 Project assets: 11
@@ -14,4 +14,4 @@ StatusBar defaultValue: editor preview metadata only; omitted from FrameXML runt
 Independent DXT5 decode: PASS (11/11; worst premultiplied RGB MAE 5.406; worst alpha MAE 0.917)
 
 Diagnostics:
-Round-trip self-check: PASS (48/48 runtime identities)
+Round-trip self-check: PASS (47/47 runtime identities)

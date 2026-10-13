@@ -48,7 +48,6 @@ end
 -- Exact control and wrapper identities from frameforge-manifest.json/controlInventory.
 -- State codes here are module-owned: I=Idle, T=Tracking, L=Located, F=Fight, R=Turnin.
 local PRESENTATION = {
-	{"Elite_Hunt_Icon", "Elite_Hunt_Icon__FFLayer", "TLFR"},
 	{"Hunt_Panel_Record", "Hunt_Panel_Record__FFLayer", "*"},
 	{"Hunt_Panel_Idle", "Hunt_Panel_Idle__FFLayer", "I"},
 	{"No_Active_Hunt", "No_Active_Hunt__FFLayer", "I"},
@@ -68,7 +67,7 @@ local PRESENTATION = {
 	{"Hunt_Panel_Top", "Hunt_Panel_Top__FFLayer", "TLFR"},
 	{"Hunt_Panel_Bottom", "Hunt_Panel_Bottom__FFLayer", "TLFR"},
 	{"Hunt_Header", "Hunt_Header__FFLayer", "TLFR"},
-	{"Standard_Hunt_Icon", "Standard_Hunt_Icon__FFLayer", "TLFR"},
+	{"Hunt_Tier_Icon", "Hunt_Tier_Icon__FFLayer", "TLFR"},
 	{"Hunt_Progress_Text", "Hunt_Progress_Text__FFLayer", "T"},
 	{"Trail_Located_Text", "Trail_Located_Text__FFLayer", "L"},
 	{"Final_Confrontation_Text", "Final_Confrontation_Text__FFLayer", "F"},
@@ -243,17 +242,16 @@ local function Render(snapshot)
 		Speak_Huntmaster:SetText("The authoritative Hunt state could not be displayed.");
 		begin_hunt:SetText(""); return;
 	end
-	SetPresentationVisible("Elite_Hunt_Icon", false);
 	SetPresentationVisible("Tracker_Elite_Hunt", false);
-	SetPresentationVisible("Standard_Hunt_Icon", false);
+	SetPresentationVisible("Hunt_Tier_Icon", false);
 	SetPresentationVisible("Tracker_Standard_Hunt", false);
 	if snapshot.tier == "E" then
-		Standard_Hunt_Icon:SetTexture(ELITE_HUNT_ICON_TEXTURE);
-		SetPresentationVisible("Standard_Hunt_Icon", true);
+		Hunt_Tier_Icon:SetTexture(ELITE_HUNT_ICON_TEXTURE);
+		SetPresentationVisible("Hunt_Tier_Icon", true);
 		SetPresentationVisible("Tracker_Elite_Hunt", true);
 	elseif snapshot.tier == "S" then
-		Standard_Hunt_Icon:SetTexture(STANDARD_HUNT_ICON_TEXTURE);
-		SetPresentationVisible("Standard_Hunt_Icon", true);
+		Hunt_Tier_Icon:SetTexture(STANDARD_HUNT_ICON_TEXTURE);
+		SetPresentationVisible("Hunt_Tier_Icon", true);
 		SetPresentationVisible("Tracker_Standard_Hunt", true);
 	end
 	Tracker_Target_Name:SetText(prey);

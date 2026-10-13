@@ -84,7 +84,7 @@
       "decodedPremultipliedColorMeanAbsoluteError": 5.405570555045698,
       "decodedAlphaMeanAbsoluteError": 0.14923095703125,
       "consumers": [
-        "Elite_Hunt_Icon"
+        "Hunt_Tier_Icon"
       ]
     },
     {
@@ -140,7 +140,7 @@
       "decodedPremultipliedColorMeanAbsoluteError": 4.471612110013957,
       "decodedAlphaMeanAbsoluteError": 0.0997314453125,
       "consumers": [
-        "Standard_Hunt_Icon"
+        "Hunt_Tier_Icon"
       ]
     },
     {
