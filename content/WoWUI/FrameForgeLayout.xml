@@ -35,7 +35,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="37.5348512595518" y="139.792795373152" />
+              <AbsDimension x="33.1989342676216" y="140.226387072345" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -79,8 +79,10 @@
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="No_Active_Hunt" setAllPoints="true" text="No Active Hunt" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE">
-              <Font font="Fonts\FRIZQT__.TTF" size="24" flags="THICKOUTLINE" />
+            <FontString name="No_Active_Hunt" setAllPoints="true" text="No Active Hunt" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF" outline="THICK">
+              <FontHeight>
+                <AbsValue val="24" />
+              </FontHeight>
               <Shadow>
                 <Offset>
                   <AbsDimension x="1" y="-1" />
@@ -104,7 +106,7 @@
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="Speak_Huntmaster" setAllPoints="true" text="Speak with a Huntmaster" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE">
+            <FontString name="Speak_Huntmaster" setAllPoints="true" text="Speak with a Huntmaster" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="14" />
               </FontHeight>
@@ -125,7 +127,7 @@
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="begin_hunt" setAllPoints="true" text="to begin a Hunt." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE">
+            <FontString name="begin_hunt" setAllPoints="true" text="to begin a Hunt." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="14" />
               </FontHeight>
@@ -140,13 +142,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="49.1753610901797" y="122.636052089627" />
+              <AbsDimension x="44.9253610901797" y="123.011052089627" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="Hunt_Seals" setAllPoints="true" text="Huntmaster's Seals:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Hunt_Seals" setAllPoints="true" text="Huntmaster's Seals:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -161,13 +163,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="49.1753610901797" y="135.659359930916" />
+              <AbsDimension x="44.9253610901797" y="136.034359930916" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="Elite_Today" setAllPoints="true" text="Elite Today:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Elite_Today" setAllPoints="true" text="Elite Today:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -182,13 +184,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="49.1753610901797" y="148.79558276062" />
+              <AbsDimension x="44.9253610901797" y="149.17058276062" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="Elite_Hunts" setAllPoints="true" text="Elite Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Elite_Hunts" setAllPoints="true" text="Elite Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -203,13 +205,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="49.1753610901797" y="162.359647353678" />
+              <AbsDimension x="44.9253610901797" y="162.359647353678" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <FontString name="Standard_Hunts" setAllPoints="true" text="Standard Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Standard_Hunts" setAllPoints="true" text="Standard Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -224,7 +226,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="103.821027832915" y="123.834128469807" />
+              <AbsDimension x="103.159777832915" y="123.999440969807" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -262,13 +264,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.692062620882" y="162.359647353678" />
+              <AbsDimension x="102.724562620882" y="162.359647353678" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -283,13 +285,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.692062620882" y="148.79558276062" />
+              <AbsDimension x="102.724562620882" y="149.17058276062" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -304,13 +306,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.798289209256" y="135.659359930916" />
+              <AbsDimension x="102.724562620882" y="136.034359930916" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -325,13 +327,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="106.692062620882" y="135.659359930916" />
+              <AbsDimension x="102.724562620882" y="136.034359930916" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -346,13 +348,13 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="101.864290674861" y="122.636052089627" />
+              <AbsDimension x="99.5499156748613" y="123.011052089627" />
             </Offset>
           </Anchor>
         </Anchors>
         <Layers>
           <Layer level="BORDER">
-            <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
               </FontHeight>
@@ -367,7 +369,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.77703772830472" y="-4.02938884847367" />
+              <AbsDimension x="5.76175933899538" y="-3.70153123093641" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -386,7 +388,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.77703772830472" y="-138.873123884264" />
+              <AbsDimension x="5.76175933899538" y="-138.873123884264" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -405,7 +407,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.19142112703241" y="-75.3038727631253" />
+              <AbsDimension x="5.51171102511131" y="-75.3038727631253" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -441,7 +443,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.43362114657401" y="-72.9664889384057" />
+              <AbsDimension x="5.97135510204083" y="-72.87" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -458,7 +460,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.43365510204086" y="-72.9665" />
+              <AbsDimension x="5.97137768129517" y="-72.8700047321862" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -475,7 +477,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.43365510204086" y="-72.9665" />
+              <AbsDimension x="5.97135510204083" y="-72.87" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -492,7 +494,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="9.43365510204086" y="-72.9665" />
+              <AbsDimension x="5.97135510204083" y="-72.87" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -515,8 +517,7 @@
         </Anchors>
         <Layers>
           <Layer level="ARTWORK">
-            <FontString name="Tracker_Elite_Hunt" setAllPoints="true" text="Elite Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE">
-              <Font font="Fonts\FRIZQT__.TTF" size="12" flags="OUTLINE" />
+            <FontString name="Tracker_Elite_Hunt" setAllPoints="true" text="Elite Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
                   <AbsDimension x="1" y="-1" />
@@ -540,8 +541,7 @@
         </Anchors>
         <Layers>
           <Layer level="ARTWORK">
-            <FontString name="Tracker_Standard_Hunt" setAllPoints="true" text="Standard Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE">
-              <Font font="Fonts\FRIZQT__.TTF" size="12" flags="OUTLINE" />
+            <FontString name="Tracker_Standard_Hunt" setAllPoints="true" text="Standard Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
                   <AbsDimension x="1" y="-1" />
@@ -565,7 +565,7 @@
         </Anchors>
         <Layers>
           <Layer level="ARTWORK">
-            <FontString name="Tracker_Target_Name" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Tracker_Target_Name" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="18" />
               </FontHeight>
@@ -586,7 +586,7 @@
         </Anchors>
         <Layers>
           <Layer level="ARTWORK">
-            <FontString name="Tracker_Huntmaster" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Tracker_Huntmaster" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -607,7 +607,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Tracker_Location" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Tracker_Location" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -628,7 +628,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Tracker_Hunt_Ground" setAllPoints="true" text="Hunting Ground:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Tracker_Hunt_Ground" setAllPoints="true" text="Hunting Ground:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -649,7 +649,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Tracker_Hunt_Ground_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Tracker_Hunt_Ground_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -720,7 +720,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Tracking2_Text" setAllPoints="true" text="Kill enemies that reward expeience in the hunting" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE">
+            <FontString name="Tracking2_Text" setAllPoints="true" text="Kill enemies that reward expeience in the hunting" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -741,7 +741,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Tracking3_Text" setAllPoints="true" text="grounds to reveal the final confrontation site." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE">
+            <FontString name="Tracking3_Text" setAllPoints="true" text="grounds to reveal the final confrontation site." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -779,7 +779,7 @@
         </Anchors>
         <Layers>
           <Layer level="OVERLAY">
-            <FontString name="Located2_Text" setAllPoints="true" text="Travel to the marked location on your map to" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE">
+            <FontString name="Located2_Text" setAllPoints="true" text="Travel to the marked location on your map to" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -800,7 +800,7 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <FontString name="Located3_Text" setAllPoints="true" text="activate the crystal and dispatch your prey." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE">
+            <FontString name="Located3_Text" setAllPoints="true" text="activate the crystal and dispatch your prey." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -838,8 +838,7 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <FontString name="Complete_Text" setAllPoints="true" text="Ready to Turn In" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE">
-              <Font font="Fonts\FRIZQT__.TTF" size="12" flags="OUTLINE" />
+            <FontString name="Complete_Text" setAllPoints="true" text="Ready to Turn In" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
                   <AbsDimension x="1" y="-1" />
@@ -863,7 +862,7 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <FontString name="Complete2A_Text" setAllPoints="true" text="Return to " inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Complete2A_Text" setAllPoints="true" text="Return to " inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -884,7 +883,7 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <FontString name="Complete2B_Huntmaster_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Complete2B_Huntmaster_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -905,7 +904,7 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <FontString name="Complete3A_Text" setAllPoints="true" text="in" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE">
+            <FontString name="Complete3A_Text" setAllPoints="true" text="in" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
@@ -926,7 +925,7 @@
         </Anchors>
         <Layers>
           <Layer level="HIGHLIGHT">
-            <FontString name="Complete3B_Location_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE">
+            <FontString name="Complete3B_Location_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
               </FontHeight>
