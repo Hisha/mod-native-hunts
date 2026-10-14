@@ -8,6 +8,7 @@ local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
 local vendorDropdown, vendorDropdownLabel, vendorCurrencyFrame, vendorCurrencyItem = nil, nil, nil, nil;
 local vendorStateActive = false;
 local vendorSelectedSpec, vendorRevision, vendorSealBalance = 1, 0, 0;
+local vendorDiagnosticSequence = 0;
 
 local function Split(value, limit)
 	local fields, start = {}, 1;
@@ -55,31 +56,45 @@ local function SetVendorDropdownVisible(visible)
 	if visible then
 		vendorDropdown:Show(); vendorDropdownLabel:Show();
 		if vendorCurrencyFrame then vendorCurrencyFrame:Show(); end
+		if MerchantMoneyFrame then MerchantMoneyFrame:Hide(); end
 	else
 		vendorDropdown:Hide(); vendorDropdownLabel:Hide();
 		if vendorCurrencyFrame then vendorCurrencyFrame:Hide(); end
+		-- Restore Blizzard's normal player-money display only after the custom
+		-- Huntmaster session has actually ended. A transient MerchantFrame hide
+		-- during a catalog refresh must not flash or retain the gold frame.
+		if not vendorStateActive and MerchantMoneyFrame then MerchantMoneyFrame:Show(); end
 	end
 end
 
 local function VendorDiagnostic(stage)
 	if not NATIVE_HUNTS_VENDOR_DIAGNOSTICS or not DEFAULT_CHAT_FRAME then return; end
-	local merchantShown = MerchantFrame and MerchantFrame:IsShown() and "1" or "0";
-	local dropdownShown = vendorDropdown and vendorDropdown:IsShown() and "1" or "0";
-	local currencyShown = vendorCurrencyFrame and vendorCurrencyFrame:IsShown() and "1" or "0";
-	local itemShown = vendorCurrencyItem and vendorCurrencyItem:IsShown() and "1" or "0";
-	DEFAULT_CHAT_FRAME:AddMessage("|cff33ccff[Native Hunts Vendor]|r " .. stage ..
+	vendorDiagnosticSequence = vendorDiagnosticSequence + 1;
+	local function Visibility(frame)
+		if not frame then return "-"; end
+		return (frame:IsShown() and "S" or "H") ..
+			(frame:IsVisible() and "V" or "N");
+	end
+	local at = GetTime and string.format("%.3f", GetTime()) or "-";
+	DEFAULT_CHAT_FRAME:AddMessage("|cff33ccff[Native Hunts Vendor]|r #" ..
+		tostring(vendorDiagnosticSequence) .. " t=" .. at .. " " .. stage ..
 		" active=" .. (vendorStateActive and "1" or "0") ..
-		" merchant=" .. merchantShown .. " dropdown=" .. dropdownShown ..
-		" currency=" .. currencyShown .. " item=" .. itemShown ..
+		" merchant=" .. Visibility(MerchantFrame) ..
+		" dropdown=" .. Visibility(vendorDropdown) ..
+		" currency=" .. Visibility(vendorCurrencyFrame) ..
+		" item=" .. Visibility(vendorCurrencyItem) ..
+		" money=" .. Visibility(MerchantMoneyFrame) ..
 		" spec=" .. tostring(vendorSelectedSpec) ..
 		" revision=" .. tostring(vendorRevision) ..
 		" balance=" .. tostring(vendorSealBalance));
 end
 
-local function ResetVendorState()
+local function ResetVendorState(reason)
+	VendorDiagnostic("ResetVendorState begin reason=" .. tostring(reason));
 	vendorStateActive = false;
 	vendorRevision = 0; vendorSealBalance = 0;
 	SetVendorDropdownVisible(false);
+	VendorDiagnostic("ResetVendorState end reason=" .. tostring(reason));
 end
 
 local function UpdateVendorCurrency()
@@ -148,18 +163,18 @@ local function InitializeVendorDropdown()
 	vendorCurrencyFrame = CreateFrame("Frame", "NativeHuntsMerchantSealCurrency",
 		MerchantFrame, "SmallAlterateCurrencyFrameTemplate");
 	if vendorCurrencyFrame then
-		vendorCurrencyFrame:SetWidth(48);
+		vendorCurrencyFrame:SetWidth(128);
 		vendorCurrencyFrame:ClearAllPoints();
-		if MerchantMoneyFrame then
-			vendorCurrencyFrame:SetPoint("BOTTOMRIGHT", MerchantMoneyFrame,
-				"TOPRIGHT", 0, 4);
-		else
-			vendorCurrencyFrame:SetPoint("BOTTOMRIGHT", MerchantFrame,
-				"BOTTOMRIGHT", -40, 84);
-		end
+		-- Use the exact stock MerchantMoneyFrame location. The Huntmaster is a
+		-- Seal-only merchant, so the custom currency replaces (rather than sits
+		-- above) the gold/silver/copper display while this session is active.
+		vendorCurrencyFrame:SetPoint("BOTTOMRIGHT", MerchantFrame,
+			"BOTTOMRIGHT", -40, 67);
 		vendorCurrencyItem = NativeHuntsMerchantSealCurrencyItem1;
-		if vendorCurrencyItem and vendorCurrencyItem.EnableMouse then
-			vendorCurrencyItem:EnableMouse(false);
+		if vendorCurrencyItem then
+			vendorCurrencyItem:ClearAllPoints();
+			vendorCurrencyItem:SetPoint("RIGHT", vendorCurrencyFrame, "RIGHT", -13, 0);
+			if vendorCurrencyItem.EnableMouse then vendorCurrencyItem:EnableMouse(false); end
 		end
 	end
 	SetVendorDropdownVisible(false);
@@ -579,7 +594,7 @@ function NativeHuntsFrame_OnEvent(self,event,...)
 	if event=="PLAYER_ENTERING_WORLD" then RequestSnapshot(); return; end
 	if event=="MERCHANT_CLOSED" then
 		VendorDiagnostic("MERCHANT_CLOSED");
-		ResetVendorState();
+		ResetVendorState("MERCHANT_CLOSED");
 		return;
 	end
 	if event=="MERCHANT_SHOW" then

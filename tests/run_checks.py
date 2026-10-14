@@ -782,8 +782,8 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr3":
-        print("SKIP functional FrameForge PTR3 contract", flush=True)
+    if manifest.get("version") != "22-ptr4":
+        print("SKIP functional FrameForge PTR4 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
         raise AssertionError("invalid Native Hunts PTR3 package identity")
@@ -1133,8 +1133,8 @@ def run_frameforge_functional_ui_checks() -> None:
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.MerchantFrame = controls.FrameForgeTestControl()
         controls.MerchantFrame.visible = False
+        controls.MerchantFrame.anchorId = "MerchantFrame"
         controls.MerchantMoneyFrame = controls.FrameForgeTestControl()
-        controls.MerchantMoneyFrame.anchorId = "MerchantMoneyFrame"
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
         handle_message("1\tV\t2\t7\t30")
@@ -1150,7 +1150,8 @@ def run_frameforge_functional_ui_checks() -> None:
         if (not controls.NativeHuntsMerchantSealCurrency.visible or
                 not controls.NativeHuntsMerchantSealCurrencyItem1.visible or
                 controls.NativeHuntsMerchantSealCurrencyItem1.text != "30" or
-                controls.NativeHuntsMerchantSealCurrencyItem1.texture != "ManagedSealTexture"):
+                controls.NativeHuntsMerchantSealCurrencyItem1.texture != "ManagedSealTexture" or
+                controls.MerchantMoneyFrame.visible):
             raise AssertionError("native merchant Seal balance did not initialize")
         label_point = controls.NativeHuntsMerchantSpecLabel.point
         dropdown_point = controls.NativeHuntsMerchantSpecDropDown.point
@@ -1161,10 +1162,15 @@ def run_frameforge_functional_ui_checks() -> None:
                 dropdown_point[4] != 162 or dropdown_point[5] != -32 or
                 controls.NativeHuntsMerchantSpecDropDown.width != 118 or
                 currency_point[1] != "BOTTOMRIGHT" or
-                currency_point[2].anchorId != "MerchantMoneyFrame" or
-                currency_point[3] != "TOPRIGHT" or currency_point[4] != 0 or
-                currency_point[5] != 4):
+                currency_point[2].anchorId != "MerchantFrame" or
+                currency_point[3] != "BOTTOMRIGHT" or currency_point[4] != -40 or
+                currency_point[5] != 67):
             raise AssertionError("native merchant specialization controls left the safe header area")
+        currency_item_point = controls.NativeHuntsMerchantSealCurrencyItem1.point
+        if (currency_item_point[1] != "RIGHT" or
+                currency_item_point[3] != "RIGHT" or currency_item_point[4] != -13 or
+                currency_item_point[5] != 0):
+            raise AssertionError("Seal quantity is not aligned to the stock money location")
 
         dropdown = controls.NativeHuntsMerchantSpecDropDown
         currency = controls.NativeHuntsMerchantSealCurrency
@@ -1181,14 +1187,17 @@ def run_frameforge_functional_ui_checks() -> None:
                 controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
             controls.NativeHuntsFrame_OnEvent(
                 controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+            controls.MerchantFrame.visible = False
             controls.MerchantFrame.hooks["OnHide"]()
             if dropdown.visible or currency.visible:
                 raise AssertionError("transient MerchantFrame hide left controls visible")
+            controls.MerchantFrame.visible = True
             controls.MerchantFrame.hooks["OnShow"]()
             if (not dropdown.visible or dropdown.selectedID != spec or
                     dropdown.text != talent_name or not currency.visible or
                     not controls.NativeHuntsMerchantSealCurrencyItem1.visible or
-                    controls.NativeHuntsMerchantSealCurrencyItem1.text != str(balance)):
+                    controls.NativeHuntsMerchantSealCurrencyItem1.text != str(balance) or
+                    controls.MerchantMoneyFrame.visible):
                 raise AssertionError(
                     "specialization refresh lost native merchant controls, selection, or balance")
         if (controls.FrameForgeCreateCounts["NativeHuntsMerchantSpecDropDown"] != 1 or
@@ -1204,17 +1213,21 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError("authoritative native merchant balance did not update")
 
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
+        controls.MerchantFrame.visible = False
         controls.MerchantFrame.hooks["OnHide"]()
+        controls.MerchantFrame.visible = True
         controls.MerchantFrame.hooks["OnShow"]()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
-        if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible):
+        if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible or
+                not controls.MerchantMoneyFrame.visible):
             raise AssertionError("native vendor controls leaked into an ordinary merchant")
 
         handle_message("1\tV\t3\t14\t13")
         controls.MerchantFrame.hooks["OnShow"]()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
         if (not dropdown.visible or dropdown.selectedID != 3 or
-                controls.NativeHuntsMerchantSealCurrencyItem1.text != "13"):
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "13" or
+                controls.MerchantMoneyFrame.visible):
             raise AssertionError("closing and reopening the Huntmaster did not restore current state")
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
         if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible):
@@ -1434,10 +1447,10 @@ def run_frameforge_functional_ui_checks() -> None:
 
 
 def run_frameforge_package_checks() -> None:
-    """Verify deterministic explicit-content rebuilds for the PTR2 package."""
+    """Verify deterministic explicit-content rebuilds for the current PTR package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr3":
+    if manifest.get("version") != "22-ptr4":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
@@ -1803,6 +1816,7 @@ def run_seal_vendor_checks() -> None:
               "NativeHuntsFrame.lua").read_text(encoding="utf-8")
     for token in ("NativeHuntsMerchantSpecDropDown", "GetTalentTabInfo",
                   "SmallAlterateCurrencyFrameTemplate", "vendorCurrencyItem:Show()",
+                  "MerchantMoneyFrame:Hide()", "MerchantMoneyFrame:Show()",
                   'SendAddonMessage(PREFIX, "1\\tV\\t"',
                   'if f[2]=="V" then HandleVendorState(f)',
                   'MerchantFrame:HookScript("OnHide"'):
