@@ -150,14 +150,15 @@ local function InitializeVendorDropdown()
 	if vendorDropdown or not MerchantFrame or not CreateFrame then return; end
 	vendorDropdownLabel = MerchantFrame:CreateFontString(
 		"NativeHuntsMerchantSpecLabel", "OVERLAY", "GameFontNormalSmall");
-	-- Keep the native selector below the centered merchant title, to the right
-	-- of the portrait, and clear of the top-right close button.
-	vendorDropdownLabel:SetPoint("TOPLEFT", MerchantFrame, "TOPLEFT", 72, -45);
 	vendorDropdownLabel:SetText("Specialization");
 	vendorDropdown = CreateFrame("Frame", "NativeHuntsMerchantSpecDropDown",
 		MerchantFrame, "UIDropDownMenuTemplate");
-	vendorDropdown:SetPoint("TOPLEFT", MerchantFrame, "TOPLEFT", 162, -32);
-	if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(vendorDropdown, 118); end
+	-- One balanced stock-style row beneath the title. Anchor the caption to the
+	-- selector so the pair stays aligned without encroaching on the portrait,
+	-- close button, or merchant item grid.
+	vendorDropdown:SetPoint("TOPLEFT", MerchantFrame, "TOPLEFT", 151, -32);
+	if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(vendorDropdown, 112); end
+	vendorDropdownLabel:SetPoint("RIGHT", vendorDropdown, "LEFT", 0, 2);
 	if UIDropDownMenu_Initialize then
 		UIDropDownMenu_Initialize(vendorDropdown, function()
 			for index = 1, 3 do

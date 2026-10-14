@@ -39,7 +39,8 @@ def run_domain_tests() -> None:
         executable = Path(directory) / ("hunt_domain_tests.exe" if os.name == "nt" else "hunt_domain_tests")
         command = [compiler(), "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic", "-Isrc",
             "tests/hunt_domain_tests.cpp", "src/HuntDomain.cpp", "src/HuntGameplay.cpp",
-            "src/HuntSnapshot.cpp", "src/HuntUiProtocol.cpp", "src/HuntCatalog.cpp", "src/HuntRewards.cpp", "-o", str(executable)]
+            "src/HuntSnapshot.cpp", "src/HuntUiProtocol.cpp", "src/HuntCatalog.cpp", "src/HuntRewards.cpp",
+            "src/SealCatalogPolicy.cpp", "-o", str(executable)]
         subprocess.run(command, cwd=ROOT, check=True)
         subprocess.run([str(executable)], cwd=ROOT, check=True)
         print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
@@ -782,8 +783,8 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr5":
-        print("SKIP functional FrameForge PTR5 contract", flush=True)
+    if manifest.get("version") != "22-ptr6":
+        print("SKIP functional FrameForge PTR6 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
         raise AssertionError("invalid Native Hunts PTR3 package identity")
@@ -1102,7 +1103,7 @@ def run_frameforge_functional_ui_checks() -> None:
             function RegisterAddonMessagePrefix() end
             function CreateFrame(_,name,parent,template)
                 FrameForgeCreateCounts[name]=(FrameForgeCreateCounts[name] or 0)+1
-                local frame=FrameForgeTestControl(); frame.parent=parent; frame.template=template; _G[name]=frame
+                local frame=FrameForgeTestControl(); frame.parent=parent; frame.template=template; frame.anchorId=name; _G[name]=frame
                 if template=="SmallAlterateCurrencyFrameTemplate" then
                     for _,suffix in ipairs({"Honor","Arena","Item1","Item2","Item3"}) do
                         local child=FrameForgeTestControl(); child.visible=false; _G[name..suffix]=child
@@ -1166,11 +1167,13 @@ def run_frameforge_functional_ui_checks() -> None:
         label_point = controls.NativeHuntsMerchantSpecLabel.point
         dropdown_point = controls.NativeHuntsMerchantSpecDropDown.point
         currency_point = controls.NativeHuntsMerchantSealCurrency.point
-        if (label_point[1] != "TOPLEFT" or label_point[3] != "TOPLEFT" or
-                label_point[4] != 72 or label_point[5] != -45 or
-                dropdown_point[1] != "TOPLEFT" or dropdown_point[3] != "TOPLEFT" or
-                dropdown_point[4] != 162 or dropdown_point[5] != -32 or
-                controls.NativeHuntsMerchantSpecDropDown.width != 118 or
+        if (label_point[1] != "RIGHT" or
+                label_point[2].anchorId != "NativeHuntsMerchantSpecDropDown" or
+                label_point[3] != "LEFT" or label_point[4] != 0 or
+                label_point[5] != 2 or dropdown_point[1] != "TOPLEFT" or
+                dropdown_point[3] != "TOPLEFT" or dropdown_point[4] != 151 or
+                dropdown_point[5] != -32 or
+                controls.NativeHuntsMerchantSpecDropDown.width != 112 or
                 currency_point[1] != "BOTTOMRIGHT" or
                 currency_point[2].anchorId != "MerchantFrame" or
                 currency_point[3] != "BOTTOMRIGHT" or currency_point[4] != -40 or
@@ -1491,7 +1494,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the current PTR package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr5":
+    if manifest.get("version") != "22-ptr6":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
@@ -1748,6 +1751,7 @@ def run_seal_vendor_checks() -> None:
         "IsSpecCompatibleEquipment(spec, *item)", "MatchesSealStoreSlot(*item, slot)",
         "ITEM_FLAG_HEROIC_TOOLTIP", "ITEM_MOD_RESILIENCE_RATING",
         "player->CanUseItem(item)", "GetArmorPreference(player, *item) < 0.0f",
+        "MatchesSealCatalogRole(role, *item)",
         "ScoreRewardItem(player, spec, role, *item) > 0.0f",
         "if (items.size() > 20)", "items.resize(20)",
     )

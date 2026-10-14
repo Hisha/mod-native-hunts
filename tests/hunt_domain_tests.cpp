@@ -4,6 +4,7 @@
 #include "HuntSnapshot.h"
 #include "HuntUiProtocol.h"
 #include "HuntRewards.h"
+#include "SealCatalogPolicy.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -102,6 +103,43 @@ void TestHuntmasterIdentity() {
 	Check(!CanUseIssuingHuntmaster(HuntState::ReadyToTurnIn,
 		99, 198, 99, 199),
 		"ReadyToTurnIn rejects an unrelated creature");
+}
+
+void TestSealCatalogFiltering() {
+	SealCatalogTraits enhancement;
+	enhancement.Agility = true;
+	enhancement.AttackPower = true;
+	Check(MatchesSealCatalogRole(SealCatalogRole::AgilityMelee, enhancement),
+		"Enhancement accepts agility/attack-power equipment");
+	Check(!MatchesSealCatalogRole(SealCatalogRole::SpellDamage, enhancement),
+		"Elemental rejects Enhancement equipment");
+	Check(!MatchesSealCatalogRole(SealCatalogRole::Healer, enhancement),
+		"Restoration rejects Enhancement equipment");
+
+	SealCatalogTraits elemental;
+	elemental.SpellPower = true;
+	elemental.Intellect = true;
+	Check(MatchesSealCatalogRole(SealCatalogRole::SpellDamage, elemental),
+		"Elemental accepts spell-damage equipment");
+	Check(MatchesSealCatalogRole(SealCatalogRole::Healer, elemental),
+		"shared caster equipment is also valid for Restoration");
+	Check(!MatchesSealCatalogRole(SealCatalogRole::AgilityMelee, elemental),
+		"Enhancement rejects caster equipment");
+
+	SealCatalogTraits restoration;
+	restoration.ManaRegeneration = true;
+	Check(MatchesSealCatalogRole(SealCatalogRole::Healer, restoration),
+		"Restoration accepts mana-regeneration equipment");
+	Check(!MatchesSealCatalogRole(SealCatalogRole::SpellDamage, restoration),
+		"Elemental rejects healer-only equipment");
+	Check(!MatchesSealCatalogRole(SealCatalogRole::AgilityMelee, restoration),
+		"Enhancement rejects healer-only equipment");
+
+	SealCatalogTraits unclassified;
+	Check(!MatchesSealCatalogRole(SealCatalogRole::AgilityMelee, unclassified) &&
+		!MatchesSealCatalogRole(SealCatalogRole::SpellDamage, unclassified) &&
+		!MatchesSealCatalogRole(SealCatalogRole::Healer, unclassified),
+		"unclassified equipment does not leak into specialized catalogs");
 }
 
 void TestRewardRules() {
@@ -659,6 +697,8 @@ int main(int argc, char **argv) {
 		TestSnapshots();
 	if (selection == "all" || selection == "protocol")
 		TestUiProtocol();
+	if (selection == "all" || selection == "seal-catalog")
+		TestSealCatalogFiltering();
 	if (selection == "all" || selection == "tracking")
 		TestTrackingEligibility();
 	if (selection == "all" || selection == "scope")

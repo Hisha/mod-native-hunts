@@ -1,4 +1,5 @@
 #include "NativeHuntsManager.h"
+#include "SealCatalogPolicy.h"
 
 #include "HuntCatalog.h"
 #include "HuntGameplay.h"
@@ -423,16 +424,7 @@ char const *StateName(HuntState state) {
 	return "Unknown";
 }
 
-enum class RewardRole
-{
-    Generic,
-    StrengthMelee,
-    AgilityMelee,
-    HunterRanged,
-    SpellDamage,
-    Healer,
-    Tank
-};
+using RewardRole = native_hunts::SealCatalogRole;
 
 RewardRole GetRewardRole(Player* player, uint32 spec)
 {
@@ -737,6 +729,34 @@ bool IsRewardIdentityStat(RewardRole role, uint32 stat)
         default:
             return true;
     }
+}
+
+bool MatchesSealCatalogRole(RewardRole role, ItemTemplate const &item)
+{
+    native_hunts::SealCatalogTraits traits;
+    for (uint32 i = 0; i < item.StatsCount && i < MAX_ITEM_PROTO_STATS; ++i)
+    {
+        if (item.ItemStat[i].ItemStatValue <= 0)
+            continue;
+        switch (item.ItemStat[i].ItemStatType)
+        {
+            case ITEM_MOD_STRENGTH: traits.Strength = true; break;
+            case ITEM_MOD_AGILITY: traits.Agility = true; break;
+            case ITEM_MOD_ATTACK_POWER: traits.AttackPower = true; break;
+            case ITEM_MOD_RANGED_ATTACK_POWER: traits.RangedAttackPower = true; break;
+            case ITEM_MOD_SPELL_POWER: traits.SpellPower = true; break;
+            case ITEM_MOD_INTELLECT: traits.Intellect = true; break;
+            case ITEM_MOD_MANA_REGENERATION: traits.ManaRegeneration = true; break;
+            case ITEM_MOD_SPIRIT: traits.Spirit = true; break;
+            case ITEM_MOD_DEFENSE_SKILL_RATING: traits.Defense = true; break;
+            case ITEM_MOD_DODGE_RATING: traits.Dodge = true; break;
+            case ITEM_MOD_PARRY_RATING: traits.Parry = true; break;
+            case ITEM_MOD_BLOCK_RATING: traits.BlockRating = true; break;
+            case ITEM_MOD_BLOCK_VALUE: traits.BlockValue = true; break;
+            default: break;
+        }
+    }
+    return native_hunts::MatchesSealCatalogRole(role, traits);
 }
 
 float GetRewardWrongDirectionPenalty(RewardRole role, uint32 stat, int32 value)
@@ -1079,7 +1099,8 @@ bool NativeHuntsManager::IsSealStoreItemEligible(Player *player,
 	if (item->Class == ITEM_CLASS_ARMOR && GetArmorPreference(player, *item) < 0.0f)
 		return false;
 	RewardRole const role = GetRewardRole(player, spec);
-	return ScoreRewardItem(player, spec, role, *item) > 0.0f;
+	return MatchesSealCatalogRole(role, *item) &&
+		ScoreRewardItem(player, spec, role, *item) > 0.0f;
 }
 
 std::vector<SealStoreItem> NativeHuntsManager::BuildSealStoreItems(
