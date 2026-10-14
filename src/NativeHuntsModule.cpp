@@ -228,6 +228,14 @@ void SendNativeSealVendorState(Player *player,
 	player->Whisper(payload, LANG_ADDON, player);
 }
 
+void SendNativeSealVendorRefreshResult(Player *player,
+		NativeSealVendorSession const &session, bool ready) {
+	std::string const payload = std::string(native_hunts::ui::Prefix) +
+		"\t1\t" + (ready ? "W" : "X") + "\t" +
+		std::to_string(session.Revision);
+	player->Whisper(payload, LANG_ADDON, player);
+}
+
 bool SendNativeSealVendorInventory(Player *player, Creature *vendor,
 		NativeSealVendorSession const &session) {
 	if (!player || !vendor || session.Rows.empty() ||
@@ -258,7 +266,7 @@ bool SendNativeSealVendorInventory(Player *player, Creature *vendor,
 }
 
 bool OpenNativeSealVendor(Player *player, Creature *creature,
-		std::uint8_t specIndex, std::string &message) {
+		std::uint8_t specIndex, std::string &message, bool refresh = false) {
 	if (!player || !creature || !sNativeHunts.IsSealStoreAvailable(player) ||
 		!sNativeHunts.AreSealStoreExtendedCostsReady()) {
 		message = sNativeHunts.GetSealStoreUnavailableReason();
@@ -296,10 +304,14 @@ bool OpenNativeSealVendor(Player *player, Creature *creature,
 	auto const &stored = NativeSealVendorSessions.at(guid);
 	SendNativeSealVendorState(player, stored);
 	if (!SendNativeSealVendorInventory(player, vendor, stored)) {
+		if (refresh)
+			SendNativeSealVendorRefreshResult(player, stored, false);
 		NativeSealVendorSessions.erase(guid);
 		message = "The Huntmaster merchant inventory could not be generated.";
 		return false;
 	}
+	if (refresh)
+		SendNativeSealVendorRefreshResult(player, stored, true);
 	message.clear();
 	return true;
 }
@@ -328,7 +340,7 @@ bool HandleNativeSealVendorSpec(Player *player, std::uint8_t specIndex) {
 		session->second.VendorGuid, UNIT_NPC_FLAG_VENDOR);
 	std::string message;
 	if (!vendor || !sNativeHunts.IsHuntmaster(vendor) ||
-		!OpenNativeSealVendor(player, vendor, specIndex, message)) {
+		!OpenNativeSealVendor(player, vendor, specIndex, message, true)) {
 		NativeSealVendorSessions.erase(guid);
 		if (!message.empty())
 			ChatHandler(player->GetSession()).PSendSysMessage(
@@ -425,7 +437,7 @@ bool HandleNativeSealVendorPurchase(Player *player, ObjectGuid vendorGuid,
 		SendNativeSealVendorBuySuccess(player, purchaseSession, vendorSlot);
 		std::string refreshMessage;
 		OpenNativeSealVendor(player, vendor, purchaseSession.SpecIndex,
-			refreshMessage);
+			refreshMessage, true);
 	}
 	if (!message.empty())
 		ChatHandler(player->GetSession()).PSendSysMessage(

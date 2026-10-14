@@ -8,6 +8,8 @@ local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
 local vendorDropdown, vendorDropdownLabel, vendorCurrencyFrame, vendorCurrencyItem = nil, nil, nil, nil;
 local vendorStateActive = false;
 local vendorSelectedSpec, vendorRevision, vendorSealBalance = 1, 0, 0;
+local vendorRefreshRequestedSpec, vendorRefreshRevision = nil, 0;
+local vendorRefreshSawClose = false;
 local vendorDiagnosticSequence = 0;
 
 local function Split(value, limit)
@@ -86,13 +88,18 @@ local function VendorDiagnostic(stage)
 		" money=" .. Visibility(MerchantMoneyFrame) ..
 		" spec=" .. tostring(vendorSelectedSpec) ..
 		" revision=" .. tostring(vendorRevision) ..
-		" balance=" .. tostring(vendorSealBalance));
+		" balance=" .. tostring(vendorSealBalance) ..
+		" refreshSpec=" .. tostring(vendorRefreshRequestedSpec) ..
+		" refreshRevision=" .. tostring(vendorRefreshRevision) ..
+		" refreshClosed=" .. (vendorRefreshSawClose and "1" or "0"));
 end
 
 local function ResetVendorState(reason)
 	VendorDiagnostic("ResetVendorState begin reason=" .. tostring(reason));
 	vendorStateActive = false;
 	vendorRevision = 0; vendorSealBalance = 0;
+	vendorRefreshRequestedSpec = nil; vendorRefreshRevision = 0;
+	vendorRefreshSawClose = false;
 	SetVendorDropdownVisible(false);
 	VendorDiagnostic("ResetVendorState end reason=" .. tostring(reason));
 end
@@ -131,6 +138,10 @@ end
 local function SelectVendorSpecialization(index)
 	if not vendorStateActive or index < 1 or index > 3 then return; end
 	if SendAddonMessage and UnitName("player") then
+		vendorRefreshRequestedSpec = index;
+		vendorRefreshRevision = 0;
+		vendorRefreshSawClose = false;
+		VendorDiagnostic("specialization refresh requested");
 		SendAddonMessage(PREFIX, "1\tV\t" .. tostring(index), "WHISPER", UnitName("player"));
 	end
 end
@@ -180,7 +191,7 @@ local function InitializeVendorDropdown()
 	SetVendorDropdownVisible(false);
 	MerchantFrame:HookScript("OnShow", function()
 		UpdateVendorCurrency();
-		SetVendorDropdownVisible(vendorStateActive);
+		SetVendorDropdownVisible(vendorStateActive and vendorRefreshRevision == 0);
 		VendorDiagnostic("MerchantFrame OnShow");
 	end);
 	MerchantFrame:HookScript("OnHide", function()
@@ -202,6 +213,19 @@ local function HandleVendorState(fields)
 	if vendorStateActive and vendorRevision ~= 0 and revision < vendorRevision then
 		return true;
 	end
+	local previousRevision, wasActive = vendorRevision, vendorStateActive;
+	if wasActive and revision > previousRevision then
+		if vendorRefreshRequestedSpec and vendorRefreshRequestedSpec ~= specIndex then
+			VendorDiagnostic("refresh state specialization mismatch");
+			ResetVendorState("refresh specialization mismatch");
+			return true;
+		end
+		-- A newer state while the Huntmaster is active begins a bounded refresh.
+		-- For a specialization change it must match the requested tree; the same
+		-- mechanism also protects the server-authoritative post-purchase refresh.
+		vendorRefreshRevision = revision;
+		vendorRefreshSawClose = false;
+	end
 	vendorStateActive = true;
 	vendorSelectedSpec = specIndex; vendorRevision = revision;
 	vendorSealBalance = balance;
@@ -218,8 +242,33 @@ local function HandleVendorState(fields)
 		end
 	end
 	UpdateVendorCurrency();
-	SetVendorDropdownVisible(MerchantFrame and MerchantFrame:IsShown());
+	SetVendorDropdownVisible(MerchantFrame and MerchantFrame:IsShown() and
+		vendorRefreshRevision == 0);
 	VendorDiagnostic("NHUNTS vendor state");
+	return true;
+end
+
+local function HandleVendorRefreshResult(fields, ready)
+	if table.getn(fields) ~= 3 then return false; end
+	local revision = Number(fields[3], 4294967295);
+	if not revision or revision == 0 then return true; end
+	if not vendorStateActive or vendorRefreshRevision == 0 or
+		revision ~= vendorRefreshRevision or revision ~= vendorRevision then
+		return true;
+	end
+	if not ready then
+		ResetVendorState("server aborted merchant refresh");
+		return true;
+	end
+	vendorRefreshRequestedSpec = nil; vendorRefreshRevision = 0;
+	vendorRefreshSawClose = false;
+	if not MerchantFrame or not MerchantFrame:IsShown() then
+		ResetVendorState("merchant refresh completed while frame hidden");
+		return true;
+	end
+	UpdateVendorCurrency();
+	SetVendorDropdownVisible(true);
+	VendorDiagnostic("merchant refresh established");
 	return true;
 end
 
@@ -485,6 +534,8 @@ local function HandleMessage(message)
 	if not message or string.len(message)>MAX_MESSAGE then return; end
 	local f=Split(message,8); if f[1]~=VERSION then return; end
 	if f[2]=="V" then HandleVendorState(f); return; end
+	if f[2]=="W" then HandleVendorRefreshResult(f,true); return; end
+	if f[2]=="X" then HandleVendorRefreshResult(f,false); return; end
 	local sequence, responseNonce=Number(f[3],4294967295),Number(f[4],4294967295);
 	if not sequence or sequence==0 or responseNonce==nil then return; end
 	if f[2]=="A" or f[2]=="P" then if table.getn(f)<5 then return; end AcceptRecord(sequence,responseNonce,f[2],table.concat(f,"\t",5)); return; end
@@ -591,17 +642,29 @@ end
 
 function NativeHuntsFrame_OnEvent(self,event,...)
 	if not initialized then return; end
-	if event=="PLAYER_ENTERING_WORLD" then RequestSnapshot(); return; end
+	if event=="PLAYER_ENTERING_WORLD" then
+		ResetVendorState("PLAYER_ENTERING_WORLD");
+		RequestSnapshot();
+		return;
+	end
 	if event=="MERCHANT_CLOSED" then
 		VendorDiagnostic("MERCHANT_CLOSED");
-		ResetVendorState("MERCHANT_CLOSED");
+		if vendorStateActive and vendorRefreshRevision ~= 0 and
+			vendorRefreshRevision == vendorRevision then
+			vendorRefreshSawClose = true;
+			SetVendorDropdownVisible(false);
+			VendorDiagnostic("MERCHANT_CLOSED preserved for refresh");
+		else
+			ResetVendorState("MERCHANT_CLOSED");
+		end
 		return;
 	end
 	if event=="MERCHANT_SHOW" then
 		-- MERCHANT_SHOW may follow MERCHANT_UPDATE more than once while the same
 		-- Huntmaster inventory is replaced.  It is not a session terminator.
 		UpdateVendorCurrency();
-		SetVendorDropdownVisible(vendorStateActive and MerchantFrame and MerchantFrame:IsShown());
+		SetVendorDropdownVisible(vendorStateActive and vendorRefreshRevision == 0 and
+			MerchantFrame and MerchantFrame:IsShown());
 		VendorDiagnostic("MERCHANT_SHOW");
 		return;
 	end

@@ -782,8 +782,8 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr4":
-        print("SKIP functional FrameForge PTR4 contract", flush=True)
+    if manifest.get("version") != "22-ptr5":
+        print("SKIP functional FrameForge PTR5 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
         raise AssertionError("invalid Native Hunts PTR3 package identity")
@@ -1090,10 +1090,15 @@ def run_frameforge_functional_ui_checks() -> None:
             end
             FrameForgeTestTime=10
             FrameForgeTestRequests=0
+            FrameForgeTestLastAddonMessage=nil
             FrameForgeCreateCounts={}
+            FrameForgeDropdownButtons={}
             function GetTime() return FrameForgeTestTime end
             function UnitName() return "Tester" end
-            function SendAddonMessage() FrameForgeTestRequests=FrameForgeTestRequests+1 end
+            function SendAddonMessage(_,message)
+                FrameForgeTestRequests=FrameForgeTestRequests+1
+                FrameForgeTestLastAddonMessage=message
+            end
             function RegisterAddonMessagePrefix() end
             function CreateFrame(_,name,parent,template)
                 FrameForgeCreateCounts[name]=(FrameForgeCreateCounts[name] or 0)+1
@@ -1108,7 +1113,7 @@ def run_frameforge_functional_ui_checks() -> None:
             function UIDropDownMenu_SetWidth(frame,width) frame.width=width end
             function UIDropDownMenu_Initialize(frame,callback) frame.initializer=callback end
             function UIDropDownMenu_CreateInfo() return {} end
-            function UIDropDownMenu_AddButton() end
+            function UIDropDownMenu_AddButton(info) table.insert(FrameForgeDropdownButtons,info) end
             function UIDropDownMenu_SetSelectedID(frame,id) frame.selectedID=id end
             function UIDropDownMenu_SetText(frame,text) frame.text=text end
             function GetTalentTabInfo(index) return ({"First Tree","Second Tree","Third Tree"})[index] end
@@ -1117,6 +1122,11 @@ def run_frameforge_functional_ui_checks() -> None:
             function GetMerchantItemCostItem() return "ManagedSealTexture",5,"item:managed-seal" end
             function AltCurrencyFrame_Update(name,texture,value)
                 local button=_G[name]; button.texture=texture; button.text=tostring(value)
+            end
+            function FrameForgeSelectVendorSpec(index)
+                FrameForgeDropdownButtons={}
+                NativeHuntsMerchantSpecDropDown.initializer()
+                FrameForgeDropdownButtons[index].func()
             end
             function HideUIPanel(frame)
                 frame:Hide()
@@ -1178,21 +1188,28 @@ def run_frameforge_functional_ui_checks() -> None:
                      (1, 10, 27, "First Tree"), (3, 11, 26, "Third Tree"),
                      (2, 12, 25, "Second Tree"))
         for spec, revision, balance, talent_name in refreshes:
+            controls.FrameForgeSelectVendorSpec(spec)
+            if controls.FrameForgeTestLastAddonMessage != f"1\tV\t{spec}":
+                raise AssertionError("specialization selection did not begin the requested refresh")
             handle_message(f"1\tV\t{spec}\t{revision}\t{balance}")
-            # PTR may deliver UPDATE before one or more SHOW notifications for
-            # the replacement inventory. None of them ends the vendor session.
-            controls.NativeHuntsFrame_OnEvent(
-                controls.NativeHuntsFrameInitializer, "MERCHANT_UPDATE")
-            controls.NativeHuntsFrame_OnEvent(
-                controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
-            controls.NativeHuntsFrame_OnEvent(
-                controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+            # Exact PTR sequence: authoritative state, frame hide, CLOSED,
+            # frame show, SHOW, followed by the server's inventory-established
+            # acknowledgement.
             controls.MerchantFrame.visible = False
             controls.MerchantFrame.hooks["OnHide"]()
+            controls.NativeHuntsFrame_OnEvent(
+                controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
+            if dropdown.visible or currency.visible or controls.MerchantMoneyFrame.visible:
+                raise AssertionError("refresh close did not preserve hidden Huntmaster presentation")
             if dropdown.visible or currency.visible:
                 raise AssertionError("transient MerchantFrame hide left controls visible")
             controls.MerchantFrame.visible = True
             controls.MerchantFrame.hooks["OnShow"]()
+            controls.NativeHuntsFrame_OnEvent(
+                controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+            if dropdown.visible or currency.visible or controls.MerchantMoneyFrame.visible:
+                raise AssertionError("refresh controls appeared before inventory acknowledgement")
+            handle_message(f"1\tW\t{revision}")
             if (not dropdown.visible or dropdown.selectedID != spec or
                     dropdown.text != talent_name or not currency.visible or
                     not controls.NativeHuntsMerchantSealCurrencyItem1.visible or
@@ -1207,22 +1224,45 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError("consecutive specialization refreshes duplicated or desynchronized controls")
 
         handle_message("1\tV\t2\t13\t14")
+        controls.MerchantFrame.visible = False
+        controls.MerchantFrame.hooks["OnHide"]()
         controls.NativeHuntsFrame_OnEvent(
-            controls.NativeHuntsFrameInitializer, "MERCHANT_UPDATE")
+            controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
+        controls.MerchantFrame.visible = True
+        controls.MerchantFrame.hooks["OnShow"]()
+        controls.NativeHuntsFrame_OnEvent(
+            controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        handle_message("1\tW\t13")
         if controls.NativeHuntsMerchantSealCurrencyItem1.text != "14":
             raise AssertionError("authoritative native merchant balance did not update")
 
+        # A request interrupted before authoritative state is a genuine close.
+        controls.FrameForgeSelectVendorSpec(1)
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
         controls.MerchantFrame.visible = False
         controls.MerchantFrame.hooks["OnHide"]()
         controls.MerchantFrame.visible = True
         controls.MerchantFrame.hooks["OnShow"]()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        if (dropdown.visible or currency.visible or not controls.MerchantMoneyFrame.visible):
+            raise AssertionError("interrupted specialization request left stale Huntmaster state")
+
+        # Reopen, then verify an explicit server abort also clears the session.
+        handle_message("1\tV\t2\t14\t14")
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        controls.FrameForgeSelectVendorSpec(3)
+        handle_message("1\tV\t3\t15\t14")
+        handle_message("1\tX\t15")
+        if (dropdown.visible or currency.visible or not controls.MerchantMoneyFrame.visible):
+            raise AssertionError("aborted specialization refresh left stale Huntmaster state")
+
+        # Ordinary vendor opening after the abort retains stock money only.
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
         if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible or
                 not controls.MerchantMoneyFrame.visible):
             raise AssertionError("native vendor controls leaked into an ordinary merchant")
 
-        handle_message("1\tV\t3\t14\t13")
+        handle_message("1\tV\t3\t16\t13")
         controls.MerchantFrame.hooks["OnShow"]()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
         if (not dropdown.visible or dropdown.selectedID != 3 or
@@ -1238,6 +1278,7 @@ def run_frameforge_functional_ui_checks() -> None:
                 not controls.NativeHuntsFrameInitializer.events["MERCHANT_UPDATE"] or
                 not controls.NativeHuntsFrameInitializer.events["MERCHANT_CLOSED"]):
             raise AssertionError("Native Hunts did not register for the merchant lifecycle")
+        controls.FrameForgeTestRequests = 0
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
             raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
         if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
@@ -1450,7 +1491,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the current PTR package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr4":
+    if manifest.get("version") != "22-ptr5":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
@@ -1800,8 +1841,15 @@ def run_seal_vendor_checks() -> None:
     action_body = module[action_start:action_end]
     if ("session.Rows = BuildNativeSealVendorRows(player, session.Spec);" not in open_body or
             "SendNativeSealVendorInventory(player, vendor, stored)" not in open_body or
-            "OpenNativeSealVendor(player, vendor, specIndex, message)" not in refresh_body):
+            "OpenNativeSealVendor(player, vendor, specIndex, message, true)" not in refresh_body):
         raise AssertionError("initial and refreshed merchant inventories do not share resource resolution")
+    if ("SendNativeSealVendorRefreshResult(player, stored, false);" not in open_body or
+            "SendNativeSealVendorRefreshResult(player, stored, true);" not in open_body or
+            open_body.index("SendNativeSealVendorState(player, stored);") >
+            open_body.index("SendNativeSealVendorInventory(player, vendor, stored)") or
+            open_body.index("SendNativeSealVendorInventory(player, vendor, stored)") >
+            open_body.index("SendNativeSealVendorRefreshResult(player, stored, true);")):
+        raise AssertionError("merchant refresh lacks bounded state/inventory/result ordering")
     close_at = action_body.index("CloseGossipMenuFor(player);")
     open_at = action_body.index("OpenNativeSealVendor(player, creature, defaultSpec, message)")
     if close_at > open_at or action_body.count("CloseGossipMenuFor(player);") != 1:
@@ -1819,6 +1867,8 @@ def run_seal_vendor_checks() -> None:
                   "MerchantMoneyFrame:Hide()", "MerchantMoneyFrame:Show()",
                   'SendAddonMessage(PREFIX, "1\\tV\\t"',
                   'if f[2]=="V" then HandleVendorState(f)',
+                  'if f[2]=="W" then HandleVendorRefreshResult(f,true)',
+                  'if f[2]=="X" then HandleVendorRefreshResult(f,false)',
                   'MerchantFrame:HookScript("OnHide"'):
         if token not in ui_lua:
             raise AssertionError(f"native merchant client contract missing: {token}")
