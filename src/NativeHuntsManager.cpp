@@ -11,6 +11,7 @@
 #include "CreatureAI.h"
 #include "Chat.h"
 #include "DatabaseEnv.h"
+#include "DBCStores.h"
 #include "Field.h"
 #include "Formulas.h"
 #include "GameObject.h"
@@ -1019,6 +1020,10 @@ bool NativeHuntsManager::IsSealStoreAvailable(Player const *player) const {
 	return player->GetLevel() >= requiredLevel;
 }
 
+bool NativeHuntsManager::AreSealStoreExtendedCostsReady() const {
+	return IsEnabled() && _resources.SealStoreReady;
+}
+
 std::uint32_t NativeHuntsManager::GetSealBalance(Player const *player) const {
 	return player && _resources.Ready && _resources.SealItemEntry
 		? player->GetItemCount(_resources.SealItemEntry, false) : 0;
@@ -1038,6 +1043,16 @@ std::uint32_t NativeHuntsManager::GetSealStoreTierMaxItemLevel(
 		std::uint8_t tier) const {
 	return tier >= 1 && tier <= 4
 		? _config.SealStoreTierMaxItemLevel[tier - 1] : 0;
+}
+
+std::uint32_t NativeHuntsManager::GetSealStoreExtendedCost(
+		std::uint8_t tier) const {
+	return tier >= 1 && tier <= 4 && _resources.SealStoreReady
+		? _resources.SealStoreExtendedCosts[tier - 1] : 0;
+}
+
+std::string const &NativeHuntsManager::GetSealStoreUnavailableReason() const {
+	return _resources.SealStoreReason;
 }
 
 bool NativeHuntsManager::IsSealStoreItemEligible(Player *player,
@@ -1253,6 +1268,45 @@ bool NativeHuntsManager::ResolveManagedResources() {
 			"managed scripted buttons/items are missing, stale, or carry default "
 			"lock/autoclose/trap behavior; rebuild content and restart worldserver";
 		return false;
+	}
+
+	_resources.SealStoreReady = true;
+	_resources.SealStoreReason = "validated managed Huntmaster vendor costs";
+	for (std::size_t index = 0; index < _resources.SealStoreExtendedCosts.size();
+			++index) {
+		if (_config.SealStoreTierCost[index] == 0)
+			continue;
+		std::string const symbol = "seal-cost-tier-" +
+			std::to_string(index + 1);
+		std::uint32_t extendedCost = 0;
+		std::string resourceReason;
+		auto const result = provider->ResolveResource(Package, symbol,
+			"item-extended-cost.id", extendedCost, resourceReason);
+		ItemExtendedCostEntry const *entry = result ==
+			ContentResourcesV1::Result::Ready && extendedCost
+			? sItemExtendedCostStore.LookupEntry(extendedCost) : nullptr;
+		bool valid = entry && entry->reqhonorpoints == 0 &&
+			entry->reqarenapoints == 0 && entry->reqarenaslot == 0 &&
+			entry->reqpersonalarenarating == 0 &&
+			entry->reqitem[0] == _resources.SealItemEntry &&
+			entry->reqitemcount[0] == _config.SealStoreTierCost[index];
+		for (std::size_t requirement = 1;
+			valid && requirement < MAX_ITEM_EXTENDED_COST_REQUIREMENTS;
+			++requirement)
+			valid = entry->reqitem[requirement] == 0 &&
+				entry->reqitemcount[requirement] == 0;
+		if (!valid) {
+			_resources.SealStoreReady = false;
+			_resources.SealStoreReason = symbol + ": " +
+				(resourceReason.empty()
+					? "managed extended cost is missing or does not match the configured Seal price"
+					: resourceReason);
+			LOG_ERROR("module.native_hunts",
+				"Native Huntmaster merchant disabled while Hunts remain active: {}",
+				_resources.SealStoreReason);
+			break;
+		}
+		_resources.SealStoreExtendedCosts[index] = extendedCost;
 	}
 	for (auto const &[symbol, entry] : _resources.CreatureEntries)
 		if (!sObjectMgr->GetCreatureTemplate(entry)) {

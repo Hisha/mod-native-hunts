@@ -5,6 +5,8 @@ local assembly, hasSnapshot, timeoutGroup = nil, false, nil;
 local lastRequestAt = -100;
 local initialized, initializationError = false, nil;
 local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
+local vendorDropdown, vendorDropdownLabel = nil, nil;
+local vendorStateActive, vendorSelectedSpec, vendorRevision = false, 1, 0;
 
 local function Split(value, limit)
 	local fields, start = {}, 1;
@@ -37,6 +39,88 @@ local function Number(value, maximum)
 	local result = tonumber(value);
 	if not result or result < 0 or result > maximum then return nil; end
 	return result;
+end
+
+local function VendorTalentName(index)
+	if GetTalentTabInfo then
+		local name = GetTalentTabInfo(index, false, false);
+		if name and name ~= "" then return name; end
+	end
+	return "Specialization " .. tostring(index);
+end
+
+local function SetVendorDropdownVisible(visible)
+	if not vendorDropdown or not vendorDropdownLabel then return; end
+	if visible then vendorDropdown:Show(); vendorDropdownLabel:Show();
+	else vendorDropdown:Hide(); vendorDropdownLabel:Hide(); end
+end
+
+local function SelectVendorSpecialization(index)
+	if not vendorStateActive or index < 1 or index > 3 then return; end
+	if SendAddonMessage and UnitName("player") then
+		SendAddonMessage(PREFIX, "1\tV\t" .. tostring(index), "WHISPER", UnitName("player"));
+	end
+end
+
+local function InitializeVendorDropdown()
+	if vendorDropdown or not MerchantFrame or not CreateFrame then return; end
+	vendorDropdownLabel = MerchantFrame:CreateFontString(
+		"NativeHuntsMerchantSpecLabel", "OVERLAY", "GameFontNormalSmall");
+	vendorDropdownLabel:SetPoint("TOPLEFT", MerchantFrame, "TOPLEFT", 20, -31);
+	vendorDropdownLabel:SetText("Specialization");
+	vendorDropdown = CreateFrame("Frame", "NativeHuntsMerchantSpecDropDown",
+		MerchantFrame, "UIDropDownMenuTemplate");
+	vendorDropdown:SetPoint("TOPLEFT", MerchantFrame, "TOPLEFT", 92, -18);
+	if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(vendorDropdown, 118); end
+	if UIDropDownMenu_Initialize then
+		UIDropDownMenu_Initialize(vendorDropdown, function()
+			for index = 1, 3 do
+				local choice = index;
+				local info = UIDropDownMenu_CreateInfo();
+				info.text = VendorTalentName(choice);
+				info.value = choice;
+				info.checked = choice == vendorSelectedSpec;
+				info.func = function() SelectVendorSpecialization(choice); end;
+				UIDropDownMenu_AddButton(info);
+			end
+		end);
+	end
+	SetVendorDropdownVisible(false);
+	MerchantFrame:HookScript("OnShow", function()
+		SetVendorDropdownVisible(vendorStateActive);
+	end);
+	MerchantFrame:HookScript("OnHide", function()
+		vendorStateActive = false; vendorRevision = 0;
+		SetVendorDropdownVisible(false);
+	end);
+end
+
+local function HandleVendorState(fields)
+	if table.getn(fields) ~= 5 then return false; end
+	local specIndex = Number(fields[3], 3);
+	local revision = Number(fields[4], 4294967295);
+	local balance = Number(fields[5], 4294967295);
+	if not specIndex or specIndex < 1 or not revision or revision == 0 or
+			not balance then return true; end
+	if vendorStateActive and vendorRevision ~= 0 and revision < vendorRevision then
+		return true;
+	end
+	vendorStateActive = true; vendorSelectedSpec = specIndex;
+	vendorRevision = revision;
+	InitializeVendorDropdown();
+	if vendorDropdownLabel then
+		vendorDropdownLabel:SetText("Spec (" .. tostring(balance) .. " Seals)");
+	end
+	if vendorDropdown then
+		if UIDropDownMenu_SetSelectedID then
+			UIDropDownMenu_SetSelectedID(vendorDropdown, specIndex);
+		end
+		if UIDropDownMenu_SetText then
+			UIDropDownMenu_SetText(vendorDropdown, VendorTalentName(specIndex));
+		end
+	end
+	SetVendorDropdownVisible(MerchantFrame and MerchantFrame:IsShown());
+	return true;
 end
 
 local function NativeHuntsFrame_UpdateMicroButtonTooltip(button)
@@ -300,6 +384,7 @@ end
 local function HandleMessage(message)
 	if not message or string.len(message)>MAX_MESSAGE then return; end
 	local f=Split(message,8); if f[1]~=VERSION then return; end
+	if f[2]=="V" then HandleVendorState(f); return; end
 	local sequence, responseNonce=Number(f[3],4294967295),Number(f[4],4294967295);
 	if not sequence or sequence==0 or responseNonce==nil then return; end
 	if f[2]=="A" or f[2]=="P" then if table.getn(f)<5 then return; end AcceptRecord(sequence,responseNonce,f[2],table.concat(f,"\t",5)); return; end
@@ -378,6 +463,7 @@ function NativeHuntsFrame_OnLoad(self)
 	Tracker_Hunt_Progress:SetValue(0);
 	RenderWaiting("Retrieving Hunt information...");
 	if RegisterAddonMessagePrefix then RegisterAddonMessagePrefix(PREFIX); end
+	InitializeVendorDropdown();
 	self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("CHAT_MSG_ADDON"); self:RegisterEvent("GOSSIP_SHOW");
 	timeoutGroup=NativeHuntsFrame:CreateAnimationGroup(); local timeout=timeoutGroup:CreateAnimation("Alpha");
 	timeout:SetChange(0); timeout:SetDuration(5); timeout:SetOrder(1);

@@ -33,8 +33,13 @@
 6. Huntmaster's Seal vendor checks for all four configurable tiers, every class
    and equipment category, specialization and Heroic/PvP filtering, carried
    physical-currency validation, inventory-first delivery, exactly-once
-   deduction, binding, forged-request revalidation, one-shot confirmation, and
-   preservation of the managed Hunts currency and Elite reward paths;
+   deduction, binding, forged/stale request revalidation, replay suppression,
+   independent per-player native merchant sessions, 150-row fair catalog
+   limiting, managed extended-cost presentation, the three-tree merchant
+   dropdown, ordinary-vendor isolation, the compatibility gossip path, and
+   preservation of the managed Hunts currency and Elite reward paths; the
+   functional UI vectors also require the existing Hunt Record artwork and
+   values to survive vendor interaction;
 7. native-only source/persistence safety checks that reject legacy package,
    table, protocol, migration, world-database assignment placement, undocumented
    configuration reads, and hard-coded allocated identities, and require

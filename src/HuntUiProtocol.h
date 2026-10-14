@@ -19,8 +19,11 @@ inline constexpr std::size_t MaxFragments = 8;
 inline constexpr std::size_t MaxEncodedRecordBytes = 1024;
 
 struct SnapshotRequest { std::uint32_t Nonce = 0; };
+struct VendorSpecRequest { std::uint8_t SpecIndex = 0; };
 
 std::optional<SnapshotRequest> ParseSnapshotRequest(std::string_view payload);
+std::optional<VendorSpecRequest> ParseVendorSpecRequest(
+	std::string_view payload);
 std::string Escape(std::string_view value);
 std::vector<std::string> SerializeSnapshot(HuntSnapshot const &snapshot,
 	std::uint32_t sequence, std::uint32_t nonce);

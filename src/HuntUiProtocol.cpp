@@ -81,6 +81,29 @@ std::optional<SnapshotRequest> ParseSnapshotRequest(std::string_view payload) {
 	return SnapshotRequest{nonce};
 }
 
+std::optional<VendorSpecRequest> ParseVendorSpecRequest(
+		std::string_view payload) {
+	if (payload.size() > MaxPayloadBytes)
+		return std::nullopt;
+	std::array<std::string_view, 3> fields;
+	std::size_t start = 0;
+	for (std::size_t index = 0; index < fields.size(); ++index) {
+		std::size_t const end = payload.find('\t', start);
+		if ((end == std::string_view::npos) != (index + 1 == fields.size()))
+			return std::nullopt;
+		fields[index] = payload.substr(start, end == std::string_view::npos
+			? payload.size() - start : end - start);
+		start = end == std::string_view::npos ? payload.size() : end + 1;
+	}
+	std::uint32_t version = 0;
+	std::uint32_t specIndex = 0;
+	if (!ParseUint(fields[0], version) || version != Version ||
+		fields[1] != "V" || !ParseUint(fields[2], specIndex) ||
+		specIndex < 1 || specIndex > 3)
+		return std::nullopt;
+	return VendorSpecRequest{static_cast<std::uint8_t>(specIndex)};
+}
+
 std::string Escape(std::string_view value) {
 	std::string result;
 	result.reserve(value.size());

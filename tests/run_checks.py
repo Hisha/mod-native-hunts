@@ -782,7 +782,7 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "21-ptr3":
+    if manifest.get("version") != "22-ptr1":
         print("SKIP functional FrameForge PTR3 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
@@ -1053,7 +1053,8 @@ def run_frameforge_functional_ui_checks() -> None:
         print("SKIP direct Lua 5.1 FrameForge renderer vectors (lupa.lua51 unavailable)", flush=True)
     else:
         lua = LuaRuntime()
-        decode, render = lua.execute(ui_lua + "\nreturn Decode, Render")
+        decode, render, handle_message = lua.execute(
+            ui_lua + "\nreturn Decode, Render, HandleMessage")
         lua.execute("""
             local function AnimationGroup()
                 local animation={SetChange=function() end,SetDuration=function() end,SetOrder=function() end}
@@ -1076,6 +1077,9 @@ def run_frameforge_functional_ui_checks() -> None:
 					SetDrawLayer=function(self,value) self.drawLayer=value end,
                     IsShown=function(self) return self.visible end,
                     HookScript=function(self,event,callback) self.hooks[event]=callback end,
+                    CreateFontString=function(self,name)
+                        local child=FrameForgeTestControl(); _G[name]=child; return child
+                    end,
                     RegisterEvent=function(self,event) self.events[event]=true end,CreateAnimationGroup=function() return AnimationGroup() end}
             end
             function PanelTemplates_SetNumTabs(frame,count) frame.numTabs=count end
@@ -1089,6 +1093,16 @@ def run_frameforge_functional_ui_checks() -> None:
             function UnitName() return "Tester" end
             function SendAddonMessage() FrameForgeTestRequests=FrameForgeTestRequests+1 end
             function RegisterAddonMessagePrefix() end
+            function CreateFrame(_,name)
+                local frame=FrameForgeTestControl(); _G[name]=frame; return frame
+            end
+            function UIDropDownMenu_SetWidth(frame,width) frame.width=width end
+            function UIDropDownMenu_Initialize(frame,callback) frame.initializer=callback end
+            function UIDropDownMenu_CreateInfo() return {} end
+            function UIDropDownMenu_AddButton() end
+            function UIDropDownMenu_SetSelectedID(frame,id) frame.selectedID=id end
+            function UIDropDownMenu_SetText(frame,text) frame.text=text end
+            function GetTalentTabInfo(index) return ({"First Tree","Second Tree","Third Tree"})[index] end
             function HideUIPanel(frame)
                 frame:Hide()
                 if frame.hooks.OnHide then frame.hooks.OnHide() end
@@ -1102,8 +1116,22 @@ def run_frameforge_functional_ui_checks() -> None:
                      "LFDParentFramePortraitTexture", "LFDParentFramePortraitIcon"):
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
+        controls.MerchantFrame = controls.FrameForgeTestControl()
+        controls.MerchantFrame.visible = False
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
+        handle_message("1\tV\t2\t7\t30")
+        controls.MerchantFrame.visible = True
+        controls.MerchantFrame.hooks["OnShow"]()
+        if (not controls.NativeHuntsMerchantSpecDropDown.visible or
+                not controls.NativeHuntsMerchantSpecLabel.visible or
+                controls.NativeHuntsMerchantSpecDropDown.selectedID != 2 or
+                controls.NativeHuntsMerchantSpecDropDown.text != "Second Tree"):
+            raise AssertionError("native merchant specialization dropdown did not initialize")
+        controls.MerchantFrame.hooks["OnHide"]()
+        if (controls.NativeHuntsMerchantSpecDropDown.visible or
+                controls.NativeHuntsMerchantSpecLabel.visible):
+            raise AssertionError("native vendor controls leaked into an ordinary merchant")
         if not controls.NativeHuntsFrameInitializer.events["GOSSIP_SHOW"]:
             raise AssertionError("Native Hunts did not register for gossip panel arbitration")
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
@@ -1263,9 +1291,37 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError("Turnin state regressed")
         idle = rendered(active=False, state="I", tier="N", progress=0)
         if (not idle.Hunt_Panel_Idle__FFLayer.visible or idle.Hunt_Panel_Top__FFLayer.visible or
+                not idle.Hunt_Panel_Record__FFLayer.visible or
                 idle.Standard_Hunts_Value.text != "11" or idle.Elite_Hunts_Value.text != "3" or
                 idle.Hunt_Seal_Value.text != "7"):
             raise AssertionError("Idle state or Hunt record rendering regressed")
+        # Vendor navigation produces several consecutive GOSSIP_SHOW events
+        # (main menu, spec, tier, slot, item, confirmation). The stock panel may
+        # yield while gossip owns the screen, but the selected Hunts tab and its
+        # existing Hunt Record presentation must survive unchanged.
+        vendor_module = (ROOT / "src" / "NativeHuntsModule.cpp").read_text(
+            encoding="utf-8")
+        vendor_config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(
+            encoding="utf-8")
+        if ("Browse Huntmaster's Seal rewards." not in vendor_module or
+                "NativeHunts.SealStore.Tier1.Cost = 5" not in vendor_config):
+            raise AssertionError("Seal vendor is not enabled for the Hunt Record regression vector")
+        controls.NativeHuntsFrame_SelectTab(2)
+        for _ in range(6):
+            controls.NativeHuntsFrame_OnEvent(
+                controls.NativeHuntsFrameInitializer, "GOSSIP_SHOW")
+        controls.LFDParentFrame.visible = True
+        controls.LFDParentFrame.hooks["OnShow"]()
+        after_vendor = rendered(active=False, state="I", tier="N", progress=0)
+        if (controls.LFDParentFrame.selectedTab != 2 or
+                not controls.NativeHuntsFrame.visible or
+                not controls.FrameForge_Dungeon_Finder_UI.visible or
+                not after_vendor.Hunt_Panel_Record__FFLayer.visible or
+                after_vendor.Standard_Hunts_Value.text != "11" or
+                after_vendor.Elite_Hunts_Value.text != "3" or
+                after_vendor.Hunt_Seal_Value.text != "7"):
+            raise AssertionError(
+                "Seal vendor gossip made the existing Hunt Record unavailable")
         if decode("field%09with%25delimiter") != "field\twith%delimiter":
             raise AssertionError("Lua client decoder regression")
         for malformed in ("%", "%GG", "%00", "%1F"):
@@ -1289,7 +1345,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the PTR2 package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "21-ptr3":
+    if manifest.get("version") != "22-ptr1":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
@@ -1592,15 +1648,15 @@ def run_seal_vendor_checks() -> None:
     if purchase_body.count("DestroyItemCount(_resources.SealItemEntry, cost, true)") != 1:
         raise AssertionError("Seal purchase does not have exactly one deduction site")
 
-    gossip_contract = (
+    fallback_contract = (
         "ShowSealSpecMenu", "ShowSealTierMenu", "ShowSealSlotMenu",
         "ShowSealItemMenu", "ShowSealConfirmation", "ActionSealBuyConfirm",
         "SealStoreContexts.erase(guid);", "PendingItemId",
         "Browse Huntmaster's Seal rewards.", "GOSSIP_ICON_VENDOR",
     )
-    for token in gossip_contract:
+    for token in fallback_contract:
         if token not in module:
-            raise AssertionError(f"Seal gossip/duplicate-prevention contract missing: {token}")
+            raise AssertionError(f"Seal gossip fallback contract missing: {token}")
     consume = module.index("// Consume the one-shot server selection")
     purchase = module.index("sNativeHunts.PurchaseSealStoreItem", consume)
     if module.index("SealStoreContexts.erase(guid);", consume) > purchase:
@@ -1612,8 +1668,58 @@ def run_seal_vendor_checks() -> None:
                row.get("category", {}).get("symbol") == "hunts"
                for row in currencies):
         raise AssertionError("existing Hunts physical currency declaration regressed")
-    if manifest.get("extendedCosts"):
-        raise AssertionError("unused static extended costs were added for the dynamic gossip store")
+    native_contract = (
+        "SMSG_LIST_INVENTORY", "OnPlayerBeforeBuyItemFromVendor",
+        "HandleNativeSealVendorPurchase", "BuildNativeSealVendorRows",
+        "NativeSealVendorSessions", "NativeSealVendorLifetime",
+        "NativeSealVendorReplayWindow", "item = 0;",
+        "PurchaseSealStoreItem(player", "SMSG_BUY_ITEM",
+        "rows.size() < MAX_VENDOR_ITEMS", "tier/category round-robin",
+        "ParseVendorSpecRequest", "UNIT_NPC_FLAG_VENDOR",
+    )
+    for token in native_contract:
+        if token not in module:
+            raise AssertionError(f"native merchant integration contract missing: {token}")
+    for token in ("player->GetGUID().GetCounter()",
+                  "session->second.VendorGuid != vendorGuid",
+                  "vendorSlot >= session->second.Rows.size()",
+                  "session->second.Rows[vendorSlot].ItemId != requestedItem",
+                  "std::chrono::steady_clock::now() >= session->second.Expires",
+                  "CanStoreNewItem(NULL_BAG, NULL_SLOT"):
+        if token not in module:
+            raise AssertionError(f"native merchant isolation/revalidation missing: {token}")
+    if "if (HandleNativeSealVendorPurchase(player, vendorGuid, vendorSlot," not in module:
+        raise AssertionError("ordinary vendors are not guarded from the custom purchase path")
+    ui_lua = (ROOT / "content" / "client" / "Interface" / "FrameXML" /
+              "NativeHuntsFrame.lua").read_text(encoding="utf-8")
+    for token in ("NativeHuntsMerchantSpecDropDown", "GetTalentTabInfo",
+                  'SendAddonMessage(PREFIX, "1\\tV\\t"',
+                  'if f[2]=="V" then HandleVendorState(f)',
+                  'MerchantFrame:HookScript("OnHide"'):
+        if token not in ui_lua:
+            raise AssertionError(f"native merchant client contract missing: {token}")
+    for forbidden in ("ActivateSpec", "LearnTalent", "SetActiveTalentGroup"):
+        if forbidden in module + ui_lua:
+            raise AssertionError("shopping specialization mutates character talents")
+    costs = manifest.get("extendedCosts", [])
+    if len(costs) != 4:
+        raise AssertionError("four managed Seal tier extended costs are required")
+    for tier, cost, _, _ in expected_tiers:
+        row = next((entry for entry in costs
+                    if entry.get("symbol") == f"seal-cost-tier-{tier}"), None)
+        requirements = row.get("requirements", []) if row else []
+        if requirements != [{"item": {"symbol": "huntmaster-seal"}, "count": cost}]:
+            raise AssertionError(f"managed extended cost for tier {tier} is incorrect")
+    huntmasters = [entry for entry in manifest.get("creatureTemplates", [])
+                   if entry.get("symbol", "").startswith("huntmaster-")]
+    if len(huntmasters) != 10 or any(
+            entry.get("overrides", {}).get("npcFlags") != 129
+            for entry in huntmasters):
+        raise AssertionError("all existing Huntmasters must retain gossip and gain vendor flags")
+    for token in ('"item-extended-cost.id"', "SealStoreExtendedCosts",
+                  "ExtendedCostMatchesConfiguredPrice"):
+        if token not in manager + header + module:
+            raise AssertionError(f"managed extended-cost resolution missing: {token}")
     if "SelectDeliverableReward" in manager:
         raise AssertionError("Elite reward selection behavior regressed")
     print("PASS Huntmaster Seal vendor parity and transaction contracts", flush=True)

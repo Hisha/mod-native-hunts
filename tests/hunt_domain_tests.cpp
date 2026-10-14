@@ -343,6 +343,13 @@ void TestUiProtocol() {
 	for (auto const malformed : {"", "1\tQ", "1\tQ\t0", "1\tX\t1",
 			"2\tQ\t1", "1\tQ\t1\textra", "1\tQ\t-1"})
 		Check(!ui::ParseSnapshotRequest(malformed), "malformed/unsupported request ignored");
+	auto vendorSpec = ui::ParseVendorSpecRequest("1\tV\t3");
+	Check(vendorSpec && vendorSpec->SpecIndex == 3,
+		"valid native vendor specialization request");
+	for (auto const malformed : {"", "1\tV", "1\tV\t0", "1\tV\t4",
+			"1\tQ\t1", "2\tV\t1", "1\tV\t1\textra", "1\tV\t-1"})
+		Check(!ui::ParseVendorSpecRequest(malformed),
+			"malformed native vendor specialization ignored");
 	Check(ui::RequestAllowed(0, 10) && !ui::RequestAllowed(10, 1009) &&
 		ui::RequestAllowed(10, 1010), "request rate limit boundary");
 	struct CodecVector { std::string Plain; std::string Encoded; };

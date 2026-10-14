@@ -82,11 +82,14 @@ struct NativeHuntsConfig {
 struct ManagedResources {
 	bool Ready = false;
 	std::string Reason;
+	bool SealStoreReady = false;
+	std::string SealStoreReason;
 	std::unordered_map<std::string, std::uint32_t> CreatureEntries;
 	std::unordered_map<std::string, std::uint32_t> CreatureSpawns;
 	std::uint32_t TrailCrystalEntry = 0;
 	std::uint32_t ReturnRiftEntry = 0;
 	std::uint32_t SealItemEntry = 0;
+	std::array<std::uint32_t, 4> SealStoreExtendedCosts{};
 	std::uint32_t StandardHuntAuraSpell = 0;
 	std::uint32_t EliteHuntAuraSpell = 0;
 };
@@ -162,10 +165,13 @@ public:
 	bool IsEliteUnlocked(Player const *player) const;
 	bool IsEliteAvailableToday(Player const *player) const;
 	bool IsSealStoreAvailable(Player const *player) const;
+	bool AreSealStoreExtendedCostsReady() const;
 	std::uint32_t GetSealBalance(Player const *player) const;
 	std::uint32_t GetSealStoreTierCost(std::uint8_t tier) const;
 	std::uint32_t GetSealStoreTierMinItemLevel(std::uint8_t tier) const;
 	std::uint32_t GetSealStoreTierMaxItemLevel(std::uint8_t tier) const;
+	std::uint32_t GetSealStoreExtendedCost(std::uint8_t tier) const;
+	std::string const &GetSealStoreUnavailableReason() const;
 	std::vector<SealStoreItem> BuildSealStoreItems(Player *player,
 		std::uint32_t spec, std::uint8_t tier, SealStoreSlot slot) const;
 	bool PurchaseSealStoreItem(Player *player, std::uint32_t spec,

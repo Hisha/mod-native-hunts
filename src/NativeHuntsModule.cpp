@@ -1,20 +1,28 @@
 #include "NativeHuntsManager.h"
+#include "HuntUiProtocol.h"
 
 #include "Chat.h"
 #include "CommandScript.h"
 #include "Config.h"
 #include "Creature.h"
+#include "DBCStores.h"
 #include "GameObject.h"
+#include "Item.h"
+#include "Log.h"
 #include "ObjectMgr.h"
+#include "Opcodes.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "SpellAuras.h"
+#include "WorldPacket.h"
+#include "WorldSession.h"
 
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <sstream>
@@ -62,6 +70,38 @@ struct SealStoreContext {
 
 std::unordered_map<std::uint32_t, SealStoreContext> SealStoreContexts;
 
+struct NativeSealVendorRow {
+	std::uint32_t ItemId = 0;
+	std::uint8_t Tier = 0;
+	native_hunts::SealStoreSlot Slot = native_hunts::SealStoreSlot::Weapon;
+	std::uint32_t ExtendedCost = 0;
+};
+
+struct NativeSealVendorSession {
+	ObjectGuid VendorGuid;
+	std::uint32_t Spec = 0;
+	std::uint8_t SpecIndex = 0;
+	std::uint32_t Revision = 0;
+	std::vector<NativeSealVendorRow> Rows;
+	std::chrono::steady_clock::time_point Expires;
+};
+
+struct NativeSealVendorPurchaseGuard {
+	ObjectGuid VendorGuid;
+	std::uint32_t ItemId = 0;
+	std::uint32_t VendorSlot = 0;
+	std::chrono::steady_clock::time_point Expires;
+};
+
+std::unordered_map<std::uint32_t, NativeSealVendorSession>
+	NativeSealVendorSessions;
+std::unordered_map<std::uint32_t, NativeSealVendorPurchaseGuard>
+	NativeSealVendorPurchaseGuards;
+std::uint32_t NativeSealVendorRevision = 0;
+
+constexpr std::chrono::minutes NativeSealVendorLifetime{5};
+constexpr std::chrono::milliseconds NativeSealVendorReplayWindow{1000};
+
 std::vector<SealSpecChoice> GetSealSpecs(Player const *player) {
 	if (!player)
 		return {};
@@ -99,6 +139,298 @@ char const *GetSealSlotName(native_hunts::SealStoreSlot slot) {
 	case native_hunts::SealStoreSlot::Relic: return "Ranged / Relics";
 	}
 	return "Equipment";
+}
+
+bool ExtendedCostMatchesConfiguredPrice(std::uint8_t tier,
+		std::uint32_t extendedCost) {
+	if (!extendedCost)
+		return false;
+	ItemExtendedCostEntry const *entry =
+		sItemExtendedCostStore.LookupEntry(extendedCost);
+	auto const &resources = sNativeHunts.Resources();
+	if (!entry || !resources.SealItemEntry || entry->reqhonorpoints ||
+		entry->reqarenapoints || entry->reqarenaslot ||
+		entry->reqpersonalarenarating ||
+		entry->reqitem[0] != resources.SealItemEntry ||
+		entry->reqitemcount[0] != sNativeHunts.GetSealStoreTierCost(tier))
+		return false;
+	for (std::size_t index = 1;
+			index < MAX_ITEM_EXTENDED_COST_REQUIREMENTS; ++index)
+		if (entry->reqitem[index] || entry->reqitemcount[index])
+			return false;
+	return true;
+}
+
+std::vector<NativeSealVendorRow> BuildNativeSealVendorRows(Player *player,
+		std::uint32_t spec) {
+	struct Group {
+		std::uint8_t Tier = 0;
+		native_hunts::SealStoreSlot Slot = native_hunts::SealStoreSlot::Weapon;
+		std::uint32_t ExtendedCost = 0;
+		std::vector<native_hunts::SealStoreItem> Items;
+	};
+	std::vector<Group> groups;
+	std::size_t eligibleCount = 0;
+	for (std::uint8_t tier = 1; tier <= 4; ++tier) {
+		if (!sNativeHunts.GetSealStoreTierCost(tier))
+			continue;
+		std::uint32_t const extendedCost =
+			sNativeHunts.GetSealStoreExtendedCost(tier);
+		if (!ExtendedCostMatchesConfiguredPrice(tier, extendedCost))
+			return {};
+		for (std::uint8_t raw = static_cast<std::uint8_t>(
+				native_hunts::SealStoreSlot::Weapon);
+			raw <= static_cast<std::uint8_t>(native_hunts::SealStoreSlot::Relic);
+			++raw) {
+			auto const slot = static_cast<native_hunts::SealStoreSlot>(raw);
+			auto items = sNativeHunts.BuildSealStoreItems(player, spec, tier, slot);
+			if (items.empty())
+				continue;
+			eligibleCount += items.size();
+			groups.push_back({tier, slot, extendedCost, std::move(items)});
+		}
+	}
+
+	std::vector<NativeSealVendorRow> rows;
+	rows.reserve(std::min<std::size_t>(eligibleCount, MAX_VENDOR_ITEMS));
+	// Rank-round-robin guarantees every nonempty tier/category group one row
+	// before adding its next-best item. No group is silently lost to the native
+	// 150-row protocol limit.
+	for (std::size_t rank = 0; rows.size() < MAX_VENDOR_ITEMS; ++rank) {
+		bool found = false;
+		for (auto const &group : groups) {
+			if (rank >= group.Items.size())
+				continue;
+			found = true;
+			auto const &candidate = group.Items[rank];
+			rows.push_back({candidate.ItemId, group.Tier, group.Slot,
+				group.ExtendedCost});
+			if (rows.size() >= MAX_VENDOR_ITEMS)
+				break;
+		}
+		if (!found)
+			break;
+	}
+	if (eligibleCount > rows.size())
+		LOG_WARN("module.native_hunts",
+			"Native Huntmaster catalog for player {} contains {} ranked rows; "
+			"the merchant packet exposed {} rows using tier/category round-robin",
+			player->GetGUID().GetCounter(), eligibleCount, rows.size());
+	return rows;
+}
+
+void SendNativeSealVendorState(Player *player,
+		NativeSealVendorSession const &session) {
+	std::string const payload = std::string(native_hunts::ui::Prefix) +
+		"\t1\tV\t" + std::to_string(session.SpecIndex) + "\t" +
+		std::to_string(session.Revision) + "\t" +
+		std::to_string(sNativeHunts.GetSealBalance(player));
+	player->Whisper(payload, LANG_ADDON, player);
+}
+
+bool SendNativeSealVendorInventory(Player *player, Creature *vendor,
+		NativeSealVendorSession const &session) {
+	if (!player || !vendor || session.Rows.empty() ||
+		session.Rows.size() > MAX_VENDOR_ITEMS)
+		return false;
+	vendor->PauseMovementForInteraction();
+	player->GetSession()->SetCurrentVendor(0);
+	WorldPacket packet(SMSG_LIST_INVENTORY,
+		8 + 1 + session.Rows.size() * 8 * 4);
+	packet << vendor->GetGUID();
+	packet << static_cast<std::uint8_t>(session.Rows.size());
+	for (std::size_t index = 0; index < session.Rows.size(); ++index) {
+		auto const &row = session.Rows[index];
+		ItemTemplate const *item = sObjectMgr->GetItemTemplate(row.ItemId);
+		if (!item)
+			return false;
+		packet << static_cast<std::uint32_t>(index + 1);
+		packet << row.ItemId;
+		packet << item->DisplayInfoID;
+		packet << static_cast<std::int32_t>(-1);
+		packet << static_cast<std::uint32_t>(0);
+		packet << item->MaxDurability;
+		packet << static_cast<std::uint32_t>(1);
+		packet << row.ExtendedCost;
+	}
+	player->GetSession()->SendPacket(&packet);
+	return true;
+}
+
+bool OpenNativeSealVendor(Player *player, Creature *creature,
+		std::uint8_t specIndex, std::string &message) {
+	if (!player || !creature || !sNativeHunts.IsSealStoreAvailable(player) ||
+		!sNativeHunts.AreSealStoreExtendedCostsReady()) {
+		message = sNativeHunts.GetSealStoreUnavailableReason();
+		if (message.empty())
+			message = "The native Huntmaster merchant is unavailable.";
+		return false;
+	}
+	Creature *vendor = player->GetNPCIfCanInteractWith(creature->GetGUID(),
+		UNIT_NPC_FLAG_VENDOR);
+	if (!vendor || !sNativeHunts.IsHuntmaster(vendor)) {
+		message = "That Huntmaster cannot open a merchant window right now.";
+		return false;
+	}
+	auto const specs = GetSealSpecs(player);
+	if (specIndex < 1 || specIndex > specs.size()) {
+		message = "That shopping specialization is invalid for your class.";
+		return false;
+	}
+	NativeSealVendorSession session;
+	session.VendorGuid = vendor->GetGUID();
+	session.SpecIndex = specIndex;
+	session.Spec = specs[specIndex - 1].Spec;
+	session.Revision = ++NativeSealVendorRevision;
+	if (!session.Revision)
+		session.Revision = ++NativeSealVendorRevision;
+	session.Rows = BuildNativeSealVendorRows(player, session.Spec);
+	session.Expires = std::chrono::steady_clock::now() +
+		NativeSealVendorLifetime;
+	if (session.Rows.empty()) {
+		message = "No eligible equipment is available for that specialization.";
+		return false;
+	}
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	NativeSealVendorSessions[guid] = std::move(session);
+	auto const &stored = NativeSealVendorSessions.at(guid);
+	SendNativeSealVendorState(player, stored);
+	if (!SendNativeSealVendorInventory(player, vendor, stored)) {
+		NativeSealVendorSessions.erase(guid);
+		message = "The Huntmaster merchant inventory could not be generated.";
+		return false;
+	}
+	message.clear();
+	return true;
+}
+
+std::uint8_t DefaultNativeSealVendorSpec(Player *player) {
+	auto const specs = GetSealSpecs(player);
+	std::uint32_t const active = player ? player->GetSpec() : 0;
+	for (std::size_t index = 0; index < specs.size(); ++index)
+		if (specs[index].Spec == active)
+			return static_cast<std::uint8_t>(index + 1);
+	return specs.empty() ? 0 : 1;
+}
+
+bool HandleNativeSealVendorSpec(Player *player, std::uint8_t specIndex) {
+	if (!player)
+		return false;
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	auto session = NativeSealVendorSessions.find(guid);
+	if (session == NativeSealVendorSessions.end())
+		return false;
+	if (std::chrono::steady_clock::now() >= session->second.Expires) {
+		NativeSealVendorSessions.erase(session);
+		return true;
+	}
+	Creature *vendor = player->GetNPCIfCanInteractWith(
+		session->second.VendorGuid, UNIT_NPC_FLAG_VENDOR);
+	std::string message;
+	if (!vendor || !sNativeHunts.IsHuntmaster(vendor) ||
+		!OpenNativeSealVendor(player, vendor, specIndex, message)) {
+		NativeSealVendorSessions.erase(guid);
+		if (!message.empty())
+			ChatHandler(player->GetSession()).PSendSysMessage(
+				"|cff33ccff[Native Hunts]|r {}", message);
+	}
+	return true;
+}
+
+void SendNativeSealVendorBuySuccess(Player *player,
+		NativeSealVendorSession const &session, std::uint32_t vendorSlot) {
+	WorldPacket packet(SMSG_BUY_ITEM, 8 + 4 + 4 + 4);
+	packet << session.VendorGuid;
+	packet << static_cast<std::uint32_t>(vendorSlot + 1);
+	packet << static_cast<std::int32_t>(-1);
+	packet << static_cast<std::uint32_t>(1);
+	player->SendDirectMessage(&packet);
+}
+
+bool HandleNativeSealVendorPurchase(Player *player, ObjectGuid vendorGuid,
+		std::uint32_t vendorSlot, std::uint32_t requestedItem,
+		std::uint8_t count) {
+	if (!player)
+		return false;
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	auto session = NativeSealVendorSessions.find(guid);
+	Creature *vendor = player->GetNPCIfCanInteractWith(vendorGuid,
+		UNIT_NPC_FLAG_VENDOR);
+	bool const nativeHuntmaster = vendor && sNativeHunts.IsHuntmaster(vendor);
+	if (session == NativeSealVendorSessions.end()) {
+		if (nativeHuntmaster)
+			player->SendBuyError(BUY_ERR_ITEM_ALREADY_SOLD, vendor,
+				requestedItem, 0);
+		return nativeHuntmaster;
+	}
+	if (session->second.VendorGuid != vendorGuid) {
+		if (nativeHuntmaster) {
+			NativeSealVendorSessions.erase(session);
+			player->SendBuyError(BUY_ERR_ITEM_ALREADY_SOLD, vendor,
+				requestedItem, 0);
+			return true;
+		}
+		return false;
+	}
+	if (!nativeHuntmaster ||
+		std::chrono::steady_clock::now() >= session->second.Expires) {
+		NativeSealVendorSessions.erase(session);
+		player->SendBuyError(BUY_ERR_DISTANCE_TOO_FAR, vendor, requestedItem, 0);
+		return true;
+	}
+	if (count != 1 || vendorSlot >= session->second.Rows.size() ||
+		session->second.Rows[vendorSlot].ItemId != requestedItem) {
+		player->SendBuyError(BUY_ERR_CANT_FIND_ITEM, vendor, requestedItem, 0);
+		return true;
+	}
+	auto guard = NativeSealVendorPurchaseGuards.find(guid);
+	if (guard != NativeSealVendorPurchaseGuards.end() &&
+		std::chrono::steady_clock::now() < guard->second.Expires &&
+		guard->second.VendorGuid == vendorGuid &&
+		guard->second.ItemId == requestedItem &&
+		guard->second.VendorSlot == vendorSlot) {
+		player->SendBuyError(BUY_ERR_ITEM_ALREADY_SOLD, vendor,
+			requestedItem, 0);
+		return true;
+	}
+	auto const purchaseSession = session->second;
+	auto const row = purchaseSession.Rows[vendorSlot];
+	std::uint32_t const cost = sNativeHunts.GetSealStoreTierCost(row.Tier);
+	if (!ExtendedCostMatchesConfiguredPrice(row.Tier, row.ExtendedCost)) {
+		NativeSealVendorSessions.erase(session);
+		player->SendBuyError(BUY_ERR_CANT_FIND_ITEM, vendor, requestedItem, 0);
+		return true;
+	}
+	if (sNativeHunts.GetSealBalance(player) < cost) {
+		player->SendEquipError(EQUIP_ERR_VENDOR_MISSING_TURNINS, nullptr,
+			nullptr, requestedItem);
+		return true;
+	}
+	ItemPosCountVec destination;
+	InventoryResult const storage = player->CanStoreNewItem(NULL_BAG, NULL_SLOT,
+		destination, requestedItem, 1);
+	if (storage != EQUIP_ERR_OK) {
+		player->SendEquipError(storage, nullptr, nullptr, requestedItem);
+		return true;
+	}
+	std::string message;
+	bool const purchased = sNativeHunts.PurchaseSealStoreItem(player,
+		purchaseSession.Spec, row.Tier, requestedItem, message);
+	if (!purchased) {
+		player->SendBuyError(BUY_ERR_CANT_FIND_ITEM, vendor, requestedItem, 0);
+	} else {
+		NativeSealVendorPurchaseGuards[guid] = {vendorGuid, requestedItem,
+			vendorSlot, std::chrono::steady_clock::now() +
+				NativeSealVendorReplayWindow};
+		SendNativeSealVendorBuySuccess(player, purchaseSession, vendorSlot);
+		std::string refreshMessage;
+		OpenNativeSealVendor(player, vendor, purchaseSession.SpecIndex,
+			refreshMessage);
+	}
+	if (!message.empty())
+		ChatHandler(player->GetSession()).PSendSysMessage(
+			"|cff33ccff[Native Hunts]|r {}", message);
+	return true;
 }
 
 std::string StateText(native_hunts::HuntRuntime const &runtime) {
@@ -229,6 +561,7 @@ public:
 			return true;
 		}
 		SealStoreContexts.erase(player->GetGUID().GetCounter());
+		NativeSealVendorSessions.erase(player->GetGUID().GetCounter());
 		ShowMenu(player, creature);
 		return true;
 	}
@@ -244,12 +577,29 @@ public:
 		}
 		if (sender != GOSSIP_SENDER_MAIN) {
 			SealStoreContexts.erase(player->GetGUID().GetCounter());
+			NativeSealVendorSessions.erase(player->GetGUID().GetCounter());
 			CloseGossipMenuFor(player);
 			return true;
 		}
 		std::uint32_t const guid = player->GetGUID().GetCounter();
 		if (action == ActionSealStore) {
+			SealStoreContexts.erase(guid);
+			NativeSealVendorSessions.erase(guid);
+			std::string message;
+			std::uint8_t const defaultSpec =
+				DefaultNativeSealVendorSpec(player);
+			if (defaultSpec && OpenNativeSealVendor(player, creature,
+					defaultSpec, message)) {
+				CloseGossipMenuFor(player);
+				return true;
+			}
+			// Preserve the existing gossip store as a compatibility fallback when
+			// native merchant resources or interaction are unavailable.
 			SealStoreContexts[guid] = {};
+			if (!message.empty())
+				ChatHandler(player->GetSession()).PSendSysMessage(
+					"|cff33ccff[Native Hunts]|r {} Using the compatibility store.",
+					message);
 			ShowSealSpecMenu(player, creature);
 			return true;
 		}
@@ -505,9 +855,30 @@ public:
 		static std::string const prefix = "NHUNTS\t";
 		if (message.compare(0, prefix.size(), prefix) != 0)
 			return;
-		sNativeHunts.HandleUiAddonMessage(player,
-			message.substr(prefix.size()));
+		std::string const payload = message.substr(prefix.size());
+		if (auto const request = native_hunts::ui::ParseVendorSpecRequest(payload))
+			HandleNativeSealVendorSpec(player, request->SpecIndex);
+		else
+			sNativeHunts.HandleUiAddonMessage(player, payload);
 		message.clear();
+	}
+	void OnPlayerSendListInventory(Player *player, ObjectGuid vendorGuid,
+			std::uint32_t & /*vendorEntry*/) override {
+		if (!player)
+			return;
+		auto session = NativeSealVendorSessions.find(
+			player->GetGUID().GetCounter());
+		if (session != NativeSealVendorSessions.end() &&
+			session->second.VendorGuid != vendorGuid)
+			NativeSealVendorSessions.erase(session);
+	}
+	void OnPlayerBeforeBuyItemFromVendor(Player *player, ObjectGuid vendorGuid,
+			std::uint32_t vendorSlot, std::uint32_t &item,
+			std::uint8_t count, std::uint8_t /*bag*/,
+			std::uint8_t /*slot*/) override {
+		if (HandleNativeSealVendorPurchase(player, vendorGuid, vendorSlot,
+				item, count))
+			item = 0;
 	}
 	void OnPlayerLogin(Player *player) override {
 		sNativeHunts.OnLogin(player);
@@ -519,8 +890,11 @@ public:
 		sNativeHunts.OnCreatureKill(owner, killed);
 	}
 	void OnPlayerBeforeLogout(Player *player) override {
-		if (player)
+		if (player) {
 			SealStoreContexts.erase(player->GetGUID().GetCounter());
+			NativeSealVendorSessions.erase(player->GetGUID().GetCounter());
+			NativeSealVendorPurchaseGuards.erase(player->GetGUID().GetCounter());
+		}
 		sNativeHunts.OnLogout(player);
 	}
 };
