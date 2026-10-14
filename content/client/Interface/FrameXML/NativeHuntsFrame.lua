@@ -6,7 +6,7 @@ local lastRequestAt = -100;
 local initialized, initializationError = false, nil;
 local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
 local vendorDropdown, vendorDropdownLabel, vendorCurrencyFrame, vendorCurrencyItem = nil, nil, nil, nil;
-local vendorStateActive, vendorStatePendingShow = false, false;
+local vendorStateActive = false;
 local vendorSelectedSpec, vendorRevision, vendorSealBalance = 1, 0, 0;
 
 local function Split(value, limit)
@@ -61,8 +61,23 @@ local function SetVendorDropdownVisible(visible)
 	end
 end
 
+local function VendorDiagnostic(stage)
+	if not NATIVE_HUNTS_VENDOR_DIAGNOSTICS or not DEFAULT_CHAT_FRAME then return; end
+	local merchantShown = MerchantFrame and MerchantFrame:IsShown() and "1" or "0";
+	local dropdownShown = vendorDropdown and vendorDropdown:IsShown() and "1" or "0";
+	local currencyShown = vendorCurrencyFrame and vendorCurrencyFrame:IsShown() and "1" or "0";
+	local itemShown = vendorCurrencyItem and vendorCurrencyItem:IsShown() and "1" or "0";
+	DEFAULT_CHAT_FRAME:AddMessage("|cff33ccff[Native Hunts Vendor]|r " .. stage ..
+		" active=" .. (vendorStateActive and "1" or "0") ..
+		" merchant=" .. merchantShown .. " dropdown=" .. dropdownShown ..
+		" currency=" .. currencyShown .. " item=" .. itemShown ..
+		" spec=" .. tostring(vendorSelectedSpec) ..
+		" revision=" .. tostring(vendorRevision) ..
+		" balance=" .. tostring(vendorSealBalance));
+end
+
 local function ResetVendorState()
-	vendorStateActive = false; vendorStatePendingShow = false;
+	vendorStateActive = false;
 	vendorRevision = 0; vendorSealBalance = 0;
 	SetVendorDropdownVisible(false);
 end
@@ -92,6 +107,10 @@ local function UpdateVendorCurrency()
 		if vendorCurrencyItem.SetNormalTexture then vendorCurrencyItem:SetNormalTexture(texture); end
 		if vendorCurrencyItem.SetText then vendorCurrencyItem:SetText(tostring(vendorSealBalance)); end
 	end
+	-- SmallAlterateCurrencyFrameTemplate declares Item1 hidden, and Blizzard's
+	-- AltCurrencyFrame_Update only changes its texture/text/width.  Stock
+	-- MerchantFrame explicitly shows the item after updating it; do the same.
+	vendorCurrencyItem:Show();
 end
 
 local function SelectVendorSpecialization(index)
@@ -147,12 +166,14 @@ local function InitializeVendorDropdown()
 	MerchantFrame:HookScript("OnShow", function()
 		UpdateVendorCurrency();
 		SetVendorDropdownVisible(vendorStateActive);
+		VendorDiagnostic("MerchantFrame OnShow");
 	end);
 	MerchantFrame:HookScript("OnHide", function()
 		-- ShowUIPanel can transiently hide MerchantFrame while a replacement
 		-- SMSG_LIST_INVENTORY is applied.  MERCHANT_CLOSED, not OnHide, is the
 		-- authoritative end of the merchant session.
 		SetVendorDropdownVisible(false);
+		VendorDiagnostic("MerchantFrame OnHide");
 	end);
 end
 
@@ -166,7 +187,7 @@ local function HandleVendorState(fields)
 	if vendorStateActive and vendorRevision ~= 0 and revision < vendorRevision then
 		return true;
 	end
-	vendorStateActive = true; vendorStatePendingShow = true;
+	vendorStateActive = true;
 	vendorSelectedSpec = specIndex; vendorRevision = revision;
 	vendorSealBalance = balance;
 	InitializeVendorDropdown();
@@ -183,6 +204,7 @@ local function HandleVendorState(fields)
 	end
 	UpdateVendorCurrency();
 	SetVendorDropdownVisible(MerchantFrame and MerchantFrame:IsShown());
+	VendorDiagnostic("NHUNTS vendor state");
 	return true;
 end
 
@@ -555,22 +577,22 @@ end
 function NativeHuntsFrame_OnEvent(self,event,...)
 	if not initialized then return; end
 	if event=="PLAYER_ENTERING_WORLD" then RequestSnapshot(); return; end
-	if event=="MERCHANT_CLOSED" then ResetVendorState(); return; end
+	if event=="MERCHANT_CLOSED" then
+		VendorDiagnostic("MERCHANT_CLOSED");
+		ResetVendorState();
+		return;
+	end
 	if event=="MERCHANT_SHOW" then
-		-- Native vendor state is sent immediately before its inventory.  A show
-		-- without that state belongs to an ordinary merchant and must not inherit
-		-- Native Hunts controls from a prior session.
-		if vendorStatePendingShow then vendorStatePendingShow=false;
-		elseif vendorStateActive then ResetVendorState(); end
+		-- MERCHANT_SHOW may follow MERCHANT_UPDATE more than once while the same
+		-- Huntmaster inventory is replaced.  It is not a session terminator.
 		UpdateVendorCurrency();
 		SetVendorDropdownVisible(vendorStateActive and MerchantFrame and MerchantFrame:IsShown());
+		VendorDiagnostic("MERCHANT_SHOW");
 		return;
 	end
 	if event=="MERCHANT_UPDATE" then
-		if vendorStateActive then
-			vendorStatePendingShow=false;
-			UpdateVendorCurrency();
-		end
+		if vendorStateActive then UpdateVendorCurrency(); end
+		VendorDiagnostic("MERCHANT_UPDATE");
 		return;
 	end
 	if event=="GOSSIP_SHOW" then

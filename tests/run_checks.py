@@ -782,7 +782,7 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr2":
+    if manifest.get("version") != "22-ptr3":
         print("SKIP functional FrameForge PTR3 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
@@ -1116,7 +1116,7 @@ def run_frameforge_functional_ui_checks() -> None:
             function GetMerchantItemCostInfo() return 0,0,1 end
             function GetMerchantItemCostItem() return "ManagedSealTexture",5,"item:managed-seal" end
             function AltCurrencyFrame_Update(name,texture,value)
-                local button=_G[name]; button.texture=texture; button.text=tostring(value); button.visible=true
+                local button=_G[name]; button.texture=texture; button.text=tostring(value)
             end
             function HideUIPanel(frame)
                 frame:Hide()
@@ -1168,37 +1168,53 @@ def run_frameforge_functional_ui_checks() -> None:
 
         dropdown = controls.NativeHuntsMerchantSpecDropDown
         currency = controls.NativeHuntsMerchantSealCurrency
-        handle_message("1\tV\t3\t8\t25")
-        controls.MerchantFrame.hooks["OnHide"]()
-        controls.MerchantFrame.hooks["OnShow"]()
-        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
-        if (not dropdown.visible or dropdown.selectedID != 3 or
-                dropdown.text != "Third Tree" or
-                controls.NativeHuntsMerchantSealCurrencyItem1.text != "25"):
-            raise AssertionError("specialization refresh lost native merchant controls or balance")
-        handle_message("1\tV\t1\t9\t20")
-        controls.MerchantFrame.hooks["OnHide"]()
-        controls.MerchantFrame.hooks["OnShow"]()
-        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        refreshes = ((3, 8, 29, "Third Tree"), (2, 9, 28, "Second Tree"),
+                     (1, 10, 27, "First Tree"), (3, 11, 26, "Third Tree"),
+                     (2, 12, 25, "Second Tree"))
+        for spec, revision, balance, talent_name in refreshes:
+            handle_message(f"1\tV\t{spec}\t{revision}\t{balance}")
+            # PTR may deliver UPDATE before one or more SHOW notifications for
+            # the replacement inventory. None of them ends the vendor session.
+            controls.NativeHuntsFrame_OnEvent(
+                controls.NativeHuntsFrameInitializer, "MERCHANT_UPDATE")
+            controls.NativeHuntsFrame_OnEvent(
+                controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+            controls.NativeHuntsFrame_OnEvent(
+                controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+            controls.MerchantFrame.hooks["OnHide"]()
+            if dropdown.visible or currency.visible:
+                raise AssertionError("transient MerchantFrame hide left controls visible")
+            controls.MerchantFrame.hooks["OnShow"]()
+            if (not dropdown.visible or dropdown.selectedID != spec or
+                    dropdown.text != talent_name or not currency.visible or
+                    not controls.NativeHuntsMerchantSealCurrencyItem1.visible or
+                    controls.NativeHuntsMerchantSealCurrencyItem1.text != str(balance)):
+                raise AssertionError(
+                    "specialization refresh lost native merchant controls, selection, or balance")
         if (controls.FrameForgeCreateCounts["NativeHuntsMerchantSpecDropDown"] != 1 or
                 controls.FrameForgeCreateCounts["NativeHuntsMerchantSealCurrency"] != 1 or
-                dropdown.selectedID != 1 or dropdown.text != "First Tree" or
-                controls.NativeHuntsMerchantSealCurrencyItem1.text != "20"):
+                dropdown.selectedID != 2 or dropdown.text != "Second Tree" or
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "25"):
             raise AssertionError("consecutive specialization refreshes duplicated or desynchronized controls")
 
-        handle_message("1\tV\t1\t10\t15")
-        if controls.NativeHuntsMerchantSealCurrencyItem1.text != "15":
+        handle_message("1\tV\t2\t13\t14")
+        controls.NativeHuntsFrame_OnEvent(
+            controls.NativeHuntsFrameInitializer, "MERCHANT_UPDATE")
+        if controls.NativeHuntsMerchantSealCurrencyItem1.text != "14":
             raise AssertionError("authoritative native merchant balance did not update")
-        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
+        controls.MerchantFrame.hooks["OnHide"]()
+        controls.MerchantFrame.hooks["OnShow"]()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
         if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible):
             raise AssertionError("native vendor controls leaked into an ordinary merchant")
 
-        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
-        handle_message("1\tV\t2\t11\t14")
+        handle_message("1\tV\t3\t14\t13")
+        controls.MerchantFrame.hooks["OnShow"]()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
-        if (not dropdown.visible or dropdown.selectedID != 2 or
-                controls.NativeHuntsMerchantSealCurrencyItem1.text != "14"):
+        if (not dropdown.visible or dropdown.selectedID != 3 or
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "13"):
             raise AssertionError("closing and reopening the Huntmaster did not restore current state")
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
         if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible):
@@ -1379,6 +1395,7 @@ def run_frameforge_functional_ui_checks() -> None:
         vendor_config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(
             encoding="utf-8")
         if ("Browse Huntmaster's Seal rewards." not in vendor_module or
+                "Browse Huntmaster's Seal rewards. (" in vendor_module or
                 "NativeHunts.SealStore.Tier1.Cost = 5" not in vendor_config):
             raise AssertionError("Seal vendor is not enabled for the Hunt Record regression vector")
         controls.NativeHuntsFrame_SelectTab(2)
@@ -1420,7 +1437,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the PTR2 package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr2":
+    if manifest.get("version") != "22-ptr3":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
@@ -1721,6 +1738,11 @@ def run_seal_vendor_checks() -> None:
     for token in fallback_contract:
         if token not in module:
             raise AssertionError(f"Seal gossip fallback contract missing: {token}")
+    show_menu = module[module.index("static void ShowMenu("):
+                       module.index("static void ShowSealSpecMenu(")]
+    if ("Browse Huntmaster's Seal rewards. (" in show_menu or
+            "GetSealBalance(player)" in show_menu):
+        raise AssertionError("Huntmaster vendor navigation gossip includes a Seal balance")
     consume = module.index("// Consume the one-shot server selection")
     purchase = module.index("sNativeHunts.PurchaseSealStoreItem", consume)
     if module.index("SealStoreContexts.erase(guid);", consume) > purchase:
@@ -1780,11 +1802,18 @@ def run_seal_vendor_checks() -> None:
     ui_lua = (ROOT / "content" / "client" / "Interface" / "FrameXML" /
               "NativeHuntsFrame.lua").read_text(encoding="utf-8")
     for token in ("NativeHuntsMerchantSpecDropDown", "GetTalentTabInfo",
+                  "SmallAlterateCurrencyFrameTemplate", "vendorCurrencyItem:Show()",
                   'SendAddonMessage(PREFIX, "1\\tV\\t"',
                   'if f[2]=="V" then HandleVendorState(f)',
                   'MerchantFrame:HookScript("OnHide"'):
         if token not in ui_lua:
             raise AssertionError(f"native merchant client contract missing: {token}")
+    if "vendorStatePendingShow" in ui_lua:
+        raise AssertionError("native merchant state still relies on a single MERCHANT_SHOW handshake")
+    merchant_show = ui_lua[ui_lua.index('if event=="MERCHANT_SHOW" then'):
+                           ui_lua.index('if event=="MERCHANT_UPDATE" then')]
+    if "ResetVendorState" in merchant_show:
+        raise AssertionError("MERCHANT_SHOW still terminates the Native Hunts vendor session")
     for forbidden in ("ActivateSpec", "LearnTalent", "SetActiveTalentGroup"):
         if forbidden in module + ui_lua:
             raise AssertionError("shopping specialization mutates character talents")

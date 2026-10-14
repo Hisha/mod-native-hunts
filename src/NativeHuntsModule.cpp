@@ -718,11 +718,8 @@ private:
 				"I wish to abandon this Hunt.", GOSSIP_SENDER_MAIN, ActionAbandon);
 		}
 		if (sNativeHunts.IsSealStoreAvailable(player)) {
-			std::uint32_t const seals = sNativeHunts.GetSealBalance(player);
-			std::ostringstream label;
-			label << "Browse Huntmaster's Seal rewards. (" << seals << " Seal"
-				<< (seals == 1 ? "" : "s") << ")";
-			AddGossipItemFor(player, GOSSIP_ICON_VENDOR, label.str(),
+			AddGossipItemFor(player, GOSSIP_ICON_VENDOR,
+				"Browse Huntmaster's Seal rewards.",
 				GOSSIP_SENDER_MAIN, ActionSealStore);
 		}
 		SendGossipMenuFor(player, 1, creature->GetGUID());
