@@ -1843,7 +1843,7 @@ def run_seal_vendor_checks() -> None:
         "NativeSealVendorSessions", "NativeSealVendorLifetime",
         "NativeSealVendorReplayWindow", "item = 0;",
         "PurchaseSealStoreItem(player", "SMSG_BUY_ITEM",
-        "rows.size() < MAX_VENDOR_ITEMS", "tier/category round-robin",
+        "items.front()",
         "ParseVendorSpecRequest", "UNIT_NPC_FLAG_VENDOR",
         "SealStoreCatalogDiagnostics", "total_candidates={}",
         "role_rejected={}", "role_accepted={}", "eligible={}",
@@ -1852,6 +1852,55 @@ def run_seal_vendor_checks() -> None:
     for token in native_contract:
         if token not in module:
             raise AssertionError(f"native merchant integration contract missing: {token}")
+    catalog_start = module.index("std::vector<NativeSealVendorRow> BuildNativeSealVendorRows")
+    catalog_end = module.index("void SendNativeSealVendorState", catalog_start)
+    catalog_body = module[catalog_start:catalog_end]
+    expected_slot_order = (
+        "Head", "Shoulder", "Chest", "Hands", "Legs", "Wrist", "Waist",
+        "Feet", "Back", "Neck", "Ring", "Trinket", "Weapon", "OffHand",
+        "Relic",
+    )
+    slot_positions = [catalog_body.index(f"SealStoreSlot::{slot}")
+                      for slot in expected_slot_order]
+    if slot_positions != sorted(slot_positions) or len(set(slot_positions)) != 15:
+        raise AssertionError("native catalog does not preserve the original slot order")
+    slot_loop = catalog_body.index("for (auto const slot : slotOrder)")
+    tier_loop = catalog_body.index("for (std::uint8_t tier = 1; tier <= 4; ++tier)")
+    winner = catalog_body.index("auto const &best = items.front();")
+    append = catalog_body.index("rows.push_back({best.ItemId, tier, slot, extendedCost});")
+    if not (slot_loop < tier_loop < winner < append):
+        raise AssertionError("native catalog is not slot-first/tier-second with one ranked winner")
+    for forbidden in ("rank-round-robin", "for (std::size_t rank =", "group.Items[rank]"):
+        if forbidden in catalog_body:
+            raise AssertionError("obsolete multi-candidate catalog packing remains")
+    if ("rows.reserve(slotOrder.size() * 4);" not in catalog_body or
+            "if (items.empty())" not in catalog_body or
+            "continue;" not in catalog_body):
+        raise AssertionError("native catalog lacks its 60-row bound or empty-group skip")
+    # Functional model of the production traversal: each nonempty group emits
+    # exactly its first ranked item, retaining the group's tier cost/resource.
+    costs = {1: 5, 2: 10, 3: 20, 4: 30}
+    extended = {1: 101, 2: 102, 3: 103, 4: 104}
+    ranked = {
+        ("Head", 1): (1101, 1102),
+        ("Head", 3): (1301,),
+        ("Shoulder", 2): (2201, 2202),
+        ("Relic", 4): (15401,),
+    }
+    selected = []
+    for slot in expected_slot_order:
+        for tier in range(1, 5):
+            items = ranked.get((slot, tier), ())
+            if items:
+                selected.append((slot, tier, items[0], costs[tier], extended[tier]))
+    if selected != [
+            ("Head", 1, 1101, 5, 101),
+            ("Head", 3, 1301, 20, 103),
+            ("Shoulder", 2, 2201, 10, 102),
+            ("Relic", 4, 15401, 30, 104)]:
+        raise AssertionError("slot/tier winner selection, empty skipping, or costs regressed")
+    if len(expected_slot_order) * 4 != 60:
+        raise AssertionError("native catalog maximum is no longer 60 rows")
     for token in ("player->GetGUID().GetCounter()",
                   "session->second.VendorGuid != vendorGuid",
                   "vendorSlot >= session->second.Rows.size()",

@@ -163,61 +163,48 @@ bool ExtendedCostMatchesConfiguredPrice(std::uint8_t tier,
 
 std::vector<NativeSealVendorRow> BuildNativeSealVendorRows(Player *player,
 		std::uint32_t spec) {
-	struct Group {
-		std::uint8_t Tier = 0;
-		native_hunts::SealStoreSlot Slot = native_hunts::SealStoreSlot::Weapon;
-		std::uint32_t ExtendedCost = 0;
-		std::vector<native_hunts::SealStoreItem> Items;
-	};
-	std::vector<Group> groups;
-	std::size_t eligibleCount = 0;
-	native_hunts::SealStoreCatalogDiagnostics diagnostics;
-	for (std::uint8_t tier = 1; tier <= 4; ++tier) {
-		if (!sNativeHunts.GetSealStoreTierCost(tier))
-			continue;
-		std::uint32_t const extendedCost =
-			sNativeHunts.GetSealStoreExtendedCost(tier);
-		if (!ExtendedCostMatchesConfiguredPrice(tier, extendedCost))
-			return {};
-		for (std::uint8_t raw = static_cast<std::uint8_t>(
-				native_hunts::SealStoreSlot::Weapon);
-			raw <= static_cast<std::uint8_t>(native_hunts::SealStoreSlot::Relic);
-			++raw) {
-			auto const slot = static_cast<native_hunts::SealStoreSlot>(raw);
-			auto items = sNativeHunts.BuildSealStoreItems(player, spec, tier, slot,
-				&diagnostics);
-			if (items.empty())
-				continue;
-			eligibleCount += items.size();
-			groups.push_back({tier, slot, extendedCost, std::move(items)});
-		}
-	}
+	// Preserve the original mod-hunts graphical catalog: equipment is grouped
+	// by this explicit slot order, with the four Seal tiers adjacent inside
+	// each group. Only the highest-ranked eligible item represents a slot/tier.
+	static std::array<native_hunts::SealStoreSlot, 15> const slotOrder{{
+		native_hunts::SealStoreSlot::Head,
+		native_hunts::SealStoreSlot::Shoulder,
+		native_hunts::SealStoreSlot::Chest,
+		native_hunts::SealStoreSlot::Hands,
+		native_hunts::SealStoreSlot::Legs,
+		native_hunts::SealStoreSlot::Wrist,
+		native_hunts::SealStoreSlot::Waist,
+		native_hunts::SealStoreSlot::Feet,
+		native_hunts::SealStoreSlot::Back,
+		native_hunts::SealStoreSlot::Neck,
+		native_hunts::SealStoreSlot::Ring,
+		native_hunts::SealStoreSlot::Trinket,
+		native_hunts::SealStoreSlot::Weapon,
+		native_hunts::SealStoreSlot::OffHand,
+		native_hunts::SealStoreSlot::Relic
+	}};
 
 	std::vector<NativeSealVendorRow> rows;
-	rows.reserve(std::min<std::size_t>(eligibleCount, MAX_VENDOR_ITEMS));
-	// Rank-round-robin guarantees every nonempty tier/category group one row
-	// before adding its next-best item. No group is silently lost to the native
-	// 150-row protocol limit.
-	for (std::size_t rank = 0; rows.size() < MAX_VENDOR_ITEMS; ++rank) {
-		bool found = false;
-		for (auto const &group : groups) {
-			if (rank >= group.Items.size())
+	rows.reserve(slotOrder.size() * 4);
+	std::size_t rankedCandidateCount = 0;
+	native_hunts::SealStoreCatalogDiagnostics diagnostics;
+	for (auto const slot : slotOrder) {
+		for (std::uint8_t tier = 1; tier <= 4; ++tier) {
+			if (!sNativeHunts.GetSealStoreTierCost(tier))
 				continue;
-			found = true;
-			auto const &candidate = group.Items[rank];
-			rows.push_back({candidate.ItemId, group.Tier, group.Slot,
-				group.ExtendedCost});
-			if (rows.size() >= MAX_VENDOR_ITEMS)
-				break;
+			std::uint32_t const extendedCost =
+				sNativeHunts.GetSealStoreExtendedCost(tier);
+			if (!ExtendedCostMatchesConfiguredPrice(tier, extendedCost))
+				return {};
+			auto items = sNativeHunts.BuildSealStoreItems(player, spec, tier, slot,
+				&diagnostics);
+			rankedCandidateCount += items.size();
+			if (items.empty())
+				continue;
+			auto const &best = items.front();
+			rows.push_back({best.ItemId, tier, slot, extendedCost});
 		}
-		if (!found)
-			break;
 	}
-	if (eligibleCount > rows.size())
-		LOG_WARN("module.native_hunts",
-			"Native Huntmaster catalog for player {} contains {} ranked rows; "
-			"the merchant packet exposed {} rows using tier/category round-robin",
-			player->GetGUID().GetCounter(), eligibleCount, rows.size());
 	char const *specName = "Unknown";
 	for (auto const &choice : GetSealSpecs(player))
 		if (choice.Spec == spec) {
@@ -227,14 +214,14 @@ std::vector<NativeSealVendorRow> BuildNativeSealVendorRows(Player *player,
 	LOG_INFO("module.native_hunts",
 		"Native Huntmaster catalog audit policy=seal-catalog-policy-v1 "
 		"player={} class={} spec={} ({}) total_candidates={} "
-		"role_rejected={} role_accepted={} eligible={} ranked_rows={} "
-		"sent={} limit_reached={} truncated={}",
+		"role_rejected={} role_accepted={} eligible={} ranked_candidates={} "
+		"sent={} alternatives_omitted={} limit_reached={}",
 		player->GetGUID().GetCounter(), player->getClass(), spec, specName,
 		diagnostics.TotalCandidates, diagnostics.RejectedByRolePolicy,
 		diagnostics.AcceptedByRolePolicy,
-		diagnostics.RemainingAfterEligibility, eligibleCount, rows.size(),
-		rows.size() == MAX_VENDOR_ITEMS ? "yes" : "no",
-		eligibleCount > rows.size() ? "yes" : "no");
+		diagnostics.RemainingAfterEligibility, rankedCandidateCount, rows.size(),
+		rankedCandidateCount - rows.size(),
+		rows.size() == MAX_VENDOR_ITEMS ? "yes" : "no");
 	return rows;
 }
 
