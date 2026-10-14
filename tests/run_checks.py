@@ -782,7 +782,7 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr1":
+    if manifest.get("version") != "22-ptr2":
         print("SKIP functional FrameForge PTR3 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
@@ -1128,6 +1128,14 @@ def run_frameforge_functional_ui_checks() -> None:
                 controls.NativeHuntsMerchantSpecDropDown.selectedID != 2 or
                 controls.NativeHuntsMerchantSpecDropDown.text != "Second Tree"):
             raise AssertionError("native merchant specialization dropdown did not initialize")
+        label_point = controls.NativeHuntsMerchantSpecLabel.point
+        dropdown_point = controls.NativeHuntsMerchantSpecDropDown.point
+        if (label_point[1] != "TOPLEFT" or label_point[3] != "TOPLEFT" or
+                label_point[4] != 72 or label_point[5] != -45 or
+                dropdown_point[1] != "TOPLEFT" or dropdown_point[3] != "TOPLEFT" or
+                dropdown_point[4] != 162 or dropdown_point[5] != -32 or
+                controls.NativeHuntsMerchantSpecDropDown.width != 118):
+            raise AssertionError("native merchant specialization controls left the safe header area")
         controls.MerchantFrame.hooks["OnHide"]()
         if (controls.NativeHuntsMerchantSpecDropDown.visible or
                 controls.NativeHuntsMerchantSpecLabel.visible):
@@ -1345,7 +1353,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the PTR2 package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr1":
+    if manifest.get("version") != "22-ptr2":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
@@ -1690,6 +1698,29 @@ def run_seal_vendor_checks() -> None:
             raise AssertionError(f"native merchant isolation/revalidation missing: {token}")
     if "if (HandleNativeSealVendorPurchase(player, vendorGuid, vendorSlot," not in module:
         raise AssertionError("ordinary vendors are not guarded from the custom purchase path")
+    open_start = module.index("bool OpenNativeSealVendor(")
+    open_end = module.index("std::uint8_t DefaultNativeSealVendorSpec", open_start)
+    open_body = module[open_start:open_end]
+    refresh_start = module.index("bool HandleNativeSealVendorSpec(")
+    refresh_end = module.index("void SendNativeSealVendorBuySuccess", refresh_start)
+    refresh_body = module[refresh_start:refresh_end]
+    action_start = module.index("if (action == ActionSealStore)")
+    action_end = module.index("if (action >= ActionSealSpecBase", action_start)
+    action_body = module[action_start:action_end]
+    if ("session.Rows = BuildNativeSealVendorRows(player, session.Spec);" not in open_body or
+            "SendNativeSealVendorInventory(player, vendor, stored)" not in open_body or
+            "OpenNativeSealVendor(player, vendor, specIndex, message)" not in refresh_body):
+        raise AssertionError("initial and refreshed merchant inventories do not share resource resolution")
+    close_at = action_body.index("CloseGossipMenuFor(player);")
+    open_at = action_body.index("OpenNativeSealVendor(player, creature, defaultSpec, message)")
+    if close_at > open_at or action_body.count("CloseGossipMenuFor(player);") != 1:
+        raise AssertionError("gossip must close exactly once before the initial merchant opens")
+    inventory_start = module.index("bool SendNativeSealVendorInventory(")
+    inventory_end = module.index("bool OpenNativeSealVendor(", inventory_start)
+    inventory_body = module[inventory_start:inventory_end]
+    if ("packet << row.ExtendedCost;" not in inventory_body or
+            "ExtendedCostMatchesConfiguredPrice(tier, extendedCost)" not in module):
+        raise AssertionError("initial merchant rows can omit validated extended costs")
     ui_lua = (ROOT / "content" / "client" / "Interface" / "FrameXML" /
               "NativeHuntsFrame.lua").read_text(encoding="utf-8")
     for token in ("NativeHuntsMerchantSpecDropDown", "GetTalentTabInfo",

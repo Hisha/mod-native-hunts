@@ -588,10 +588,13 @@ public:
 			std::string message;
 			std::uint8_t const defaultSpec =
 				DefaultNativeSealVendorSpec(player);
-			if (defaultSpec && OpenNativeSealVendor(player, creature,
-					defaultSpec, message)) {
+			if (defaultSpec) {
+				// Complete gossip before SMSG_LIST_INVENTORY opens MerchantFrame.
+				// A late gossip-close packet can hide/reset the newly opened merchant
+				// and its Native Hunts state before the first extended-cost render.
 				CloseGossipMenuFor(player);
-				return true;
+				if (OpenNativeSealVendor(player, creature, defaultSpec, message))
+					return true;
 			}
 			// Preserve the existing gossip store as a compatibility fallback when
 			// native merchant resources or interaction are unavailable.

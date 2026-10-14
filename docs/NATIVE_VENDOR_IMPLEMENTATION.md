@@ -74,7 +74,7 @@ spawn, `npc_vendor` row, currency, or standalone addon was added.
 3. Place `content/mod-native-hunts.epf` in Content Manager's configured package
    discovery directory.
 4. In worldserver, run `.content scan` and confirm package
-   `mod-native-hunts` version `22-ptr1` is discovered.
+   `mod-native-hunts` version `22-ptr2` is discovered.
 5. Run `.content install mod-native-hunts` if that version is not already the
    selected package.
 6. Run `.content build`, then `.content build list`; retain the new STAGED build
