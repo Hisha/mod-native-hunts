@@ -768,9 +768,13 @@ def run_functional_ui_checks() -> None:
                 overrides.get("displayId") != display_id or
                 overrides.get("scriptName") != expected_script):
             raise AssertionError(f"{symbol} must use the clean scripted-button contract")
-    item_symbols = {row["symbol"] for row in manifest["dbcRows"]}
-    if "huntmaster-seal" not in item_symbols:
+    seal_rows = [row for row in manifest["dbcRows"]
+                 if row["symbol"] == "huntmaster-seal"]
+    if len(seal_rows) != 1:
         raise AssertionError("physical Huntmaster's Seal is not declared")
+    if seal_rows[0]["fields"].get("DisplayInfoID") != {"copyFromItem": 45978}:
+        raise AssertionError(
+            "Huntmaster's Seal must retain the original INV_Misc_Coin_17 display donor")
     serialized = json.dumps(manifest)
     for disposable in ("test-creature", "test-creature-spawn", "test-object"):
         if disposable in serialized:
