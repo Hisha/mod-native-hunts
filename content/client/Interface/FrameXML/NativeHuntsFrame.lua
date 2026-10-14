@@ -5,8 +5,9 @@ local assembly, hasSnapshot, timeoutGroup = nil, false, nil;
 local lastRequestAt = -100;
 local initialized, initializationError = false, nil;
 local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
-local vendorDropdown, vendorDropdownLabel = nil, nil;
-local vendorStateActive, vendorSelectedSpec, vendorRevision = false, 1, 0;
+local vendorDropdown, vendorDropdownLabel, vendorCurrencyFrame, vendorCurrencyItem = nil, nil, nil, nil;
+local vendorStateActive, vendorStatePendingShow = false, false;
+local vendorSelectedSpec, vendorRevision, vendorSealBalance = 1, 0, 0;
 
 local function Split(value, limit)
 	local fields, start = {}, 1;
@@ -51,8 +52,46 @@ end
 
 local function SetVendorDropdownVisible(visible)
 	if not vendorDropdown or not vendorDropdownLabel then return; end
-	if visible then vendorDropdown:Show(); vendorDropdownLabel:Show();
-	else vendorDropdown:Hide(); vendorDropdownLabel:Hide(); end
+	if visible then
+		vendorDropdown:Show(); vendorDropdownLabel:Show();
+		if vendorCurrencyFrame then vendorCurrencyFrame:Show(); end
+	else
+		vendorDropdown:Hide(); vendorDropdownLabel:Hide();
+		if vendorCurrencyFrame then vendorCurrencyFrame:Hide(); end
+	end
+end
+
+local function ResetVendorState()
+	vendorStateActive = false; vendorStatePendingShow = false;
+	vendorRevision = 0; vendorSealBalance = 0;
+	SetVendorDropdownVisible(false);
+end
+
+local function UpdateVendorCurrency()
+	if not vendorCurrencyItem then return; end
+	local texture = nil;
+	if vendorStateActive and GetMerchantNumItems and GetMerchantItemCostInfo and
+		GetMerchantItemCostItem then
+		local itemCount = GetMerchantNumItems() or 0;
+		for index = 1, itemCount do
+			local _, _, costItems = GetMerchantItemCostInfo(index);
+			for costIndex = 1, (costItems or 0) do
+				texture = GetMerchantItemCostItem(index, costIndex);
+				if texture then break; end
+			end
+			if texture then break; end
+		end
+	end
+	-- The packaged Seal artwork is only a fallback until merchant cost data is
+	-- available; the managed extended-cost row remains the currency identity.
+	texture = texture or "Interface\\NativeHunts\\hunt_icon_seal.tga";
+	if AltCurrencyFrame_Update then
+		AltCurrencyFrame_Update("NativeHuntsMerchantSealCurrencyItem1", texture,
+			vendorSealBalance);
+	else
+		if vendorCurrencyItem.SetNormalTexture then vendorCurrencyItem:SetNormalTexture(texture); end
+		if vendorCurrencyItem.SetText then vendorCurrencyItem:SetText(tostring(vendorSealBalance)); end
+	end
 end
 
 local function SelectVendorSpecialization(index)
@@ -87,12 +126,32 @@ local function InitializeVendorDropdown()
 			end
 		end);
 	end
+	vendorCurrencyFrame = CreateFrame("Frame", "NativeHuntsMerchantSealCurrency",
+		MerchantFrame, "SmallAlterateCurrencyFrameTemplate");
+	if vendorCurrencyFrame then
+		vendorCurrencyFrame:SetWidth(48);
+		vendorCurrencyFrame:ClearAllPoints();
+		if MerchantMoneyFrame then
+			vendorCurrencyFrame:SetPoint("BOTTOMRIGHT", MerchantMoneyFrame,
+				"TOPRIGHT", 0, 4);
+		else
+			vendorCurrencyFrame:SetPoint("BOTTOMRIGHT", MerchantFrame,
+				"BOTTOMRIGHT", -40, 84);
+		end
+		vendorCurrencyItem = NativeHuntsMerchantSealCurrencyItem1;
+		if vendorCurrencyItem and vendorCurrencyItem.EnableMouse then
+			vendorCurrencyItem:EnableMouse(false);
+		end
+	end
 	SetVendorDropdownVisible(false);
 	MerchantFrame:HookScript("OnShow", function()
+		UpdateVendorCurrency();
 		SetVendorDropdownVisible(vendorStateActive);
 	end);
 	MerchantFrame:HookScript("OnHide", function()
-		vendorStateActive = false; vendorRevision = 0;
+		-- ShowUIPanel can transiently hide MerchantFrame while a replacement
+		-- SMSG_LIST_INVENTORY is applied.  MERCHANT_CLOSED, not OnHide, is the
+		-- authoritative end of the merchant session.
 		SetVendorDropdownVisible(false);
 	end);
 end
@@ -107,11 +166,12 @@ local function HandleVendorState(fields)
 	if vendorStateActive and vendorRevision ~= 0 and revision < vendorRevision then
 		return true;
 	end
-	vendorStateActive = true; vendorSelectedSpec = specIndex;
-	vendorRevision = revision;
+	vendorStateActive = true; vendorStatePendingShow = true;
+	vendorSelectedSpec = specIndex; vendorRevision = revision;
+	vendorSealBalance = balance;
 	InitializeVendorDropdown();
 	if vendorDropdownLabel then
-		vendorDropdownLabel:SetText("Spec (" .. tostring(balance) .. " Seals)");
+		vendorDropdownLabel:SetText("Specialization");
 	end
 	if vendorDropdown then
 		if UIDropDownMenu_SetSelectedID then
@@ -121,6 +181,7 @@ local function HandleVendorState(fields)
 			UIDropDownMenu_SetText(vendorDropdown, VendorTalentName(specIndex));
 		end
 	end
+	UpdateVendorCurrency();
 	SetVendorDropdownVisible(MerchantFrame and MerchantFrame:IsShown());
 	return true;
 end
@@ -467,6 +528,7 @@ function NativeHuntsFrame_OnLoad(self)
 	if RegisterAddonMessagePrefix then RegisterAddonMessagePrefix(PREFIX); end
 	InitializeVendorDropdown();
 	self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("CHAT_MSG_ADDON"); self:RegisterEvent("GOSSIP_SHOW");
+	self:RegisterEvent("MERCHANT_SHOW"); self:RegisterEvent("MERCHANT_UPDATE"); self:RegisterEvent("MERCHANT_CLOSED");
 	timeoutGroup=NativeHuntsFrame:CreateAnimationGroup(); local timeout=timeoutGroup:CreateAnimation("Alpha");
 	timeout:SetChange(0); timeout:SetDuration(5); timeout:SetOrder(1);
 	timeoutGroup:SetScript("OnFinished",function()
@@ -493,6 +555,24 @@ end
 function NativeHuntsFrame_OnEvent(self,event,...)
 	if not initialized then return; end
 	if event=="PLAYER_ENTERING_WORLD" then RequestSnapshot(); return; end
+	if event=="MERCHANT_CLOSED" then ResetVendorState(); return; end
+	if event=="MERCHANT_SHOW" then
+		-- Native vendor state is sent immediately before its inventory.  A show
+		-- without that state belongs to an ordinary merchant and must not inherit
+		-- Native Hunts controls from a prior session.
+		if vendorStatePendingShow then vendorStatePendingShow=false;
+		elseif vendorStateActive then ResetVendorState(); end
+		UpdateVendorCurrency();
+		SetVendorDropdownVisible(vendorStateActive and MerchantFrame and MerchantFrame:IsShown());
+		return;
+	end
+	if event=="MERCHANT_UPDATE" then
+		if vendorStateActive then
+			vendorStatePendingShow=false;
+			UpdateVendorCurrency();
+		end
+		return;
+	end
 	if event=="GOSSIP_SHOW" then
 		-- LFDParentFrame is a special-frame panel.  The stock UI closes competing
 		-- panels when gossip opens, but our Hunts child could keep that parent's

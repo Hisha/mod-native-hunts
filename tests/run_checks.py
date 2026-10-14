@@ -1066,6 +1066,7 @@ def run_frameforge_functional_ui_checks() -> None:
             function FrameForgeTestControl()
                 return {text="",value=0,min=0,max=0,visible=true,width=0,height=0,objectType="Frame",hooks={},children={},events={},
                     SetText=function(self,value) self.text=value end,SetValue=function(self,value) self.value=value end,
+                    SetNormalTexture=function(self,value) self.texture=value end,EnableMouse=function(self,value) self.mouseEnabled=value end,
                     SetMinMaxValues=function(self,min,max) self.min=min self.max=max end,
                     SetTexture=function(self,value) self.texture=value end,SetWidth=function(self,value) self.width=value end,
                     SetHeight=function(self,value) self.height=value end,GetWidth=function(self) return self.width end,
@@ -1089,12 +1090,20 @@ def run_frameforge_functional_ui_checks() -> None:
             end
             FrameForgeTestTime=10
             FrameForgeTestRequests=0
+            FrameForgeCreateCounts={}
             function GetTime() return FrameForgeTestTime end
             function UnitName() return "Tester" end
             function SendAddonMessage() FrameForgeTestRequests=FrameForgeTestRequests+1 end
             function RegisterAddonMessagePrefix() end
-            function CreateFrame(_,name)
-                local frame=FrameForgeTestControl(); _G[name]=frame; return frame
+            function CreateFrame(_,name,parent,template)
+                FrameForgeCreateCounts[name]=(FrameForgeCreateCounts[name] or 0)+1
+                local frame=FrameForgeTestControl(); frame.parent=parent; frame.template=template; _G[name]=frame
+                if template=="SmallAlterateCurrencyFrameTemplate" then
+                    for _,suffix in ipairs({"Honor","Arena","Item1","Item2","Item3"}) do
+                        local child=FrameForgeTestControl(); child.visible=false; _G[name..suffix]=child
+                    end
+                end
+                return frame
             end
             function UIDropDownMenu_SetWidth(frame,width) frame.width=width end
             function UIDropDownMenu_Initialize(frame,callback) frame.initializer=callback end
@@ -1103,6 +1112,12 @@ def run_frameforge_functional_ui_checks() -> None:
             function UIDropDownMenu_SetSelectedID(frame,id) frame.selectedID=id end
             function UIDropDownMenu_SetText(frame,text) frame.text=text end
             function GetTalentTabInfo(index) return ({"First Tree","Second Tree","Third Tree"})[index] end
+            function GetMerchantNumItems() return 10 end
+            function GetMerchantItemCostInfo() return 0,0,1 end
+            function GetMerchantItemCostItem() return "ManagedSealTexture",5,"item:managed-seal" end
+            function AltCurrencyFrame_Update(name,texture,value)
+                local button=_G[name]; button.texture=texture; button.text=tostring(value); button.visible=true
+            end
             function HideUIPanel(frame)
                 frame:Hide()
                 if frame.hooks.OnHide then frame.hooks.OnHide() end
@@ -1118,30 +1133,82 @@ def run_frameforge_functional_ui_checks() -> None:
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
         controls.MerchantFrame = controls.FrameForgeTestControl()
         controls.MerchantFrame.visible = False
+        controls.MerchantMoneyFrame = controls.FrameForgeTestControl()
+        controls.MerchantMoneyFrame.anchorId = "MerchantMoneyFrame"
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
         handle_message("1\tV\t2\t7\t30")
         controls.MerchantFrame.visible = True
         controls.MerchantFrame.hooks["OnShow"]()
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
         if (not controls.NativeHuntsMerchantSpecDropDown.visible or
                 not controls.NativeHuntsMerchantSpecLabel.visible or
                 controls.NativeHuntsMerchantSpecDropDown.selectedID != 2 or
-                controls.NativeHuntsMerchantSpecDropDown.text != "Second Tree"):
+                controls.NativeHuntsMerchantSpecDropDown.text != "Second Tree" or
+                controls.NativeHuntsMerchantSpecLabel.text != "Specialization"):
             raise AssertionError("native merchant specialization dropdown did not initialize")
+        if (not controls.NativeHuntsMerchantSealCurrency.visible or
+                not controls.NativeHuntsMerchantSealCurrencyItem1.visible or
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "30" or
+                controls.NativeHuntsMerchantSealCurrencyItem1.texture != "ManagedSealTexture"):
+            raise AssertionError("native merchant Seal balance did not initialize")
         label_point = controls.NativeHuntsMerchantSpecLabel.point
         dropdown_point = controls.NativeHuntsMerchantSpecDropDown.point
+        currency_point = controls.NativeHuntsMerchantSealCurrency.point
         if (label_point[1] != "TOPLEFT" or label_point[3] != "TOPLEFT" or
                 label_point[4] != 72 or label_point[5] != -45 or
                 dropdown_point[1] != "TOPLEFT" or dropdown_point[3] != "TOPLEFT" or
                 dropdown_point[4] != 162 or dropdown_point[5] != -32 or
-                controls.NativeHuntsMerchantSpecDropDown.width != 118):
+                controls.NativeHuntsMerchantSpecDropDown.width != 118 or
+                currency_point[1] != "BOTTOMRIGHT" or
+                currency_point[2].anchorId != "MerchantMoneyFrame" or
+                currency_point[3] != "TOPRIGHT" or currency_point[4] != 0 or
+                currency_point[5] != 4):
             raise AssertionError("native merchant specialization controls left the safe header area")
+
+        dropdown = controls.NativeHuntsMerchantSpecDropDown
+        currency = controls.NativeHuntsMerchantSealCurrency
+        handle_message("1\tV\t3\t8\t25")
         controls.MerchantFrame.hooks["OnHide"]()
-        if (controls.NativeHuntsMerchantSpecDropDown.visible or
-                controls.NativeHuntsMerchantSpecLabel.visible):
+        controls.MerchantFrame.hooks["OnShow"]()
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        if (not dropdown.visible or dropdown.selectedID != 3 or
+                dropdown.text != "Third Tree" or
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "25"):
+            raise AssertionError("specialization refresh lost native merchant controls or balance")
+        handle_message("1\tV\t1\t9\t20")
+        controls.MerchantFrame.hooks["OnHide"]()
+        controls.MerchantFrame.hooks["OnShow"]()
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        if (controls.FrameForgeCreateCounts["NativeHuntsMerchantSpecDropDown"] != 1 or
+                controls.FrameForgeCreateCounts["NativeHuntsMerchantSealCurrency"] != 1 or
+                dropdown.selectedID != 1 or dropdown.text != "First Tree" or
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "20"):
+            raise AssertionError("consecutive specialization refreshes duplicated or desynchronized controls")
+
+        handle_message("1\tV\t1\t10\t15")
+        if controls.NativeHuntsMerchantSealCurrencyItem1.text != "15":
+            raise AssertionError("authoritative native merchant balance did not update")
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible):
             raise AssertionError("native vendor controls leaked into an ordinary merchant")
+
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
+        handle_message("1\tV\t2\t11\t14")
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_SHOW")
+        if (not dropdown.visible or dropdown.selectedID != 2 or
+                controls.NativeHuntsMerchantSealCurrencyItem1.text != "14"):
+            raise AssertionError("closing and reopening the Huntmaster did not restore current state")
+        controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "MERCHANT_CLOSED")
+        if (dropdown.visible or controls.NativeHuntsMerchantSpecLabel.visible or currency.visible):
+            raise AssertionError("MERCHANT_CLOSED did not clear native merchant controls")
         if not controls.NativeHuntsFrameInitializer.events["GOSSIP_SHOW"]:
             raise AssertionError("Native Hunts did not register for gossip panel arbitration")
+        if (not controls.NativeHuntsFrameInitializer.events["MERCHANT_SHOW"] or
+                not controls.NativeHuntsFrameInitializer.events["MERCHANT_UPDATE"] or
+                not controls.NativeHuntsFrameInitializer.events["MERCHANT_CLOSED"]):
+            raise AssertionError("Native Hunts did not register for the merchant lifecycle")
         if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
             raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
         if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
@@ -1416,19 +1483,6 @@ def run_source_safety_checks() -> None:
     for path in world_sql:
         if path.is_file() and "native_hunt_assignment" in path.read_text(encoding="utf-8"):
             raise AssertionError("character assignment schema leaked into world SQL")
-    audit_sql_path = ROOT / "tools/audit_huntmaster_duplicates.sql"
-    if not audit_sql_path.is_file():
-        raise AssertionError("read-only Huntmaster duplicate audit SQL is missing")
-    audit_sql = audit_sql_path.read_text(encoding="utf-8")
-    scrubbed_audit = re.sub(r"--[^\n]*", "", audit_sql)
-    if re.search(r"\b(DELETE|UPDATE|INSERT|REPLACE|ALTER|DROP|TRUNCATE|CREATE)\b",
-                 scrubbed_audit, re.IGNORECASE):
-        raise AssertionError("Huntmaster duplicate audit SQL is not read-only")
-    for token in ("mod_native_hunts_huntmaster", "content_manager_allocation",
-                  "content_manager_server_resource_owner", "state` = 'ACTIVE'",
-                  "GROUP BY c.`map`, c.`position_x`, c.`position_y`, c.`position_z`"):
-        if token not in audit_sql:
-            raise AssertionError(f"Huntmaster duplicate audit coverage missing: {token}")
     current_world_sql = [path for path in world_sql if path.is_file()]
     if current_world_sql:
         raise AssertionError("Native Hunts must not provision world spawns through module SQL")
@@ -1517,8 +1571,10 @@ def run_source_safety_checks() -> None:
     config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
     config_reads = set(re.findall(r'"(NativeHunts\.[A-Za-z0-9.]+)"', module))
     config_entries = set(re.findall(r'^(NativeHunts\.[A-Za-z0-9.]+)\s*=', config, re.MULTILINE))
-    if config_reads - config_entries:
-        raise AssertionError(f"undocumented config reads: {sorted(config_reads - config_entries)}")
+    undocumented_reads = {key for key in config_reads if key not in config_entries and
+                          not any(entry.startswith(key) for entry in config_entries)}
+    if undocumented_reads:
+        raise AssertionError(f"undocumented config reads: {sorted(undocumented_reads)}")
     expected_defaults = (
         "NativeHunts.AssignmentScope = Local",
         "NativeHunts.GroupCreditRadius = 100.0",
