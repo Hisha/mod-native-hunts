@@ -92,7 +92,7 @@ Local implementation stops before deployment. For an authorized PTR release:
 3. Optionally run `.content stage mod-native-hunts` and inspect the staged paths, FrameXML insertion,
    Lua, and all `Interface/FrameForge/Dungeon_Finder_UI/*.tga` files.
 4. Run `.content build`; record the immutable build number and SHA-256. Do not activate unless the
-   reviewed build contains package version 21 and the expected protected-FrameXML requirement.
+   reviewed build contains package version 22 and the expected protected-FrameXML requirement.
 5. When authorized, run `.content activate <build-number>` and publish that exact artifact.
 6. Update the PTR Portalkeeper patch entry with the published URL and SHA-256 while retaining
    `Requirements=protected-framexml` and isolated runtime mode.
