@@ -46,6 +46,7 @@
 namespace native_hunts {
 namespace {
 constexpr char Package[] = "mod-native-hunts";
+constexpr char SealSymbol[] = "huntmaster-seal";
 
 ContentResourcesV1::Provider const *FindContentProvider(std::string &reason) {
 	ContentResourcesV1::Provider const *provider = nullptr;
@@ -1279,7 +1280,7 @@ bool NativeHuntsManager::ResolveManagedResources() {
 				 _resources.TrailCrystalEntry) ||
 		!resolve("return-rift", "gameobject-template.id",
 				 _resources.ReturnRiftEntry) ||
-		!resolve("huntmaster-seal", "item.id", _resources.SealItemEntry))
+		!resolve(SealSymbol, "item.id", _resources.SealItemEntry))
 		return false;
 
 	auto const *crystal =
@@ -1352,6 +1353,32 @@ bool NativeHuntsManager::ResolveManagedResources() {
 
 	_resources.Ready = true;
 	_resources.Reason = "validated ACTIVE/APPLIED Native Hunts resources";
+	std::uint32_t currencyCategory = 0;
+	std::uint32_t currencyKnownBit = 0;
+	std::string currencyCategoryReason;
+	std::string currencyKnownBitReason;
+	auto const categoryResult = provider->ResolveResource(Package, "hunts",
+		"currency-category.id", currencyCategory, currencyCategoryReason);
+	auto const knownBitResult = provider->ResolveResource(Package,
+		"huntmaster-seal-currency", "currency.known-bit", currencyKnownBit,
+		currencyKnownBitReason);
+	if (categoryResult == ContentResourcesV1::Result::Ready && currencyCategory &&
+		knownBitResult == ContentResourcesV1::Result::Ready && currencyKnownBit) {
+		LOG_INFO("module.native_hunts",
+			"Native Hunts Content Manager resources: Package: {}; Seal symbol: {}; "
+			"Seal item ID: {}; Currency category ID: {}; Currency known-bit: {}; "
+			"Extended-cost tier IDs: [{}, {}, {}, {}]",
+			Package, SealSymbol, _resources.SealItemEntry, currencyCategory,
+			currencyKnownBit, _resources.SealStoreExtendedCosts[0],
+			_resources.SealStoreExtendedCosts[1],
+			_resources.SealStoreExtendedCosts[2],
+			_resources.SealStoreExtendedCosts[3]);
+	} else {
+		LOG_WARN("module.native_hunts",
+			"Native Hunts Content Manager startup diagnostic could not resolve "
+			"currency metadata: category='{}'; known-bit='{}'",
+			currencyCategoryReason, currencyKnownBitReason);
+	}
 	return true;
 }
 
