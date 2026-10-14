@@ -9,6 +9,7 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -42,6 +43,13 @@ struct SealStoreItem {
 	std::string Name;
 	std::uint32_t ItemLevel = 0;
 	float Score = 0.0f;
+};
+
+struct SealStoreCatalogDiagnostics {
+	std::size_t TotalCandidates = 0;
+	std::size_t RejectedByRolePolicy = 0;
+	std::size_t AcceptedByRolePolicy = 0;
+	std::size_t RemainingAfterEligibility = 0;
 };
 
 struct NativeHuntsConfig {
@@ -173,7 +181,8 @@ public:
 	std::uint32_t GetSealStoreExtendedCost(std::uint8_t tier) const;
 	std::string const &GetSealStoreUnavailableReason() const;
 	std::vector<SealStoreItem> BuildSealStoreItems(Player *player,
-		std::uint32_t spec, std::uint8_t tier, SealStoreSlot slot) const;
+		std::uint32_t spec, std::uint8_t tier, SealStoreSlot slot,
+		SealStoreCatalogDiagnostics *diagnostics = nullptr) const;
 	bool PurchaseSealStoreItem(Player *player, std::uint32_t spec,
 		std::uint8_t tier, std::uint32_t itemId, std::string &message);
 	bool IsGuardLocator(std::uint32_t entry) const;
@@ -211,7 +220,8 @@ private:
 	void PublishUiState(Player *player, std::uint32_t nonce = 0,
 		bool force = false);
 	bool IsSealStoreItemEligible(Player *player, std::uint32_t spec,
-		std::uint8_t tier, SealStoreSlot slot, std::uint32_t itemId) const;
+		std::uint8_t tier, SealStoreSlot slot, std::uint32_t itemId,
+		SealStoreCatalogDiagnostics *diagnostics = nullptr) const;
 
 	NativeHuntsConfig _config;
 	ManagedResources _resources;

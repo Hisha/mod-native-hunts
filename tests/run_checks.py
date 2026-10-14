@@ -1730,6 +1730,14 @@ def run_seal_vendor_checks() -> None:
     config = (ROOT / "conf" / "mod_native_hunts.conf.dist").read_text(encoding="utf-8")
     manifest = json.loads((ROOT / "content" / "manifest.json").read_text(encoding="utf-8"))
 
+    cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+    for source in ("NativeHuntsManager.cpp", "NativeHuntsModule.cpp",
+                   "SealCatalogPolicy.cpp", "mod_native_hunts_loader.cpp"):
+        if f'AC_ADD_SCRIPT("${{CMAKE_CURRENT_LIST_DIR}}/src/{source}")' not in cmake:
+            raise AssertionError(f"worldserver build does not register {source}")
+    if "seal-catalog-policy-v1" not in cmake:
+        raise AssertionError("worldserver build lacks the Seal catalog policy marker")
+
     expected_tiers = ((1, 5, 213, 219), (2, 10, 226, 232),
                       (3, 20, 245, 251), (4, 30, 264, 264))
     for tier, cost, minimum, maximum in expected_tiers:
@@ -1752,12 +1760,29 @@ def run_seal_vendor_checks() -> None:
         "ITEM_FLAG_HEROIC_TOOLTIP", "ITEM_MOD_RESILIENCE_RATING",
         "player->CanUseItem(item)", "GetArmorPreference(player, *item) < 0.0f",
         "MatchesSealCatalogRole(role, *item)",
-        "ScoreRewardItem(player, spec, role, *item) > 0.0f",
+        "ScoreRewardItem(player, spec, role, *item) <= 0.0f",
         "if (items.size() > 20)", "items.resize(20)",
     )
     for token in catalog_contract:
         if token not in manager:
             raise AssertionError(f"dynamic Seal catalog contract missing: {token}")
+    eligibility_start = manager.index(
+        "bool NativeHuntsManager::IsSealStoreItemEligible")
+    eligibility_end = manager.index(
+        "std::vector<SealStoreItem> NativeHuntsManager::BuildSealStoreItems",
+        eligibility_start)
+    eligibility_body = manager[eligibility_start:eligibility_end]
+    if (eligibility_body.index("MatchesSealCatalogRole(role, *item)") >
+            eligibility_body.index("ScoreRewardItem(player, spec, role, *item)")):
+        raise AssertionError("role policy runs after the final eligibility score")
+    build_start = eligibility_end
+    build_end = manager.index(
+        "bool NativeHuntsManager::PurchaseSealStoreItem", build_start)
+    build_body = manager[build_start:build_end]
+    if not (build_body.index("IsSealStoreItemEligible") <
+            build_body.index("std::sort(items.begin()") <
+            build_body.index("items.resize(20)")):
+        raise AssertionError("role-filtered eligibility does not precede ranking/truncation")
     for slot in ("Weapon", "Head", "Neck", "Shoulder", "Back", "Chest",
                  "Wrist", "Hands", "Waist", "Legs", "Feet", "Ring",
                  "Trinket", "OffHand", "Relic"):
@@ -1820,6 +1845,9 @@ def run_seal_vendor_checks() -> None:
         "PurchaseSealStoreItem(player", "SMSG_BUY_ITEM",
         "rows.size() < MAX_VENDOR_ITEMS", "tier/category round-robin",
         "ParseVendorSpecRequest", "UNIT_NPC_FLAG_VENDOR",
+        "SealStoreCatalogDiagnostics", "total_candidates={}",
+        "role_rejected={}", "role_accepted={}", "eligible={}",
+        "sent={}", "limit_reached={}", "seal-catalog-policy-v1",
     )
     for token in native_contract:
         if token not in module:

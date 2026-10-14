@@ -1077,17 +1077,28 @@ std::string const &NativeHuntsManager::GetSealStoreUnavailableReason() const {
 
 bool NativeHuntsManager::IsSealStoreItemEligible(Player *player,
 		std::uint32_t spec, std::uint8_t tier, SealStoreSlot slot,
-		std::uint32_t itemId) const {
+		std::uint32_t itemId, SealStoreCatalogDiagnostics *diagnostics) const {
 	if (!IsSealStoreAvailable(player) || !IsSpecForClass(player, spec) ||
 		tier < 1 || tier > 4)
 		return false;
 	ItemTemplate const *item = sObjectMgr->GetItemTemplate(itemId);
 	if (!item || item->Quality != ITEM_QUALITY_EPIC ||
 		(item->Class != ITEM_CLASS_WEAPON && item->Class != ITEM_CLASS_ARMOR) ||
-		!IsSpecCompatibleEquipment(spec, *item) ||
 		!MatchesSealStoreSlot(*item, slot) || item->RequiredLevel > player->GetLevel() ||
 		item->ItemLevel < GetSealStoreTierMinItemLevel(tier) ||
-		item->ItemLevel > GetSealStoreTierMaxItemLevel(tier) ||
+		item->ItemLevel > GetSealStoreTierMaxItemLevel(tier))
+		return false;
+	if (diagnostics)
+		++diagnostics->TotalCandidates;
+	RewardRole const role = GetRewardRole(player, spec);
+	if (!MatchesSealCatalogRole(role, *item)) {
+		if (diagnostics)
+			++diagnostics->RejectedByRolePolicy;
+		return false;
+	}
+	if (diagnostics)
+		++diagnostics->AcceptedByRolePolicy;
+	if (!IsSpecCompatibleEquipment(spec, *item) ||
 		item->HasFlag(ITEM_FLAG_HEROIC_TOOLTIP) ||
 		player->CanUseItem(item) != EQUIP_ERR_OK)
 		return false;
@@ -1098,21 +1109,24 @@ bool NativeHuntsManager::IsSealStoreItemEligible(Player *player,
 			return false;
 	if (item->Class == ITEM_CLASS_ARMOR && GetArmorPreference(player, *item) < 0.0f)
 		return false;
-	RewardRole const role = GetRewardRole(player, spec);
-	return MatchesSealCatalogRole(role, *item) &&
-		ScoreRewardItem(player, spec, role, *item) > 0.0f;
+	if (ScoreRewardItem(player, spec, role, *item) <= 0.0f)
+		return false;
+	if (diagnostics)
+		++diagnostics->RemainingAfterEligibility;
+	return true;
 }
 
 std::vector<SealStoreItem> NativeHuntsManager::BuildSealStoreItems(
 		Player *player, std::uint32_t spec, std::uint8_t tier,
-		SealStoreSlot slot) const {
+		SealStoreSlot slot, SealStoreCatalogDiagnostics *diagnostics) const {
 	std::vector<SealStoreItem> items;
 	if (!IsSealStoreAvailable(player) || !IsSpecForClass(player, spec) ||
 		tier < 1 || tier > 4 || !GetSealStoreTierCost(tier))
 		return items;
 	RewardRole const role = GetRewardRole(player, spec);
 	for (auto const &[itemId, item] : *sObjectMgr->GetItemTemplateStore()) {
-		if (!IsSealStoreItemEligible(player, spec, tier, slot, itemId))
+		if (!IsSealStoreItemEligible(player, spec, tier, slot, itemId,
+				diagnostics))
 			continue;
 		items.push_back({itemId, item.Name1, item.ItemLevel,
 			ScoreRewardItem(player, spec, role, item)});
@@ -1352,6 +1366,8 @@ void NativeHuntsManager::Initialize() {
 		_resources.Reason = "Native Hunts is disabled by configuration";
 		return;
 	}
+	LOG_INFO("module.native_hunts",
+		"Native Hunts server build marker: seal-catalog-policy-v1");
 	ResolveManagedResources();
 	ResolveGuardLocators();
 	LoadAssignments();

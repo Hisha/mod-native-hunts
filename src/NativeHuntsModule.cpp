@@ -171,6 +171,7 @@ std::vector<NativeSealVendorRow> BuildNativeSealVendorRows(Player *player,
 	};
 	std::vector<Group> groups;
 	std::size_t eligibleCount = 0;
+	native_hunts::SealStoreCatalogDiagnostics diagnostics;
 	for (std::uint8_t tier = 1; tier <= 4; ++tier) {
 		if (!sNativeHunts.GetSealStoreTierCost(tier))
 			continue;
@@ -183,7 +184,8 @@ std::vector<NativeSealVendorRow> BuildNativeSealVendorRows(Player *player,
 			raw <= static_cast<std::uint8_t>(native_hunts::SealStoreSlot::Relic);
 			++raw) {
 			auto const slot = static_cast<native_hunts::SealStoreSlot>(raw);
-			auto items = sNativeHunts.BuildSealStoreItems(player, spec, tier, slot);
+			auto items = sNativeHunts.BuildSealStoreItems(player, spec, tier, slot,
+				&diagnostics);
 			if (items.empty())
 				continue;
 			eligibleCount += items.size();
@@ -216,6 +218,23 @@ std::vector<NativeSealVendorRow> BuildNativeSealVendorRows(Player *player,
 			"Native Huntmaster catalog for player {} contains {} ranked rows; "
 			"the merchant packet exposed {} rows using tier/category round-robin",
 			player->GetGUID().GetCounter(), eligibleCount, rows.size());
+	char const *specName = "Unknown";
+	for (auto const &choice : GetSealSpecs(player))
+		if (choice.Spec == spec) {
+			specName = choice.Name;
+			break;
+		}
+	LOG_INFO("module.native_hunts",
+		"Native Huntmaster catalog audit policy=seal-catalog-policy-v1 "
+		"player={} class={} spec={} ({}) total_candidates={} "
+		"role_rejected={} role_accepted={} eligible={} ranked_rows={} "
+		"sent={} limit_reached={} truncated={}",
+		player->GetGUID().GetCounter(), player->getClass(), spec, specName,
+		diagnostics.TotalCandidates, diagnostics.RejectedByRolePolicy,
+		diagnostics.AcceptedByRolePolicy,
+		diagnostics.RemainingAfterEligibility, eligibleCount, rows.size(),
+		rows.size() == MAX_VENDOR_ITEMS ? "yes" : "no",
+		eligibleCount > rows.size() ? "yes" : "no");
 	return rows;
 }
 
