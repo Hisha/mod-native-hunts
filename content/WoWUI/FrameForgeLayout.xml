@@ -142,7 +142,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="44.9253610901797" y="123.011052089627" />
+              <AbsDimension x="44.9253610901797" y="123.250401454861" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -184,7 +184,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="44.9253610901797" y="149.17058276062" />
+              <AbsDimension x="45.0293878846133" y="149.339169491577" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -264,7 +264,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.533538891267" y="163.123742272138" />
+              <AbsDimension x="102.593416298021" y="163.462385201433" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -285,7 +285,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.533538891267" y="149.93467767908" />
+              <AbsDimension x="102.631273093961" y="150.373579273359" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -306,7 +306,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.533538891267" y="137.046785697875" />
+              <AbsDimension x="102.533538891267" y="137.305620536743" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -327,7 +327,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="102.533538891267" y="137.046785697875" />
+              <AbsDimension x="102.576736523103" y="137.329370841918" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -348,7 +348,7 @@
         <Anchors>
           <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="99.3588919452463" y="123.966170737702" />
+              <AbsDimension x="99.2707266620432" y="124.428786704499" />
             </Offset>
           </Anchor>
         </Anchors>
