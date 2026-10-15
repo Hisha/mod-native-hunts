@@ -735,6 +735,7 @@ bool IsRewardIdentityStat(RewardRole role, uint32 stat)
 bool MatchesSealCatalogRole(RewardRole role, ItemTemplate const &item)
 {
     native_hunts::SealCatalogTraits traits;
+	traits.Relic = item.InventoryType == INVTYPE_RELIC;
     for (uint32 i = 0; i < item.StatsCount && i < MAX_ITEM_PROTO_STATS; ++i)
     {
         if (item.ItemStat[i].ItemStatValue <= 0)

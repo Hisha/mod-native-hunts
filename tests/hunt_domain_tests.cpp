@@ -140,6 +140,24 @@ void TestSealCatalogFiltering() {
 		!MatchesSealCatalogRole(SealCatalogRole::SpellDamage, unclassified) &&
 		!MatchesSealCatalogRole(SealCatalogRole::Healer, unclassified),
 		"unclassified equipment does not leak into specialized catalogs");
+
+	SealCatalogTraits relic;
+	relic.Relic = true;
+	Check(MatchesSealCatalogRole(SealCatalogRole::AgilityMelee, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::SpellDamage, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::Healer, relic),
+		"Shaman totems remain eligible across all three roles");
+	Check(MatchesSealCatalogRole(SealCatalogRole::StrengthMelee, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::Healer, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::Tank, relic),
+		"Paladin librams remain eligible across all three roles");
+	Check(MatchesSealCatalogRole(SealCatalogRole::SpellDamage, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::AgilityMelee, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::Healer, relic),
+		"Druid idols remain eligible across all three roles");
+	Check(MatchesSealCatalogRole(SealCatalogRole::StrengthMelee, relic) &&
+		MatchesSealCatalogRole(SealCatalogRole::Tank, relic),
+		"Death Knight sigils remain eligible across all three roles");
 }
 
 void TestRewardRules() {

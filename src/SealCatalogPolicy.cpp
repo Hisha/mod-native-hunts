@@ -4,6 +4,8 @@ namespace native_hunts {
 
 bool MatchesSealCatalogRole(SealCatalogRole role,
 		SealCatalogTraits const &traits) {
+	if (traits.Relic)
+		return true;
 	switch (role) {
 	case SealCatalogRole::StrengthMelee:
 		return traits.Strength || traits.AttackPower;

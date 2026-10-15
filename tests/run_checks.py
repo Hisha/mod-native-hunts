@@ -1764,6 +1764,9 @@ def run_seal_vendor_checks() -> None:
         "ITEM_FLAG_HEROIC_TOOLTIP", "ITEM_MOD_RESILIENCE_RATING",
         "player->CanUseItem(item)", "GetArmorPreference(player, *item) < 0.0f",
         "MatchesSealCatalogRole(role, *item)",
+        "traits.Relic = item.InventoryType == INVTYPE_RELIC",
+        "ITEM_SUBCLASS_ARMOR_TOTEM", "ITEM_SUBCLASS_ARMOR_LIBRAM",
+        "ITEM_SUBCLASS_ARMOR_IDOL", "ITEM_SUBCLASS_ARMOR_SIGIL",
         "ScoreRewardItem(player, spec, role, *item) <= 0.0f",
         "if (items.size() > 20)", "items.resize(20)",
     )

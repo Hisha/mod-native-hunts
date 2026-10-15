@@ -13,6 +13,10 @@ enum class SealCatalogRole {
 };
 
 struct SealCatalogTraits {
+	// Relic benefits in 3.3.5 are commonly encoded as equip spells instead of
+	// explicit item-template stats. Inventory/subclass compatibility is checked
+	// separately before a relic can enter a class/spec catalog.
+	bool Relic = false;
 	bool Strength = false;
 	bool Agility = false;
 	bool AttackPower = false;
@@ -28,9 +32,10 @@ struct SealCatalogTraits {
 	bool BlockValue = false;
 };
 
-// A Seal catalog is an eligibility boundary, not merely a ranking hint. Only
-// explicit item-template stats are used here; proc/spell text is deliberately
-// not guessed at, so unclassifiable items stay out of every specialized list.
+// A Seal catalog is an eligibility boundary, not merely a ranking hint. Apart
+// from class-restricted relics, only explicit item-template stats are used;
+// proc/spell text is deliberately not guessed at, so other unclassifiable
+// items stay out of every specialized list.
 bool MatchesSealCatalogRole(SealCatalogRole role,
 	SealCatalogTraits const &traits);
 
