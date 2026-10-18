@@ -1046,6 +1046,13 @@ def run_frameforge_functional_ui_checks() -> None:
                         if element.tag.endswith("Layer"))
     if record_layer.get("level") not in {"BACKGROUND", "BORDER", "ARTWORK", "OVERLAY"}:
         raise AssertionError("Hunt Record artwork uses a non-persistent draw layer")
+    for statistic_name in record_statistic_names:
+        statistic_layer = next(
+            element for element in named[f"{statistic_name}__FFLayer"].iter()
+            if element.tag.endswith("Layer"))
+        if statistic_layer.get("level") != "ARTWORK":
+            raise AssertionError(
+                f"persistent Hunt Record statistic {statistic_name} must export to ARTWORK")
     lower_panel_levels = {
         name: int(named[name].get("frameLevel"))
         for name in ("Hunt_Panel_Top__FFLayer", "Hunt_Panel_Bottom__FFLayer")

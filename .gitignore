@@ -1,6 +1,7 @@
 # Build/editor artifacts
 build/
 cmake-build-*/
+.test-logs/
 *.user
 *.swp
 *~

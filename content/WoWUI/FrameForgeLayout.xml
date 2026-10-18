@@ -40,7 +40,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Panel_Idle" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_idle">
               <TexCoords left="0" right="0.7646484375" top="0" bottom="0.576171875" />
             </Texture>
@@ -59,7 +59,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <FontString name="No_Active_Hunt" setAllPoints="true" text="No Active Hunt" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF" outline="NORMAL">
               <FontHeight>
                 <AbsValue val="24" />
@@ -86,7 +86,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <FontString name="Speak_Huntmaster" setAllPoints="true" text="Speak with a Huntmaster" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="14" />
@@ -107,7 +107,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <FontString name="begin_hunt" setAllPoints="true" text="to begin a Hunt." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="14" />
@@ -128,7 +128,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Circle_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_circle_icon">
               <TexCoords left="0" right="0.63671875" top="0" bottom="0.78125" />
             </Texture>
@@ -147,7 +147,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Panel_Top" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active">
               <TexCoords left="0" right="0.64453125" top="0" bottom="0.953125" />
             </Texture>
@@ -166,7 +166,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Panel_Bottom" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active">
               <TexCoords left="0" right="0.64453125" top="0" bottom="0.953125" />
             </Texture>
@@ -204,7 +204,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BACKGROUND">
+          <Layer level="ARTWORK">
             <FontString name="Hunt_Progress_Text" setAllPoints="true" text="Hunt Progress" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
@@ -221,7 +221,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Trail_Located_Text" setAllPoints="true" text="Trail Located" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
@@ -238,7 +238,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Final_Confrontation_Text" setAllPoints="true" text="Final Confrontation" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
@@ -255,7 +255,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Hunt_Complete_Text" setAllPoints="true" text="Hunt Complete" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
@@ -272,7 +272,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Tracker_Elite_Hunt" setAllPoints="true" text="Elite Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
@@ -296,7 +296,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Tracker_Standard_Hunt" setAllPoints="true" text="Standard Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
@@ -320,7 +320,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Tracker_Target_Name" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="18" />
@@ -341,7 +341,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Tracker_Huntmaster" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -383,7 +383,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="ARTWORK">
             <FontString name="Tracker_Hunt_Ground" setAllPoints="true" text="Hunting Grounds:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -593,7 +593,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Complete_Text" setAllPoints="true" text="Ready to Turn In" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
@@ -617,7 +617,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Complete2A_Text" setAllPoints="true" text="Return to " inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -638,7 +638,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Complete2B_Huntmaster_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -659,7 +659,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Complete3A_Text" setAllPoints="true" text="in" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -680,7 +680,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Complete3B_Location_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -701,7 +701,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <Texture name="Final_Fight_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_finalfight">
               <TexCoords left="0" right="0.6796875" top="0" bottom="0.625" />
             </Texture>
@@ -720,7 +720,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Final_Fight_Text" setAllPoints="true" text="Defeat your prey." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
@@ -737,7 +737,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Panel_Record" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_record">
               <TexCoords left="0" right="0.556640625" top="0" bottom="0.556640625" />
             </Texture>
@@ -756,7 +756,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Hunt_Seals" setAllPoints="true" text="Huntmaster's Seals:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
@@ -777,7 +777,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Elite_Today" setAllPoints="true" text="Elite Today:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
@@ -798,7 +798,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Elite_Hunts" setAllPoints="true" text="Elite Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
@@ -819,7 +819,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Standard_Hunts" setAllPoints="true" text="Standard Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="8" />
@@ -840,7 +840,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Seal" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_seal">
               <TexCoords left="0" right="0.84375" top="0" bottom="0.625" />
             </Texture>
@@ -859,7 +859,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -880,7 +880,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -901,7 +901,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -922,7 +922,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -943,7 +943,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
