@@ -77,6 +77,8 @@ def run_relic_persistence_contract_checks() -> None:
     manager = (ROOT / "src/NativeHuntsManager.cpp").read_text(encoding="utf-8")
     world = (ROOT / "data/sql/db-world/base/001_native_hunt_shared_relic.sql").read_text(
         encoding="utf-8")
+    visual_update = (ROOT / "data/sql/db-world/updates/2026_10_18_00_native_hunt_shared_relic_visual.sql").read_text(
+        encoding="utf-8")
     for token in ("`hunt_instance_id`", "UNIQUE KEY `uq_native_hunt_instance`"):
         if token not in assignment:
             raise AssertionError(f"hunt-instance persistence contract missing: {token}")
@@ -109,6 +111,17 @@ def run_relic_persistence_contract_checks() -> None:
             r"INSERT\s+(?:IGNORE\s+)?INTO\s+`gameobject`(?:\s|\()", world,
             re.IGNORECASE):
         raise AssertionError("prototype world SQL must define only the shared relic template")
+    if not re.search(
+            r"\(990000,\s*1,\s*5011,\s*'Cursed Hunt Relic',\s*1\.0,\s*"
+            r"'mod_native_hunts_shared_relic',\s*12340\)", world):
+        raise AssertionError("new installs do not use the verified purple crystal display")
+    for token in ("UPDATE `gameobject_template`", "`displayId` = 5011",
+                  "`size` = 1.0", "`entry` = 990000",
+                  "`ScriptName` = 'mod_native_hunts_shared_relic'"):
+        if token not in visual_update:
+            raise AssertionError(f"existing-install relic visual update missing: {token}")
+    if re.search(r"\b(?:DELETE|INSERT|REPLACE)\b", visual_update, re.IGNORECASE):
+        raise AssertionError("relic visual update must be a repeatable in-place update")
 
     with tempfile.TemporaryDirectory(prefix=".native-hunts-relic-", dir=ROOT) as directory:
         database = Path(directory) / "ledger.sqlite"
@@ -126,7 +139,22 @@ def run_relic_persistence_contract_checks() -> None:
                 tracking_award INTEGER NOT NULL,
                 PRIMARY KEY (hunt_instance_id, objective_key, relic_key)
             );
+            CREATE TABLE gameobject_template (
+                entry INTEGER PRIMARY KEY,
+                displayId INTEGER NOT NULL,
+                size REAL NOT NULL,
+                ScriptName TEXT NOT NULL
+            );
+            INSERT INTO gameobject_template VALUES
+                (990000, 3991, 1.0, 'mod_native_hunts_shared_relic');
         """)
+        connection.executescript(visual_update)
+        connection.executescript(visual_update)
+        relic_visual = connection.execute(
+            "SELECT displayId, size, ScriptName FROM gameobject_template "
+            "WHERE entry=990000").fetchone()
+        if relic_visual != (5011, 1.0, "mod_native_hunts_shared_relic"):
+            raise AssertionError("repeatable relic visual update changed its template contract")
         connection.executemany("INSERT INTO assignment VALUES (?, ?, 0)",
                                ((1, "hunt-a"), (2, "hunt-b")))
         for instance in ("hunt-a", "hunt-b"):
@@ -1704,9 +1732,18 @@ def run_source_safety_checks() -> None:
         if path.is_file() and "native_hunt_assignment" in path.read_text(encoding="utf-8"):
             raise AssertionError("character assignment schema leaked into world SQL")
     current_world_sql = [path for path in world_sql if path.is_file()]
-    if len(current_world_sql) != 1:
-        raise AssertionError("Native Hunts must define exactly one prototype world template SQL file")
-    world_text = current_world_sql[0].read_text(encoding="utf-8")
+    expected_world_sql = {
+        "base/001_native_hunt_shared_relic.sql",
+        "updates/2026_10_18_00_native_hunt_shared_relic_visual.sql",
+    }
+    actual_world_sql = {
+        str(path.relative_to(ROOT / "data/sql/db-world"))
+        for path in current_world_sql
+    }
+    if actual_world_sql != expected_world_sql:
+        raise AssertionError("Native Hunts world SQL scope changed unexpectedly")
+    world_text = "\n".join(path.read_text(encoding="utf-8")
+                           for path in current_world_sql)
     if re.search(r"INSERT\s+(?:IGNORE\s+)?INTO\s+`gameobject`(?:\s|\()",
                  world_text, re.IGNORECASE):
         raise AssertionError("Native Hunts must not provision permanent world spawns through SQL")

@@ -119,9 +119,11 @@ removed.
 The optional prototype is disabled by default and does not change the client
 package or tracking UI. Apply the character SQL, including the collection
 migration for an existing installation, and apply
-`data/sql/db-world/base/001_native_hunt_shared_relic.sql`. The latter defines
-GameObject entry `990000` with script `mod_native_hunts_shared_relic`; it does
-not create a permanent database spawn.
+`data/sql/db-world/base/001_native_hunt_shared_relic.sql`. Existing PTR
+installations must also apply
+`data/sql/db-world/updates/2026_10_18_00_native_hunt_shared_relic_visual.sql`.
+The world SQL defines GameObject entry `990000` with script
+`mod_native_hunts_shared_relic`; it does not create a permanent database spawn.
 
 Set `NativeHunts.CollectionPrototype.Enable = 1` and restart worldserver. The
 default placement is in Westfall (zone 40, map 0) and can be changed with the
