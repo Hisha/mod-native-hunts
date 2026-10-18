@@ -210,8 +210,7 @@ public:
 	bool Abandon(Player *player, std::string &message);
 	bool CollectRelic(Player *player, GameObject *object,
 		std::string &message);
-	bool CompleteRelicCollection(Player *player, GameObject *object,
-		std::string &message);
+	bool CompleteRelicCollection(Player *player, std::string &message);
 	void CancelRelicCollection(Player *player);
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);

@@ -181,13 +181,14 @@ def run_relic_persistence_contract_checks() -> None:
     for token in ("_pendingRelicCollections.count(guid)",
                   "std::make_shared<SpellInfo>", "SpellCastTimesEntry",
                   "effect.Effect = 0", "TRIGGERED_NONE",
-                  "RelicCollectionSpellId", "CompleteRelicCollection(player, object, message)"):
+                  "RelicCollectionSpellId", "CompleteRelicCollection(player, message)"):
         if token not in begin_code:
             raise AssertionError(f"interruptible relic cast setup missing: {token}")
     if begin_code.index("_config.RelicCollectionCastTimeMs == 0") > begin_code.index(
             "sSpellMgr->GetSpellInfo"):
         raise AssertionError("zero cast time no longer preserves instant collection")
-    for token in ("pending.RelicGuid != object->GetGUID()",
+    for token in ("ObjectAccessor::GetGameObject(*player,",
+                  "pending.RelicGuid",
                   "runtime->HuntInstanceId != pending.HuntInstanceId",
                   "pool->Id != pending.PoolId", "relicIndex != pending.RelicIndex",
                   "player->IsWithinDistInMap(object, INTERACTION_DISTANCE)",
@@ -198,8 +199,14 @@ def run_relic_persistence_contract_checks() -> None:
         raise AssertionError("relic progress can be committed before cast completion")
     if "TRIGGERED_IGNORE_EFFECTS" in begin_code:
         raise AssertionError("relic cast suppresses the client-visible spell packets")
+    for token in ("_relicCollectionSpell->Targets = TARGET_FLAG_NONE",
+                  "_relicCollectionSpell->ExplicitTargetMask = TARGET_FLAG_NONE"):
+        if token not in begin_code:
+            raise AssertionError(f"relic cast retains an invalid OPEN_LOCK target contract: {token}")
+    if "targets.SetGOTarget(object)" in begin_code:
+        raise AssertionError("lockless shared relic is still sent as an OPEN_LOCK spell target")
     for token in ("OnSpellCastCancel", "CancelRelicCollection",
-                  "OnSpellCast(Spell *spell", "spell->m_targets.GetGOTarget()"):
+                  "OnSpellCast(Spell *spell", "CompleteRelicCollection(player, message)"):
         if token not in module:
             raise AssertionError(f"relic cast lifecycle hook missing: {token}")
     for token in ("LoadCollectedRelics(runtime)", "HaveAtClient(object)",

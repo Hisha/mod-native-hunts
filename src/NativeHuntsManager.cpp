@@ -2990,7 +2990,7 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		relicIndex, object->GetGUID()};
 	_pendingRelicCollections.emplace(guid, std::move(pending));
 	if (_config.RelicCollectionCastTimeMs == 0)
-		return CompleteRelicCollection(player, object, message);
+		return CompleteRelicCollection(player, message);
 
 	if (!_relicCollectionSpell) {
 		SpellEntry const *spellEntry = sSpellStore.LookupEntry(
@@ -3002,8 +3002,12 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 			_relicCollectionCastTime =
 				std::make_shared<SpellCastTimesEntry>();
 			_relicCollectionSpell->AttributesCu = sourceSpell->AttributesCu;
-			_relicCollectionSpell->ExplicitTargetMask =
-				sourceSpell->ExplicitTargetMask;
+			// Spell 3365 is the stock Opening visual, but its native OPEN_LOCK
+			// effect only accepts locked GameObjects. The relic is a shared button,
+			// so keep its identity, visual, interrupt flags, and cast bar while the
+			// pending record supplies the authoritative relic GUID server-side.
+			_relicCollectionSpell->Targets = TARGET_FLAG_NONE;
+			_relicCollectionSpell->ExplicitTargetMask = TARGET_FLAG_NONE;
 			// Spell effect 0 means no server-side effect in build 12340.
 			for (SpellEffectInfo &effect : _relicCollectionSpell->Effects)
 				effect.Effect = 0;
@@ -3021,12 +3025,17 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		static_cast<std::int32_t>(std::min<std::uint32_t>(
 			_config.RelicCollectionCastTimeMs,
 			static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max())));
+	// Do not send the BUTTON GameObject as an OPEN_LOCK target. AzerothCore
+	// rejects lockless objects with SPELL_FAILED_BAD_TARGETS. Completion resolves
+	// and revalidates the pending GUID after this real cast succeeds.
 	SpellCastTargets targets;
-	targets.SetGOTarget(object);
 	SpellCastResult const result = player->CastSpell(targets,
 		_relicCollectionSpell.get(), nullptr, TRIGGERED_NONE);
 	if (result != SPELL_CAST_OK) {
 		_pendingRelicCollections.erase(guid);
+		LOG_DEBUG("module.native_hunts",
+			"Relic collection cast {} failed for character {} with result {}.",
+			RelicCollectionSpellId, guid, static_cast<std::uint32_t>(result));
 		message = "You cannot examine this relic right now.";
 		return false;
 	}
@@ -3041,8 +3050,8 @@ void NativeHuntsManager::CancelRelicCollection(Player *player) {
 }
 
 bool NativeHuntsManager::CompleteRelicCollection(Player *player,
-		GameObject *object, std::string &message) {
-	if (!player || !object) {
+		std::string &message) {
+	if (!player) {
 		message = "The relic cannot be examined.";
 		return false;
 	}
@@ -3054,8 +3063,10 @@ bool NativeHuntsManager::CompleteRelicCollection(Player *player,
 	}
 	PendingRelicCollection const pending = pendingIt->second;
 	_pendingRelicCollections.erase(pendingIt);
-	if (pending.RelicGuid != object->GetGUID()) {
-		message = "The relic changed before you finished examining it.";
+	GameObject *object = ObjectAccessor::GetGameObject(*player,
+		pending.RelicGuid);
+	if (!object || !object->IsInWorld()) {
+		message = "The relic is no longer present after you finished examining it.";
 		return false;
 	}
 	auto runtimeIt = _runtimes.find(guid);

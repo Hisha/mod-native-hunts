@@ -898,8 +898,7 @@ public:
 			return;
 		Player *player = caster->ToPlayer();
 		std::string message;
-		sNativeHunts.CompleteRelicCollection(player,
-			spell->m_targets.GetGOTarget(), message);
+		sNativeHunts.CompleteRelicCollection(player, message);
 		if (!message.empty())
 			ChatHandler(player->GetSession()).PSendSysMessage(
 				"|cff33ccff[Native Hunts]|r {}", message);
