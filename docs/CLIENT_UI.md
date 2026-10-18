@@ -3,10 +3,13 @@
 ## Functional FrameForge integration
 
 The editable design remains `assets/Native-Hunts.fforge.json` and the authoritative FrameForge
-export remains `content/WoWUI/`. Do not hand-edit either as part of module integration. Package 21
+export remains `content/WoWUI/`. Do not hand-edit either as part of module integration. Package 22
 ships `FrameForgeLayout.xml` byte-for-byte at
-`Interface/FrameXML/NativeHuntsFrameForgeLayout.xml`. Its `FrameForge_Dungeon_Finder_UI` root stays
-parented to `LFDParentFrame` at its authored 355 x 440 dimensions. The preserved host at
+`Interface/FrameXML/NativeHuntsFrameForgeLayout.xml`. Its `FrameForge_Dungeon_Finder_UI` root is
+exported against `LFDParentFrame` at its authored 355 x 440 dimensions, then attached once during
+module initialization to the module-owned `NativeHuntsFrame`. This makes the shell the presentation's
+visual parent while retaining the export's explicit Blizzard-relative anchor and all authored child
+ordering. The preserved host at
 `content/client/Interface/FrameXML/NativeHuntsFrame.xml` still supplies the tabs, backdrop, and
 hidden legacy presentation subtree.
 
@@ -14,7 +17,9 @@ The functional host, `NativeHuntsFrame.lua`, both PvE tabs, and the initializer/
 active. Hunts selection shows the host and `FrameForge_Dungeon_Finder_UI`; Dungeon Finder selection
 hides both and restores `LFDQueueFrame`. Blizzard's `LFDParentFrame`, title, geometry, close button,
 templates, and microbutton remain stock-owned. Initialization validates every exported control and
-falls back to Dungeon Finder with a diagnostic if any required global is absent.
+falls back to Dungeon Finder with a diagnostic if any required global is absent. No runtime frame
+levels or strata are assigned: the host/presentation relationship establishes the outer ordering,
+and FrameForge's exported wrapper levels preserve the authored ordering inside the presentation.
 
 The PvE tab contract explicitly establishes `LFDParentFrame.numTabs = 2` before calling Blizzard's
 `PanelTemplates_SetTab`. Optional tab-resize support is independent, matching the 3.3.5a API where

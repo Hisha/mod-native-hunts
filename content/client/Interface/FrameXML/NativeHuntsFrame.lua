@@ -349,6 +349,16 @@ local function NormalizePresentationDrawLayers()
 	end
 end
 
+-- The exported presentation is anchored to Blizzard's LFDParentFrame, but the
+-- module-owned NativeHuntsFrame paints the shell that it must appear above.
+-- Make that visual ownership explicit instead of leaving two independent
+-- siblings to compete when Blizzard normalizes their runtime frame levels.
+local function AttachFrameForgePresentation()
+	if FrameForge_Dungeon_Finder_UI:GetParent() ~= NativeHuntsFrame then
+		FrameForge_Dungeon_Finder_UI:SetParent(NativeHuntsFrame);
+	end
+end
+
 local STANDARD_HUNT_ICON_TEXTURE = "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_standard";
 local ELITE_HUNT_ICON_TEXTURE = "Interface\\FrameForge\\Dungeon_Finder_UI\\hunt_icon_elite";
 
@@ -608,6 +618,7 @@ function NativeHuntsFrame_OnLoad(self)
 	initialized = false;
 	local valid, missing = ValidateFrameForgeControls();
 	if not valid then ReportInitializationFailure("required exported control is missing: " .. missing); return; end
+	AttachFrameForgePresentation();
 	initialized = true;
 	NativeHuntsFrameInitializationError = nil;
 	NormalizePresentationDrawLayers();

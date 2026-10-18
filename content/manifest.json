@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "22-ptr6",
+  "version": "22-ptr7",
   "description": "Managed Native Hunts gameplay, native Huntmaster merchant integration, and protected FrameXML presentation.",
   "content": [
     {

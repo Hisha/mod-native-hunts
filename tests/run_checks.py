@@ -943,8 +943,8 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr6":
-        print("SKIP functional FrameForge PTR6 contract", flush=True)
+    if manifest.get("version") != "22-ptr7":
+        print("SKIP functional FrameForge PTR7 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
         raise AssertionError("invalid Native Hunts PTR3 package identity")
@@ -1028,11 +1028,32 @@ def run_frameforge_functional_ui_checks() -> None:
             int(tier_wrapper.get("frameLevel")) <= int(panel_wrapper.get("frameLevel"))):
         raise AssertionError("tier icon must stay above the active panel without Lua frame-level changes")
     record_wrapper = named["Hunt_Panel_Record__FFLayer"]
-    record_label_wrapper = named["Hunt_Seals__FFLayer"]
-    if (record_wrapper.get("frameLevel") != "6" or
-            int(record_wrapper.get("frameLevel")) >= int(record_label_wrapper.get("frameLevel"))):
+    record_statistic_names = {
+        "Hunt_Seals", "Elite_Today", "Elite_Hunts", "Standard_Hunts",
+        "Hunt_Seal", "Standard_Hunts_Value", "Elite_Hunts_Value",
+        "Elite_Today_Available", "Elite_Today_Unavailable", "Hunt_Seal_Value",
+    }
+    record_statistic_wrappers = [named[f"{name}__FFLayer"]
+                                 for name in record_statistic_names]
+    record_level = int(record_wrapper.get("frameLevel"))
+    if (record_wrapper.get("frameStrata") != "MEDIUM" or
+            any(wrapper.get("frameStrata") != "MEDIUM" or
+                int(wrapper.get("frameLevel")) <= record_level
+                for wrapper in record_statistic_wrappers)):
         raise AssertionError(
-            "Hunt Record artwork must stay above the host shell and below its statistics")
+            "Hunt Record artwork must stay below every statistic in one compatible strata")
+    record_layer = next(element for element in record_wrapper.iter()
+                        if element.tag.endswith("Layer"))
+    if record_layer.get("level") not in {"BACKGROUND", "BORDER", "ARTWORK", "OVERLAY"}:
+        raise AssertionError("Hunt Record artwork uses a non-persistent draw layer")
+    lower_panel_levels = {
+        name: int(named[name].get("frameLevel"))
+        for name in ("Hunt_Panel_Top__FFLayer", "Hunt_Panel_Bottom__FFLayer")
+    }
+    if lower_panel_levels != {
+            "Hunt_Panel_Top__FFLayer": 7,
+            "Hunt_Panel_Bottom__FFLayer": 8}:
+        raise AssertionError("lower hunt panel layering changed")
     grounds_wrapper = named["Tracker_Hunt_Ground__FFLayer"]
     grounds_size = next(element for element in grounds_wrapper if element.tag.endswith("Size"))
     grounds_dimensions = next(element for element in grounds_size if element.tag.endswith("AbsDimension"))
@@ -1122,6 +1143,7 @@ def run_frameforge_functional_ui_checks() -> None:
         "NativeHuntsFrameInitializationError", "required exported control is missing",
         "Hunt_Tier_Icon:SetTexture(ELITE_HUNT_ICON_TEXTURE)",
         "Hunt_Tier_Icon:SetTexture(STANDARD_HUNT_ICON_TEXTURE)",
+        "FrameForge_Dungeon_Finder_UI:SetParent(NativeHuntsFrame)",
     )
     for token in required_lua:
         if token not in ui_lua:
@@ -1135,7 +1157,7 @@ def run_frameforge_functional_ui_checks() -> None:
             raise AssertionError(f"modern Lua/WoW API token found: {token}")
     for forbidden in ("LFDParentFrame:SetWidth", "LFDParentFrame:SetHeight",
                       "LFDQueueFrameTitleText:SetText", "PositionCloseButton",
-                      "HUNTS_PARENT_HEIGHT", "SetFrameLevel"):
+                      "HUNTS_PARENT_HEIGHT", "SetFrameLevel", "SetFrameStrata"):
         if forbidden in ui_lua:
             raise AssertionError(f"Blizzard geometry/title mutation remains: {forbidden}")
 
@@ -1238,13 +1260,14 @@ def run_frameforge_functional_ui_checks() -> None:
                     Play=function(self) self.playing=true end}
             end
             function FrameForgeTestControl()
-                return {text="",value=0,min=0,max=0,visible=true,width=0,height=0,objectType="Frame",hooks={},children={},events={},
+                return {text="",value=0,min=0,max=0,visible=true,width=0,height=0,objectType="Frame",hooks={},children={},events={},parent=nil,
                     SetText=function(self,value) self.text=value end,SetValue=function(self,value) self.value=value end,
                     SetNormalTexture=function(self,value) self.texture=value end,EnableMouse=function(self,value) self.mouseEnabled=value end,
                     SetMinMaxValues=function(self,min,max) self.min=min self.max=max end,
                     SetTexture=function(self,value) self.texture=value end,SetWidth=function(self,value) self.width=value end,
                     SetHeight=function(self,value) self.height=value end,GetWidth=function(self) return self.width end,
                     GetHeight=function(self) return self.height end,GetObjectType=function(self) return self.objectType end,
+                    GetParent=function(self) return self.parent end,SetParent=function(self,parent) self.parent=parent end,
                     GetPoint=function(self) return unpack(self.point) end,GetChildren=function(self) return unpack(self.children) end,
                     ClearAllPoints=function(self) self.point=nil end,
                     SetPoint=function(self,point,relative,relativePoint,x,y) self.point={point,relative,relativePoint,x,y} end,
@@ -1311,16 +1334,21 @@ def run_frameforge_functional_ui_checks() -> None:
         for name in names | set(host_named) | {"NativeHuntsFrameInitializer"}:
             if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
                 controls[name] = controls.FrameForgeTestControl()
+                controls[name].anchorId = name
         for name in ("LFDParentFrame", "LFDQueueFrame", "LFDQueueFrameTitleText",
                      "LFDParentFramePortraitTexture", "LFDParentFramePortraitIcon"):
             controls[name] = controls.FrameForgeTestControl()
         controls.LFDParentFrame.width, controls.LFDParentFrame.height = 355, 440
+        controls.NativeHuntsFrame.parent = controls.LFDParentFrame
+        controls.FrameForge_Dungeon_Finder_UI.parent = controls.LFDParentFrame
         controls.MerchantFrame = controls.FrameForgeTestControl()
         controls.MerchantFrame.visible = False
         controls.MerchantFrame.anchorId = "MerchantFrame"
         controls.MerchantMoneyFrame = controls.FrameForgeTestControl()
         controls.LFDQueueFrameTitleText.text = "Dungeon Finder"
         controls.NativeHuntsFrame_OnLoad(controls.NativeHuntsFrameInitializer)
+        if controls.FrameForge_Dungeon_Finder_UI.parent.anchorId != "NativeHuntsFrame":
+            raise AssertionError("FrameForge presentation was not attached above the Native Hunts shell")
         handle_message("1\tV\t2\t7\t30")
         controls.MerchantFrame.visible = True
         controls.MerchantFrame.hooks["OnShow"]()
@@ -1667,7 +1695,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the current PTR package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr6":
+    if manifest.get("version") != "22-ptr7":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()
