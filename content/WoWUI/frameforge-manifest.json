@@ -20,17 +20,17 @@
       "id": "idle",
       "name": "Idle",
       "show": [
-        "Hunt_Panel_Record__FFLayer",
         "Hunt_Panel_Idle__FFLayer",
         "No_Active_Hunt__FFLayer",
         "Speak_Huntmaster__FFLayer",
         "begin_hunt__FFLayer",
+        "Hunt_Circle_Icon__FFLayer",
+        "Hunt_Panel_Record__FFLayer",
         "Hunt_Seals__FFLayer",
         "Elite_Today__FFLayer",
         "Elite_Hunts__FFLayer",
         "Standard_Hunts__FFLayer",
         "Hunt_Seal__FFLayer",
-        "Hunt_Circle_Icon__FFLayer",
         "Standard_Hunts_Value__FFLayer",
         "Elite_Hunts_Value__FFLayer",
         "Elite_Today_Available__FFLayer",
@@ -76,18 +76,7 @@
       "name": "Tracking",
       "show": [
         "Hunt_Tier_Icon__FFLayer",
-        "Hunt_Panel_Record__FFLayer",
-        "Hunt_Seals__FFLayer",
-        "Elite_Today__FFLayer",
-        "Elite_Hunts__FFLayer",
-        "Standard_Hunts__FFLayer",
-        "Hunt_Seal__FFLayer",
         "Hunt_Circle_Icon__FFLayer",
-        "Standard_Hunts_Value__FFLayer",
-        "Elite_Hunts_Value__FFLayer",
-        "Elite_Today_Available__FFLayer",
-        "Elite_Today_Unavailable__FFLayer",
-        "Hunt_Seal_Value__FFLayer",
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
@@ -103,7 +92,18 @@
         "Tracker_Hunt_Progress",
         "Tracking_Text__FFLayer",
         "Tracking2_Text__FFLayer",
-        "Tracking3_Text__FFLayer"
+        "Tracking3_Text__FFLayer",
+        "Hunt_Panel_Record__FFLayer",
+        "Hunt_Seals__FFLayer",
+        "Elite_Today__FFLayer",
+        "Elite_Hunts__FFLayer",
+        "Standard_Hunts__FFLayer",
+        "Hunt_Seal__FFLayer",
+        "Standard_Hunts_Value__FFLayer",
+        "Elite_Hunts_Value__FFLayer",
+        "Elite_Today_Available__FFLayer",
+        "Elite_Today_Unavailable__FFLayer",
+        "Hunt_Seal_Value__FFLayer"
       ],
       "hide": [
         "Hunt_Panel_Idle__FFLayer",
@@ -131,18 +131,7 @@
       "name": "Located",
       "show": [
         "Hunt_Tier_Icon__FFLayer",
-        "Hunt_Panel_Record__FFLayer",
-        "Hunt_Seals__FFLayer",
-        "Elite_Today__FFLayer",
-        "Elite_Hunts__FFLayer",
-        "Standard_Hunts__FFLayer",
-        "Hunt_Seal__FFLayer",
         "Hunt_Circle_Icon__FFLayer",
-        "Standard_Hunts_Value__FFLayer",
-        "Elite_Hunts_Value__FFLayer",
-        "Elite_Today_Available__FFLayer",
-        "Elite_Today_Unavailable__FFLayer",
-        "Hunt_Seal_Value__FFLayer",
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
@@ -158,7 +147,18 @@
         "Tracker_Hunt_Progress",
         "Located_Text__FFLayer",
         "Located2_Text__FFLayer",
-        "Located3_Text__FFLayer"
+        "Located3_Text__FFLayer",
+        "Hunt_Panel_Record__FFLayer",
+        "Hunt_Seals__FFLayer",
+        "Elite_Today__FFLayer",
+        "Elite_Hunts__FFLayer",
+        "Standard_Hunts__FFLayer",
+        "Hunt_Seal__FFLayer",
+        "Standard_Hunts_Value__FFLayer",
+        "Elite_Hunts_Value__FFLayer",
+        "Elite_Today_Available__FFLayer",
+        "Elite_Today_Unavailable__FFLayer",
+        "Hunt_Seal_Value__FFLayer"
       ],
       "hide": [
         "Hunt_Panel_Idle__FFLayer",
@@ -186,18 +186,7 @@
       "name": "Fight",
       "show": [
         "Hunt_Tier_Icon__FFLayer",
-        "Hunt_Panel_Record__FFLayer",
-        "Hunt_Seals__FFLayer",
-        "Elite_Today__FFLayer",
-        "Elite_Hunts__FFLayer",
-        "Standard_Hunts__FFLayer",
-        "Hunt_Seal__FFLayer",
         "Hunt_Circle_Icon__FFLayer",
-        "Standard_Hunts_Value__FFLayer",
-        "Elite_Hunts_Value__FFLayer",
-        "Elite_Today_Available__FFLayer",
-        "Elite_Today_Unavailable__FFLayer",
-        "Hunt_Seal_Value__FFLayer",
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
@@ -210,7 +199,18 @@
         "Tracker_Hunt_Ground__FFLayer",
         "Tracker_Hunt_Ground_Value__FFLayer",
         "Final_Fight_Icon__FFLayer",
-        "Final_Fight_Text__FFLayer"
+        "Final_Fight_Text__FFLayer",
+        "Hunt_Panel_Record__FFLayer",
+        "Hunt_Seals__FFLayer",
+        "Elite_Today__FFLayer",
+        "Elite_Hunts__FFLayer",
+        "Standard_Hunts__FFLayer",
+        "Hunt_Seal__FFLayer",
+        "Standard_Hunts_Value__FFLayer",
+        "Elite_Hunts_Value__FFLayer",
+        "Elite_Today_Available__FFLayer",
+        "Elite_Today_Unavailable__FFLayer",
+        "Hunt_Seal_Value__FFLayer"
       ],
       "hide": [
         "Hunt_Panel_Idle__FFLayer",
@@ -241,18 +241,7 @@
       "name": "Turnin",
       "show": [
         "Hunt_Tier_Icon__FFLayer",
-        "Hunt_Panel_Record__FFLayer",
-        "Hunt_Seals__FFLayer",
-        "Elite_Today__FFLayer",
-        "Elite_Hunts__FFLayer",
-        "Standard_Hunts__FFLayer",
-        "Hunt_Seal__FFLayer",
         "Hunt_Circle_Icon__FFLayer",
-        "Standard_Hunts_Value__FFLayer",
-        "Elite_Hunts_Value__FFLayer",
-        "Elite_Today_Available__FFLayer",
-        "Elite_Today_Unavailable__FFLayer",
-        "Hunt_Seal_Value__FFLayer",
         "Hunt_Panel_Top__FFLayer",
         "Hunt_Panel_Bottom__FFLayer",
         "Hunt_Header__FFLayer",
@@ -269,7 +258,18 @@
         "Complete2A_Text__FFLayer",
         "Complete2B_Huntmaster_Value__FFLayer",
         "Complete3A_Text__FFLayer",
-        "Complete3B_Location_Value__FFLayer"
+        "Complete3B_Location_Value__FFLayer",
+        "Hunt_Panel_Record__FFLayer",
+        "Hunt_Seals__FFLayer",
+        "Elite_Today__FFLayer",
+        "Elite_Hunts__FFLayer",
+        "Standard_Hunts__FFLayer",
+        "Hunt_Seal__FFLayer",
+        "Standard_Hunts_Value__FFLayer",
+        "Elite_Hunts_Value__FFLayer",
+        "Elite_Today_Available__FFLayer",
+        "Elite_Today_Unavailable__FFLayer",
+        "Hunt_Seal_Value__FFLayer"
       ],
       "hide": [
         "Hunt_Panel_Idle__FFLayer",
@@ -305,15 +305,6 @@
         "fight",
         "turnin"
       ],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject2",
-      "runtimeId": "Hunt_Panel_Record",
-      "visibilityRuntimeId": "Hunt_Panel_Record__FFLayer",
-      "type": "Texture",
-      "allStates": true,
-      "states": [],
       "runtimeValueRequired": false
     },
     {
@@ -361,100 +352,10 @@
       "runtimeValueRequired": false
     },
     {
-      "sourceObject": "DesignObject7",
-      "runtimeId": "Hunt_Seals",
-      "visibilityRuntimeId": "Hunt_Seals__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject8",
-      "runtimeId": "Elite_Today",
-      "visibilityRuntimeId": "Elite_Today__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject9",
-      "runtimeId": "Elite_Hunts",
-      "visibilityRuntimeId": "Elite_Hunts__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject10",
-      "runtimeId": "Standard_Hunts",
-      "visibilityRuntimeId": "Standard_Hunts__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject11",
-      "runtimeId": "Hunt_Seal",
-      "visibilityRuntimeId": "Hunt_Seal__FFLayer",
-      "type": "Texture",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
       "sourceObject": "DesignObject12",
       "runtimeId": "Hunt_Circle_Icon",
       "visibilityRuntimeId": "Hunt_Circle_Icon__FFLayer",
       "type": "Texture",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject13",
-      "runtimeId": "Standard_Hunts_Value",
-      "visibilityRuntimeId": "Standard_Hunts_Value__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject14",
-      "runtimeId": "Elite_Hunts_Value",
-      "visibilityRuntimeId": "Elite_Hunts_Value__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject15",
-      "runtimeId": "Elite_Today_Available",
-      "visibilityRuntimeId": "Elite_Today_Available__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject16",
-      "runtimeId": "Elite_Today_Unavailable",
-      "visibilityRuntimeId": "Elite_Today_Unavailable__FFLayer",
-      "type": "FontString",
-      "allStates": true,
-      "states": [],
-      "runtimeValueRequired": false
-    },
-    {
-      "sourceObject": "DesignObject17",
-      "runtimeId": "Hunt_Seal_Value",
-      "visibilityRuntimeId": "Hunt_Seal_Value__FFLayer",
-      "type": "FontString",
       "allStates": true,
       "states": [],
       "runtimeValueRequired": false
@@ -820,6 +721,105 @@
       "states": [
         "fight"
       ],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject2",
+      "runtimeId": "Hunt_Panel_Record",
+      "visibilityRuntimeId": "Hunt_Panel_Record__FFLayer",
+      "type": "Texture",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject7",
+      "runtimeId": "Hunt_Seals",
+      "visibilityRuntimeId": "Hunt_Seals__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject8",
+      "runtimeId": "Elite_Today",
+      "visibilityRuntimeId": "Elite_Today__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject9",
+      "runtimeId": "Elite_Hunts",
+      "visibilityRuntimeId": "Elite_Hunts__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject10",
+      "runtimeId": "Standard_Hunts",
+      "visibilityRuntimeId": "Standard_Hunts__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject11",
+      "runtimeId": "Hunt_Seal",
+      "visibilityRuntimeId": "Hunt_Seal__FFLayer",
+      "type": "Texture",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject13",
+      "runtimeId": "Standard_Hunts_Value",
+      "visibilityRuntimeId": "Standard_Hunts_Value__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject14",
+      "runtimeId": "Elite_Hunts_Value",
+      "visibilityRuntimeId": "Elite_Hunts_Value__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject15",
+      "runtimeId": "Elite_Today_Available",
+      "visibilityRuntimeId": "Elite_Today_Available__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject16",
+      "runtimeId": "Elite_Today_Unavailable",
+      "visibilityRuntimeId": "Elite_Today_Unavailable__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
+      "runtimeValueRequired": false
+    },
+    {
+      "sourceObject": "DesignObject17",
+      "runtimeId": "Hunt_Seal_Value",
+      "visibilityRuntimeId": "Hunt_Seal_Value__FFLayer",
+      "type": "FontString",
+      "allStates": true,
+      "states": [],
       "runtimeValueRequired": false
     }
   ]

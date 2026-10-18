@@ -28,26 +28,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Panel_Record__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="6">
-        <Size>
-          <AbsDimension x="285" y="130" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="33.1989342676216" y="140.226387072345" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BACKGROUND">
-            <Texture name="Hunt_Panel_Record" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_record">
-              <TexCoords left="0" right="0.556640625" top="0" bottom="0.556640625" />
-            </Texture>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Hunt_Panel_Idle__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="3" hidden="true">
+      <Frame name="Hunt_Panel_Idle__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="2" hidden="true">
         <Size>
           <AbsDimension x="340" y="295" />
         </Size>
@@ -66,7 +47,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="No_Active_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="4" hidden="true">
+      <Frame name="No_Active_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="3" hidden="true">
         <Size>
           <AbsDimension x="300" y="25" />
         </Size>
@@ -93,7 +74,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Speak_Huntmaster__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="5" hidden="true">
+      <Frame name="Speak_Huntmaster__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="4" hidden="true">
         <Size>
           <AbsDimension x="300" y="24" />
         </Size>
@@ -114,7 +95,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="begin_hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="6" hidden="true">
+      <Frame name="begin_hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="5" hidden="true">
         <Size>
           <AbsDimension x="300" y="24" />
         </Size>
@@ -135,110 +116,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Seals__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="7">
-        <Size>
-          <AbsDimension x="120" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="44.9253610901797" y="123.250401454861" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BACKGROUND">
-            <FontString name="Hunt_Seals" setAllPoints="true" text="Huntmaster's Seals:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="8" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Elite_Today__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="8">
-        <Size>
-          <AbsDimension x="120" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="44.9253610901797" y="136.034359930916" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BACKGROUND">
-            <FontString name="Elite_Today" setAllPoints="true" text="Elite Today:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="8" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Elite_Hunts__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="9">
-        <Size>
-          <AbsDimension x="120" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="45.0293878846133" y="149.339169491577" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BACKGROUND">
-            <FontString name="Elite_Hunts" setAllPoints="true" text="Elite Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="8" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Standard_Hunts__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="10">
-        <Size>
-          <AbsDimension x="120" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="44.9253610901797" y="162.359647353678" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BACKGROUND">
-            <FontString name="Standard_Hunts" setAllPoints="true" text="Standard Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="8" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Hunt_Seal__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="11">
-        <Size>
-          <AbsDimension x="10" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="103.159777832915" y="124.763535888267" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BORDER">
-            <Texture name="Hunt_Seal" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_seal">
-              <TexCoords left="0" right="0.84375" top="0" bottom="0.625" />
-            </Texture>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Hunt_Circle_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="12">
+      <Frame name="Hunt_Circle_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="6">
         <Size>
           <AbsDimension x="50" y="50" />
         </Size>
@@ -250,119 +128,14 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="BACKGROUND">
             <Texture name="Hunt_Circle_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_circle_icon">
               <TexCoords left="0" right="0.63671875" top="0" bottom="0.78125" />
             </Texture>
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Standard_Hunts_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="13">
-        <Size>
-          <AbsDimension x="80" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="102.593416298021" y="163.462385201433" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BORDER">
-            <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Elite_Hunts_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="14">
-        <Size>
-          <AbsDimension x="80" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="102.631273093961" y="150.373579273359" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BORDER">
-            <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Elite_Today_Available__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="15">
-        <Size>
-          <AbsDimension x="80" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="102.533538891267" y="137.305620536743" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BORDER">
-            <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Elite_Today_Unavailable__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="16">
-        <Size>
-          <AbsDimension x="80" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="102.576736523103" y="137.329370841918" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BORDER">
-            <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Hunt_Seal_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="17">
-        <Size>
-          <AbsDimension x="70" y="10" />
-        </Size>
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
-            <Offset>
-              <AbsDimension x="99.2707266620432" y="124.428786704499" />
-            </Offset>
-          </Anchor>
-        </Anchors>
-        <Layers>
-          <Layer level="BORDER">
-            <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-            </FontString>
-          </Layer>
-        </Layers>
-      </Frame>
-      <Frame name="Hunt_Panel_Top__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="18" hidden="true">
+      <Frame name="Hunt_Panel_Top__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="7" hidden="true">
         <Size>
           <AbsDimension x="330" y="150" />
         </Size>
@@ -374,14 +147,14 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="BACKGROUND">
             <Texture name="Hunt_Panel_Top" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active">
               <TexCoords left="0" right="0.64453125" top="0" bottom="0.953125" />
             </Texture>
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Panel_Bottom__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="19" hidden="true">
+      <Frame name="Hunt_Panel_Bottom__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="8" hidden="true">
         <Size>
           <AbsDimension x="330" y="130" />
         </Size>
@@ -393,14 +166,14 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="BORDER">
+          <Layer level="BACKGROUND">
             <Texture name="Hunt_Panel_Bottom" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_active">
               <TexCoords left="0" right="0.64453125" top="0" bottom="0.953125" />
             </Texture>
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Header__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="20" hidden="true">
+      <Frame name="Hunt_Header__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="9" hidden="true">
         <Size>
           <AbsDimension x="335" y="70" />
         </Size>
@@ -419,7 +192,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Progress_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="21" hidden="true">
+      <Frame name="Hunt_Progress_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="10" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -431,12 +204,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BACKGROUND">
             <FontString name="Hunt_Progress_Text" setAllPoints="true" text="Hunt Progress" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Trail_Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="22" hidden="true">
+      <Frame name="Trail_Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="11" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -448,12 +221,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Trail_Located_Text" setAllPoints="true" text="Trail Located" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Final_Confrontation_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="23" hidden="true">
+      <Frame name="Final_Confrontation_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="12" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -465,12 +238,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Final_Confrontation_Text" setAllPoints="true" text="Final Confrontation" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="24" hidden="true">
+      <Frame name="Hunt_Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="13" hidden="true">
         <Size>
           <AbsDimension x="320" y="24" />
         </Size>
@@ -482,12 +255,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Hunt_Complete_Text" setAllPoints="true" text="Hunt Complete" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Elite_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="25" hidden="true">
+      <Frame name="Tracker_Elite_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="14" hidden="true">
         <Size>
           <AbsDimension x="120" y="24" />
         </Size>
@@ -499,7 +272,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Tracker_Elite_Hunt" setAllPoints="true" text="Elite Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
@@ -511,7 +284,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Standard_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="26" hidden="true">
+      <Frame name="Tracker_Standard_Hunt__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="15" hidden="true">
         <Size>
           <AbsDimension x="120" y="24" />
         </Size>
@@ -523,7 +296,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Tracker_Standard_Hunt" setAllPoints="true" text="Standard Hunt" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
@@ -535,7 +308,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Target_Name__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="27" hidden="true">
+      <Frame name="Tracker_Target_Name__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="16" hidden="true">
         <Size>
           <AbsDimension x="220" y="24" />
         </Size>
@@ -547,7 +320,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Tracker_Target_Name" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="18" />
@@ -556,7 +329,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Huntmaster__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="28" hidden="true">
+      <Frame name="Tracker_Huntmaster__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="17" hidden="true">
         <Size>
           <AbsDimension x="200" y="16" />
         </Size>
@@ -568,7 +341,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer level="BORDER">
             <FontString name="Tracker_Huntmaster" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -577,7 +350,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Location__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="29" hidden="true">
+      <Frame name="Tracker_Location__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="18" hidden="true">
         <Size>
           <AbsDimension x="200" y="16" />
         </Size>
@@ -598,7 +371,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Hunt_Ground__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="30" hidden="true">
+      <Frame name="Tracker_Hunt_Ground__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="19" hidden="true">
         <Size>
           <AbsDimension x="100" y="16" />
         </Size>
@@ -610,7 +383,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="BORDER">
             <FontString name="Tracker_Hunt_Ground" setAllPoints="true" text="Hunting Grounds:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -619,7 +392,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Hunt_Ground_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="31" hidden="true">
+      <Frame name="Tracker_Hunt_Ground_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="20" hidden="true">
         <Size>
           <AbsDimension x="110" y="16" />
         </Size>
@@ -631,7 +404,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Tracker_Hunt_Ground_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -640,7 +413,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracker_Progress_Surround__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="32" hidden="true">
+      <Frame name="Tracker_Progress_Surround__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="21" hidden="true">
         <Size>
           <AbsDimension x="280" y="90" />
         </Size>
@@ -652,14 +425,14 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <Texture name="Tracker_Progress_Surround" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_progress_empty">
               <TexCoords left="0" right="0.546875" top="0" bottom="0.796875" />
             </Texture>
           </Layer>
         </Layers>
       </Frame>
-      <StatusBar name="Tracker_Hunt_Progress" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="33" hidden="true" minValue="0" maxValue="100">
+      <StatusBar name="Tracker_Hunt_Progress" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="22" hidden="true" minValue="0" maxValue="100">
         <Size>
           <AbsDimension x="217" y="13" />
         </Size>
@@ -673,7 +446,7 @@
         <BarTexture file="Interface\TargetingFrame\UI-StatusBar" />
         <BarColor r="0.2" g="0.8" b="0.2" a="1" />
       </StatusBar>
-      <Frame name="Tracking_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="34" hidden="true">
+      <Frame name="Tracking_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="23" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -685,12 +458,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Tracking_Text" setAllPoints="true" text="Tracking Prey..." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracking2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="35" hidden="true">
+      <Frame name="Tracking2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="24" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -702,7 +475,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Tracking2_Text" setAllPoints="true" text="Kill enemies that reward expeience in the hunting" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -711,7 +484,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Tracking3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="36" hidden="true">
+      <Frame name="Tracking3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="25" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -723,7 +496,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Tracking3_Text" setAllPoints="true" text="grounds to reveal the final confrontation site." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -732,7 +505,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="37" hidden="true">
+      <Frame name="Located_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="26" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -744,12 +517,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Located_Text" setAllPoints="true" text="Prey Located" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Located2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="38" hidden="true">
+      <Frame name="Located2_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="27" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -761,7 +534,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="OVERLAY">
+          <Layer level="ARTWORK">
             <FontString name="Located2_Text" setAllPoints="true" text="Travel to the marked location on your map to" inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -770,7 +543,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Located3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="39" hidden="true">
+      <Frame name="Located3_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="28" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -782,7 +555,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <FontString name="Located3_Text" setAllPoints="true" text="activate the crystal and dispatch your prey." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -791,7 +564,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Complete_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="40" hidden="true">
+      <Frame name="Hunt_Complete_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="29" hidden="true">
         <Size>
           <AbsDimension x="64" y="64" />
         </Size>
@@ -803,12 +576,12 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="ARTWORK">
             <Texture name="Hunt_Complete_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_turnin" />
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="41" hidden="true">
+      <Frame name="Complete_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="30" hidden="true">
         <Size>
           <AbsDimension x="280" y="18" />
         </Size>
@@ -820,7 +593,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <FontString name="Complete_Text" setAllPoints="true" text="Ready to Turn In" inherits="GameFontNormal" justifyH="CENTER" justifyV="MIDDLE" outline="NORMAL">
               <Shadow>
                 <Offset>
@@ -832,7 +605,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete2A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="42" hidden="true">
+      <Frame name="Complete2A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="31" hidden="true">
         <Size>
           <AbsDimension x="116" y="18" />
         </Size>
@@ -844,7 +617,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <FontString name="Complete2A_Text" setAllPoints="true" text="Return to " inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -853,7 +626,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete2B_Huntmaster_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="43" hidden="true">
+      <Frame name="Complete2B_Huntmaster_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="32" hidden="true">
         <Size>
           <AbsDimension x="159" y="18" />
         </Size>
@@ -865,7 +638,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <FontString name="Complete2B_Huntmaster_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -874,7 +647,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete3A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="44" hidden="true">
+      <Frame name="Complete3A_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="33" hidden="true">
         <Size>
           <AbsDimension x="130" y="18" />
         </Size>
@@ -886,7 +659,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <FontString name="Complete3A_Text" setAllPoints="true" text="in" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -895,7 +668,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Complete3B_Location_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="45" hidden="true">
+      <Frame name="Complete3B_Location_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="34" hidden="true">
         <Size>
           <AbsDimension x="154" y="18" />
         </Size>
@@ -907,7 +680,7 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <FontString name="Complete3B_Location_Value" setAllPoints="true" text="Text" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
               <FontHeight>
                 <AbsValue val="10" />
@@ -916,7 +689,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Final_Fight_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="46" hidden="true">
+      <Frame name="Final_Fight_Icon__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="35" hidden="true">
         <Size>
           <AbsDimension x="80" y="80" />
         </Size>
@@ -928,14 +701,14 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <Texture name="Final_Fight_Icon" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_icon_finalfight">
               <TexCoords left="0" right="0.6796875" top="0" bottom="0.625" />
             </Texture>
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Final_Fight_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="47" hidden="true">
+      <Frame name="Final_Fight_Text__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="36" hidden="true">
         <Size>
           <AbsDimension x="280" y="20" />
         </Size>
@@ -947,8 +720,235 @@
           </Anchor>
         </Anchors>
         <Layers>
-          <Layer level="HIGHLIGHT">
+          <Layer level="OVERLAY">
             <FontString name="Final_Fight_Text" setAllPoints="true" text="Defeat your prey." inherits="GameFontHighlight" justifyH="CENTER" justifyV="MIDDLE" />
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Hunt_Panel_Record__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="37">
+        <Size>
+          <AbsDimension x="285" y="130" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="33.1989342676216" y="140.226387072345" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="OVERLAY">
+            <Texture name="Hunt_Panel_Record" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_panel_record">
+              <TexCoords left="0" right="0.556640625" top="0" bottom="0.556640625" />
+            </Texture>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Hunt_Seals__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="38">
+        <Size>
+          <AbsDimension x="120" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="44.9253610901797" y="123.250401454861" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="OVERLAY">
+            <FontString name="Hunt_Seals" setAllPoints="true" text="Huntmaster's Seals:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="8" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Elite_Today__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="39">
+        <Size>
+          <AbsDimension x="120" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="44.9253610901797" y="136.034359930916" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Elite_Today" setAllPoints="true" text="Elite Today:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="8" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Elite_Hunts__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="40">
+        <Size>
+          <AbsDimension x="120" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="45.0293878846133" y="149.339169491577" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Elite_Hunts" setAllPoints="true" text="Elite Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="8" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Standard_Hunts__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="41">
+        <Size>
+          <AbsDimension x="120" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="44.9253610901797" y="162.359647353678" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Standard_Hunts" setAllPoints="true" text="Standard Hunts:" inherits="GameFontHighlight" justifyH="LEFT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="8" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Hunt_Seal__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="42">
+        <Size>
+          <AbsDimension x="10" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="103.159777832915" y="124.763535888267" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <Texture name="Hunt_Seal" setAllPoints="true" file="Interface\FrameForge\Dungeon_Finder_UI\hunt_seal">
+              <TexCoords left="0" right="0.84375" top="0" bottom="0.625" />
+            </Texture>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Standard_Hunts_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="43">
+        <Size>
+          <AbsDimension x="80" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="102.593416298021" y="163.462385201433" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Standard_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Elite_Hunts_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="44">
+        <Size>
+          <AbsDimension x="80" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="102.631273093961" y="150.373579273359" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Elite_Hunts_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Elite_Today_Available__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="45">
+        <Size>
+          <AbsDimension x="80" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="102.533538891267" y="137.305620536743" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Elite_Today_Available" setAllPoints="true" text="Available" inherits="GameFontGreen" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Elite_Today_Unavailable__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="46">
+        <Size>
+          <AbsDimension x="80" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="102.576736523103" y="137.329370841918" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Elite_Today_Unavailable" setAllPoints="true" text="Unavailable" inherits="GameFontDisable" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <Frame name="Hunt_Seal_Value__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="47">
+        <Size>
+          <AbsDimension x="70" y="10" />
+        </Size>
+        <Anchors>
+          <Anchor point="CENTER" relativeTo="FrameForge_Dungeon_Finder_UI" relativePoint="CENTER">
+            <Offset>
+              <AbsDimension x="99.2707266620432" y="124.428786704499" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="HIGHLIGHT">
+            <FontString name="Hunt_Seal_Value" setAllPoints="true" text="0" inherits="GameFontHighlight" justifyH="RIGHT" justifyV="MIDDLE" font="Fonts\FRIZQT__.TTF">
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+            </FontString>
           </Layer>
         </Layers>
       </Frame>
