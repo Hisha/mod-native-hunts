@@ -1398,6 +1398,7 @@
       "offsetX": -303.9388208344193,
       "offsetY": 304.2263870723448,
       "visible": true,
+      "level": 6,
       "kind": "TEXTURE",
       "visual": {
         "texture": {
@@ -1495,7 +1496,7 @@
       "relativeTo": null,
       "relativePoint": "CENTER",
       "offsetX": -292.21239401186114,
-      "offsetY": 287.0110520896269,
+      "offsetY": 287.250401454861,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1536,8 +1537,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -292.21239401186114,
-      "offsetY": 313.17058276062016,
+      "offsetX": -292.10836721742755,
+      "offsetY": 313.33916949157697,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1614,8 +1615,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.6042162107742,
-      "offsetY": 327.1237422721385,
+      "offsetX": -234.5443388040198,
+      "offsetY": 327.462385201433,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1635,8 +1636,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.60421621077424,
-      "offsetY": 313.9346776790803,
+      "offsetX": -234.5064820080798,
+      "offsetY": 314.37357927335904,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1656,8 +1657,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.6042162107742,
-      "offsetY": 301.0467856978754,
+      "offsetX": -234.60421621077379,
+      "offsetY": 301.305620536743,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1677,8 +1678,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -234.6042162107742,
-      "offsetY": 301.0467856978754,
+      "offsetX": -234.5610185789378,
+      "offsetY": 301.32937084191803,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {
@@ -1698,8 +1699,8 @@
       "point": "CENTER",
       "relativeTo": null,
       "relativePoint": "CENTER",
-      "offsetX": -237.77886315679456,
-      "offsetY": 287.9661707377021,
+      "offsetX": -237.8670284399976,
+      "offsetY": 288.428786704499,
       "visible": true,
       "kind": "FONTSTRING",
       "visual": {

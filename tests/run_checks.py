@@ -960,6 +960,13 @@ def run_frameforge_functional_ui_checks() -> None:
 
     exported_manifest = json.loads((content_root / "WoWUI/frameforge-manifest.json").read_text())
     assets_manifest = json.loads((content_root / "WoWUI/assets-manifest.json").read_text())
+    project = json.loads((ROOT / "assets/Native-Hunts.fforge.json").read_text())
+    project_frames = {frame["name"]: frame for frame in project["frames"]}
+    record_source = project_frames["DesignObject2"]
+    if (record_source.get("level") != 6 or
+            record_source.get("visual", {}).get("texture", {}).get("file") !=
+            "hunt_panel_record.png"):
+        raise AssertionError("Hunt Record source project layering or artwork regressed")
     inventory = exported_manifest.get("bindings", [])
     if (exported_manifest.get("schema") != "frameforge-wow335-manifest" or
             exported_manifest.get("version") != 2 or len(inventory) != 47):
@@ -992,6 +999,12 @@ def run_frameforge_functional_ui_checks() -> None:
     if (tier_wrapper.get("frameLevel") != "21" or
             int(tier_wrapper.get("frameLevel")) <= int(panel_wrapper.get("frameLevel"))):
         raise AssertionError("tier icon must stay above the active panel without Lua frame-level changes")
+    record_wrapper = named["Hunt_Panel_Record__FFLayer"]
+    record_label_wrapper = named["Hunt_Seals__FFLayer"]
+    if (record_wrapper.get("frameLevel") != "6" or
+            int(record_wrapper.get("frameLevel")) >= int(record_label_wrapper.get("frameLevel"))):
+        raise AssertionError(
+            "Hunt Record artwork must stay above the host shell and below its statistics")
     grounds_wrapper = named["Tracker_Hunt_Ground__FFLayer"]
     grounds_size = next(element for element in grounds_wrapper if element.tag.endswith("Size"))
     grounds_dimensions = next(element for element in grounds_size if element.tag.endswith("AbsDimension"))

@@ -28,7 +28,7 @@
           </Layer>
         </Layers>
       </Frame>
-      <Frame name="Hunt_Panel_Record__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="2">
+      <Frame name="Hunt_Panel_Record__FFLayer" parent="FrameForge_Dungeon_Finder_UI" frameStrata="MEDIUM" frameLevel="6">
         <Size>
           <AbsDimension x="285" y="130" />
         </Size>
