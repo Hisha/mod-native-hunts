@@ -512,12 +512,68 @@ void TestAssignmentScopesAndAmbushes() {
 	Check(NextAmbushThreshold(0, 2) == 33 &&
 			  NextAmbushThreshold(1, 2) == 66,
 		"two ambushes use established one-third thresholds");
-	Check(ShouldStartAmbush(30, 35, 0, 2, false),
-		"crossing first threshold starts ambush");
-	Check(!ShouldStartAmbush(30, 35, 0, 2, true),
-		"pending ambush cannot duplicate");
-	Check(!ShouldStartAmbush(95, 100, 1, 2, false),
-		"final reveal is not replaced by an ambush");
+	Check(NextTrackingMilestone(32, 0, 2, false) ==
+			TrackingMilestoneAction::None,
+		"ordinary progress below the first threshold has no milestone");
+	Check(NextTrackingMilestone(33, 0, 2, false) ==
+			TrackingMilestoneAction::StartAmbush,
+		"reaching the first threshold starts an ambush");
+	Check(NextTrackingMilestone(35, 0, 2, true) ==
+			TrackingMilestoneAction::None,
+		"an already pending ambush cannot duplicate");
+
+	Check(NextTrackingMilestone(70, 0, 2, false) ==
+			TrackingMilestoneAction::StartAmbush,
+		"a jump across multiple thresholds starts the first outstanding ambush");
+	Check(NextTrackingMilestone(70, 1, 2, false) ==
+			TrackingMilestoneAction::StartAmbush,
+		"the second crossed threshold remains due after the first ambush");
+	Check(NextTrackingMilestone(70, 2, 2, false) ==
+			TrackingMilestoneAction::None,
+		"sub-100 progress does not reveal after all ambushes");
+	HuntAggregate jumped = Accepted();
+	ExpectStatus(HuntDomain::Execute(jumped, AdvanceTracking{30}),
+		TransitionStatus::Applied, "prepare multi-threshold progress jump");
+	ExpectStatus(HuntDomain::Execute(jumped, AdvanceTracking{100}),
+		TransitionStatus::Applied, "jump from 30 progress to the cap");
+	Check(jumped.Progress == 100,
+		"multi-threshold jump preserves full capped progress");
+	Check(NextTrackingMilestone(jumped.Progress, 0, 2, false) ==
+			TrackingMilestoneAction::StartAmbush &&
+			NextTrackingMilestone(jumped.Progress, 1, 2, false) ==
+				TrackingMilestoneAction::StartAmbush &&
+			NextTrackingMilestone(jumped.Progress, 2, 2, false) ==
+				TrackingMilestoneAction::RevealFinal,
+		"30-to-100 jump drains both ambushes before final reveal");
+
+	Check(NextTrackingMilestone(100, 0, 2, false) ==
+			TrackingMilestoneAction::StartAmbush,
+		"100 progress with zero completed ambushes starts the first ambush");
+	Check(NextTrackingMilestone(100, 1, 2, false) ==
+			TrackingMilestoneAction::StartAmbush,
+		"100 progress with one completed ambush starts the second ambush");
+	Check(NextTrackingMilestone(100, 2, 2, false) ==
+			TrackingMilestoneAction::RevealFinal,
+		"100 progress reveals only after every ambush completes");
+	Check(NextTrackingMilestone(100, 0, 2, true) ==
+			TrackingMilestoneAction::None,
+		"restart with a pending ambush at 100 preserves the encounter requirement");
+	Check(NextTrackingMilestone(100, 1, 2, true) ==
+			TrackingMilestoneAction::None,
+		"a failed second ambush spawn remains pending instead of revealing");
+
+	Check(NextTrackingMilestone(100, 0, 0, false) ==
+			TrackingMilestoneAction::RevealFinal,
+		"zero configured ambushes reveal immediately at 100");
+	Check(NextAmbushThreshold(0, 3) == 25 &&
+			NextAmbushThreshold(1, 3) == 50 &&
+			NextAmbushThreshold(2, 3) == 75,
+		"three configured ambushes use evenly spaced thresholds");
+	Check(NextTrackingMilestone(100, 2, 3, false) ==
+			TrackingMilestoneAction::StartAmbush &&
+			NextTrackingMilestone(100, 3, 3, false) ==
+				TrackingMilestoneAction::RevealFinal,
+		"non-default ambush counts drain every encounter before final reveal");
 }
 
 void TestCrystalAndSpawnValidation() {

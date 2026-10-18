@@ -39,13 +39,17 @@ std::uint8_t NextAmbushThreshold(std::uint8_t completed,
 		(static_cast<std::uint32_t>(count) + 1u));
 }
 
-bool ShouldStartAmbush(std::uint8_t oldProgress, std::uint8_t newProgress,
-					   std::uint8_t completed, std::uint8_t count,
-					   bool pending) {
-	if (pending || newProgress >= 100 || completed >= count)
-		return false;
-	std::uint8_t const threshold = NextAmbushThreshold(completed, count);
-	return oldProgress < threshold && newProgress >= threshold;
+TrackingMilestoneAction NextTrackingMilestone(std::uint8_t progress,
+		std::uint8_t ambushesCompleted, std::uint8_t ambushCount,
+		bool ambushPending) {
+	if (ambushPending)
+		return TrackingMilestoneAction::None;
+	if (ambushesCompleted < ambushCount &&
+		progress >= NextAmbushThreshold(ambushesCompleted, ambushCount))
+		return TrackingMilestoneAction::StartAmbush;
+	if (progress == 100 && ambushesCompleted >= ambushCount)
+		return TrackingMilestoneAction::RevealFinal;
+	return TrackingMilestoneAction::None;
 }
 
 GameplayDecision CanActivateCrystal(CrystalUseContext const &context) {

@@ -207,6 +207,9 @@ private:
 						std::string &message);
 	bool SpawnAmbush(Player *player, HuntRuntime &runtime,
 					 std::string &message);
+	bool AwardTrackingProgress(Player *player, HuntRuntime &runtime,
+		std::uint8_t amount);
+	bool ReconcileTrackingMilestones(Player *player, HuntRuntime &runtime);
 	void SendFinalLocationFeedback(Player *player, HuntRuntime &runtime,
 								  bool includeMessage);
 	void InitializePreyCombat(Player *player, HuntRuntime &runtime,

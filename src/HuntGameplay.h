@@ -66,6 +66,12 @@ struct HuntAuraDecision {
 	std::uint32_t AddSpell = 0;
 };
 
+enum class TrackingMilestoneAction : std::uint8_t {
+	None,
+	StartAmbush,
+	RevealFinal
+};
+
 bool MatchesManagedHuntmaster(std::uint32_t creatureEntry,
 	std::uint32_t creatureSpawn, std::uint32_t managedEntry,
 	std::uint32_t managedSpawn);
@@ -79,9 +85,9 @@ bool CanUseIssuingHuntmaster(HuntState state, std::uint32_t creatureEntry,
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context);
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,
 								 std::uint8_t count);
-bool ShouldStartAmbush(std::uint8_t oldProgress, std::uint8_t newProgress,
-					   std::uint8_t completed, std::uint8_t count,
-					   bool pending);
+TrackingMilestoneAction NextTrackingMilestone(std::uint8_t progress,
+	std::uint8_t ambushesCompleted, std::uint8_t ambushCount,
+	bool ambushPending);
 GameplayDecision CanActivateCrystal(CrystalUseContext const &context);
 GameplayDecision CanCompleteFinalKill(FinalKillContext const &context);
 GameplayDecision CanUseReturnRift(ReturnRiftUseContext const &context);

@@ -1484,10 +1484,15 @@ void NativeHuntsManager::LoadAssignments() {
 		}
 		if (!HuntDomain::IsValid(runtime.Aggregate))
 			continue;
+		bool changed = false;
 		if (runtime.Aggregate.State == HuntState::PreyActive) {
 			HuntDomain::Execute(runtime.Aggregate, RecoverAfterRestart{});
-			SaveAssignment(runtime);
+			changed = true;
 		}
+		if (runtime.Aggregate.State == HuntState::Tracking)
+			changed = ReconcileTrackingMilestones(nullptr, runtime) || changed;
+		if (changed)
+			SaveAssignment(runtime);
 		_runtimes[runtime.CharacterGuid] = std::move(runtime);
 	} while (result->NextRow());
 }
@@ -2010,6 +2015,60 @@ bool NativeHuntsManager::SpawnAmbush(Player *player, HuntRuntime &runtime,
 	return true;
 }
 
+bool NativeHuntsManager::ReconcileTrackingMilestones(Player *player,
+		HuntRuntime &runtime) {
+	if (runtime.Aggregate.State != HuntState::Tracking)
+		return false;
+
+	switch (NextTrackingMilestone(runtime.Aggregate.Progress,
+			runtime.AmbushesCompleted, _config.AmbushCount,
+			runtime.AmbushPending)) {
+	case TrackingMilestoneAction::StartAmbush: {
+		// Pending is authoritative and must survive a failed spawn. Update will
+		// keep retrying while the hunter remains in the assigned zone.
+		runtime.AmbushPending = true;
+		if (player) {
+			std::string message;
+			if (SpawnAmbush(player, runtime, message))
+				ChatHandler(player->GetSession()).PSendSysMessage(
+					"|cffff8000[Native Hunts]|r {}", message);
+		}
+		return true;
+	}
+	case TrackingMilestoneAction::RevealFinal: {
+		auto const sites = FinalSitesForZone(runtime.Aggregate.Identity.ZoneKey);
+		if (sites.empty())
+			return false;
+		auto const *site = sites[urand(
+			0, static_cast<std::uint32_t>(sites.size() - 1))];
+		if (HuntDomain::Execute(runtime.Aggregate,
+				RevealFinal{site->Key, site->ZoneName}).Status !=
+			TransitionStatus::Applied)
+			return false;
+		if (player)
+			SendFinalLocationFeedback(player, runtime, true);
+		return true;
+	}
+	case TrackingMilestoneAction::None:
+		return false;
+	}
+	return false;
+}
+
+bool NativeHuntsManager::AwardTrackingProgress(Player *player,
+		HuntRuntime &runtime, std::uint8_t amount) {
+	HuntState const oldState = runtime.Aggregate.State;
+	if (HuntDomain::Execute(runtime.Aggregate, AdvanceTracking{amount}).Status !=
+		TransitionStatus::Applied)
+		return false;
+	ReconcileTrackingMilestones(player, runtime);
+	SaveAssignment(runtime);
+	if (runtime.Aggregate.State != oldState)
+		ReconcileHuntAura(player, &runtime.Aggregate);
+	QueueUiState(player);
+	return true;
+}
+
 bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 										std::string &message) {
 	auto const *preyDefinition = FindPrey(runtime.Aggregate.Identity.PreyKey);
@@ -2173,35 +2232,9 @@ void NativeHuntsManager::OnCreatureKill(Player *killer, Creature *killed) {
 			CanAdvanceTracking(context) != GameplayDecision::Allowed)
 			continue;
 
-		std::uint8_t const oldProgress = runtime.Aggregate.Progress;
-		HuntState const oldState = runtime.Aggregate.State;
 		std::uint8_t amount = static_cast<std::uint8_t>(urand(
 			_config.TrackingProgressMin, _config.TrackingProgressMax));
-		HuntDomain::Execute(runtime.Aggregate, AdvanceTracking{amount});
-		if (runtime.Aggregate.Progress == 100) {
-			auto const sites =
-				FinalSitesForZone(runtime.Aggregate.Identity.ZoneKey);
-			if (!sites.empty()) {
-				auto const *site = sites[urand(
-					0, static_cast<std::uint32_t>(sites.size() - 1))];
-				if (HuntDomain::Execute(runtime.Aggregate,
-						RevealFinal{site->Key, site->ZoneName}).Status ==
-					TransitionStatus::Applied)
-					SendFinalLocationFeedback(hunter, runtime, true);
-			}
-		} else if (ShouldStartAmbush(oldProgress, runtime.Aggregate.Progress,
-				runtime.AmbushesCompleted, _config.AmbushCount,
-				runtime.AmbushPending)) {
-			runtime.AmbushPending = true;
-			std::string ambushMessage;
-			if (SpawnAmbush(hunter, runtime, ambushMessage))
-				ChatHandler(hunter->GetSession()).PSendSysMessage(
-					"|cffff8000[Native Hunts]|r {}", ambushMessage);
-		}
-		SaveAssignment(runtime);
-		if (runtime.Aggregate.State != oldState)
-			ReconcileHuntAura(hunter, &runtime.Aggregate);
-		QueueUiState(hunter);
+		AwardTrackingProgress(hunter, runtime, amount);
 	}
 }
 
@@ -2341,7 +2374,12 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 				runtime.AmbushPending = false;
 				if (runtime.AmbushesCompleted < _config.AmbushCount)
 					++runtime.AmbushesCompleted;
+				HuntState const oldState = runtime.Aggregate.State;
+				ReconcileTrackingMilestones(player, runtime);
 				SaveAssignment(runtime);
+				if (runtime.Aggregate.State != oldState)
+					ReconcileHuntAura(player, &runtime.Aggregate);
+				QueueUiState(player);
 			} else
 				UpdatePreyAbilities(player, runtime, ambush, tick);
 		}

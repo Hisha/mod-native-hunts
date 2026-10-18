@@ -46,6 +46,26 @@ def run_domain_tests() -> None:
         print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
 
 
+def run_tracking_milestone_source_checks() -> None:
+    manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
+    milestone_start = manager.index(
+        "bool NativeHuntsManager::ReconcileTrackingMilestones")
+    milestone_end = manager.index(
+        "bool NativeHuntsManager::AwardTrackingProgress", milestone_start)
+    milestone = manager[milestone_start:milestone_end]
+    if ("runtime.AmbushPending = true;" not in milestone or
+            "SpawnAmbush(player, runtime, message)" not in milestone or
+            milestone.index("runtime.AmbushPending = true;") >
+            milestone.index("SpawnAmbush(player, runtime, message)")):
+        raise AssertionError(
+            "tracking milestone reconciliation does not preserve pending state "
+            "before an ambush spawn attempt")
+    if manager.count("ReconcileTrackingMilestones(") < 4:
+        raise AssertionError(
+            "tracking milestones are not reconciled after load, progress, and ambush completion")
+    print("PASS tracking milestone manager integration contracts", flush=True)
+
+
 def run_functional_ui_checks() -> None:
     """Verify the functional Native Hunts client contract of the known-working
     version-18 package.
@@ -1997,6 +2017,7 @@ def main() -> None:
     checks = (
         run_function_shadow_guard,
         run_domain_tests,
+        run_tracking_milestone_source_checks,
         run_functional_ui_checks,
         run_frameforge_functional_ui_checks,
         run_frameforge_package_checks,
