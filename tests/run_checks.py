@@ -108,9 +108,12 @@ def run_relic_persistence_contract_checks() -> None:
             raise AssertionError(f"relic-pool persistence contract missing: {token}")
     if "NativeHunts.Relics.CountPerZone = 60" not in configuration:
         raise AssertionError("default relic population is not documented as 60")
+    if "NativeHunts.Relics.CollectionCastTimeMs = 3000" not in configuration:
+        raise AssertionError("default relic collection cast time is not documented as 3000 ms")
     if "NativeHunts.CollectionPrototype.Enable" in configuration:
         raise AssertionError("obsolete separate relic enable setting remains")
     for token in ('"NativeHunts.Relics.CountPerZone"',
+                  '"NativeHunts.Relics.CollectionCastTimeMs"',
                   "NormalizeRelicsPerZone", "std::int32_t"):
         if token not in module:
             raise AssertionError(f"relic count validation is missing: {token}")
@@ -168,8 +171,45 @@ def run_relic_persistence_contract_checks() -> None:
         "bool NativeHuntsManager::CollectRelic")
     collection_end = manager.index(
         "bool NativeHuntsManager::UseCrystal", collection_start)
-    if "object->Delete()" in manager[collection_start:collection_end]:
+    collection_code = manager[collection_start:collection_end]
+    if "object->Delete()" in collection_code:
         raise AssertionError("shared relic interaction consumes the world object")
+    begin_end = collection_code.index(
+        "bool NativeHuntsManager::CompleteRelicCollection")
+    begin_code = collection_code[:begin_end]
+    complete_code = collection_code[begin_end:]
+    for token in ("_pendingRelicCollections.count(guid)",
+                  "std::make_shared<SpellInfo>", "SpellCastTimesEntry",
+                  "effect.Effect = 0", "TRIGGERED_NONE",
+                  "RelicCollectionSpellId", "CompleteRelicCollection(player, object, message)"):
+        if token not in begin_code:
+            raise AssertionError(f"interruptible relic cast setup missing: {token}")
+    if begin_code.index("_config.RelicCollectionCastTimeMs == 0") > begin_code.index(
+            "sSpellMgr->GetSpellInfo"):
+        raise AssertionError("zero cast time no longer preserves instant collection")
+    for token in ("pending.RelicGuid != object->GetGUID()",
+                  "runtime->HuntInstanceId != pending.HuntInstanceId",
+                  "pool->Id != pending.PoolId", "relicIndex != pending.RelicIndex",
+                  "player->IsWithinDistInMap(object, INTERACTION_DISTANCE)",
+                  "INSERT IGNORE INTO `native_hunt_collection`"):
+        if token not in complete_code:
+            raise AssertionError(f"completion-time relic validation missing: {token}")
+    if "INSERT IGNORE INTO `native_hunt_collection`" in begin_code:
+        raise AssertionError("relic progress can be committed before cast completion")
+    if "TRIGGERED_IGNORE_EFFECTS" in begin_code:
+        raise AssertionError("relic cast suppresses the client-visible spell packets")
+    for token in ("OnSpellCastCancel", "CancelRelicCollection",
+                  "OnSpellCast(Spell *spell", "spell->m_targets.GetGOTarget()"):
+        if token not in module:
+            raise AssertionError(f"relic cast lifecycle hook missing: {token}")
+    for token in ("LoadCollectedRelics(runtime)", "HaveAtClient(object)",
+                  "DestroyForPlayer(player)", "CollectedRelicKeys",
+                  "RefreshRelicInteractionState(player, runtime)"):
+        if token not in manager:
+            raise AssertionError(f"per-player collected-relic visibility missing: {token}")
+    if any(token in collection_code for token in (
+            "SetFlag(GAMEOBJECT_FLAGS", "DespawnOrUnsummon", "SetRespawnTime")):
+        raise AssertionError("collection changes the shared relic's global interaction state")
     if "mod_native_hunts_shared_relic" not in world or re.search(
             r"INSERT\s+(?:IGNORE\s+)?INTO\s+`gameobject`(?:\s|\()", world,
             re.IGNORECASE):

@@ -24,6 +24,10 @@ NativeHunts.GroupCreditRadius = 100.0
 # 200; negative values are treated as 0. Existing active pools retain their
 # persisted locations until their last active or resumable Hunt ends.
 NativeHunts.Relics.CountPerZone = 60
+# Time spent examining a relic. This uses a normal interruptible WoW spellcast;
+# movement or other cast interruption awards no progress. Set to 0 for the
+# previous instant interaction.
+NativeHunts.Relics.CollectionCastTimeMs = 3000
 
 # Required Standard tracking ambushes are spaced evenly through progress.
 # Set Count to 0 to disable them. The assigned prey escapes at the configured

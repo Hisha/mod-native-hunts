@@ -15,6 +15,7 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
+#include "Spell.h"
 #include "SpellAuras.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -32,6 +33,7 @@
 
 namespace {
 native_hunts::NativeHuntsConfig Config;
+constexpr std::uint32_t RelicCollectionSpellId = 3365;
 
 Player *GetCommandPlayer(ChatHandler *handler) {
 	return handler && handler->GetSession()
@@ -507,6 +509,8 @@ public:
 		auto const relicPolicy = native_hunts::NormalizeRelicsPerZone(
 			configuredRelics);
 		Config.RelicsCountPerZone = relicPolicy.Count;
+		Config.RelicCollectionCastTimeMs = sConfigMgr->GetOption<std::uint32_t>(
+			"NativeHunts.Relics.CollectionCastTimeMs", 3000);
 		if (relicPolicy.Adjusted)
 			LOG_WARN("module.native_hunts",
 				"NativeHunts.Relics.CountPerZone={} is outside the supported "
@@ -875,6 +879,33 @@ public:
 	}
 };
 
+class NativeRelicCollectionSpellScript final : public AllSpellScript {
+public:
+	NativeRelicCollectionSpellScript() :
+		AllSpellScript("NativeRelicCollectionSpellScript") {}
+
+	void OnSpellCastCancel(Spell *, Unit *caster, SpellInfo const *spellInfo,
+			bool) override {
+		if (spellInfo && spellInfo->Id == RelicCollectionSpellId && caster &&
+			caster->IsPlayer())
+			sNativeHunts.CancelRelicCollection(caster->ToPlayer());
+	}
+
+	void OnSpellCast(Spell *spell, Unit *caster, SpellInfo const *spellInfo,
+			bool) override {
+		if (!spell || !spellInfo || spellInfo->Id != RelicCollectionSpellId ||
+			!caster || !caster->IsPlayer())
+			return;
+		Player *player = caster->ToPlayer();
+		std::string message;
+		sNativeHunts.CompleteRelicCollection(player,
+			spell->m_targets.GetGOTarget(), message);
+		if (!message.empty())
+			ChatHandler(player->GetSession()).PSendSysMessage(
+				"|cff33ccff[Native Hunts]|r {}", message);
+	}
+};
+
 class NativeReturnRiftScript final : public GameObjectScript {
 public:
 	NativeReturnRiftScript() :
@@ -1053,6 +1084,7 @@ void AddNativeHuntsModuleScripts() {
 	new NativeHuntmasterScript();
 	new NativeTrailCrystalScript();
 	new NativeSharedRelicScript();
+	new NativeRelicCollectionSpellScript();
 	new NativeReturnRiftScript();
 	new NativeHuntsPlayerScript();
 	new NativeHuntGuardLocatorScript();

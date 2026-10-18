@@ -8,6 +8,11 @@ ordinary kill tracking or deleting historical `native_hunt_collection` rows.
 Negative values are treated as zero. Values above 200 are clamped to 200 and
 reported in the server log. There is deliberately no separate enable switch.
 
+`NativeHunts.Relics.CollectionCastTimeMs = 3000` controls the base duration of
+the client-visible, interruptible collection cast. Zero keeps collection
+instant. Movement and other normal spell interruptions cancel the pending
+attempt before any ledger or tracking write occurs.
+
 Changing the positive value does not rewrite an active pool. Its persisted
 count and positions remain stable until its last associated Hunt ends. New
 pools use the new value. Changing the value to zero immediately despawns and
@@ -31,6 +36,25 @@ Completion and abandonment release the assignment. A pool stays alive while
 any active or resumable assignment references it, including an offline player.
 After the final reference disappears, every summoned object is deleted and the
 pool and position rows are removed. Historical per-Hunt collection rows remain.
+
+## Per-player interaction
+
+AzerothCore does not expose a general per-player override for
+`GAMEOBJECT_FLAGS` on a shared BUTTON GameObject. Native Hunts therefore keeps
+the shared world object unchanged and sends AzerothCore's recipient-only object
+destroy packet after that player has durable collection credit. Other players
+continue to see and use the same object. The persisted collection ledger is
+loaded on restart and remains the authoritative duplicate guard; visibility is
+reapplied after login and whenever the object re-enters that player's client
+visibility range.
+
+The collection cast uses stock build-12340 spell 3365 (`Opening`) for its
+client cast bar and normal interruption lifecycle. The server invokes it with
+effects disabled, so it does not open, loot, despawn, or change the shared
+relic. Hunt, pool, indexed relic, map, zone, range, and duplicate eligibility
+are checked again only after a successful cast. One pending attempt is allowed
+per player, and the database uniqueness key remains the final concurrency
+guard.
 
 ## Restart recovery
 
@@ -142,17 +166,23 @@ No separate database or permanent `gameobject` spawn is introduced.
 4. Give Player B a Westfall Hunt; confirm both assignments reference the same
    pool UUID and the position count remains 60.
 5. Collect the same indexed relic with both players; both should gain tracking.
-   Re-click with either player and confirm no second award.
-6. Use relics and kills across both ambush thresholds and confirm each actual
+   Confirm it disappears only for the collector while remaining visible and
+   interactable for the other player.
+6. Move during the three-second collection cast and confirm the cast is
+   interrupted, the relic remains visible, and no collection row or progress is
+   awarded. Complete a cast and confirm progress is written only at completion.
+7. Re-click or replay an interaction packet for a collected relic and confirm no
+   second award.
+8. Use relics and kills across both ambush thresholds and confirm each actual
    ambush must resolve before final reveal.
-7. Relog each player and restart worldserver. Confirm pool UUID, coordinates,
-   and collection credit remain unchanged.
-8. Complete Player A's Hunt; confirm all relics remain for Player B.
-9. Complete Player B's Hunt; confirm the objects and pool/position rows retire.
-10. Give Player C a Westfall Hunt and compare positions; confirm a new pool UUID
+9. Relog each player and restart worldserver. Confirm pool UUID, coordinates,
+   collection credit, and per-player hidden relic state are restored.
+10. Complete Player A's Hunt; confirm all relics remain for Player B.
+11. Complete Player B's Hunt; confirm the objects and pool/position rows retire.
+12. Give Player C a Westfall Hunt and compare positions; confirm a new pool UUID
     and newly randomized coordinates.
-11. Repeat with two map instances where an authored hunting zone permits it;
+13. Repeat with two map instances where an authored hunting zone permits it;
     confirm distinct pool UUIDs and no cross-instance interaction.
-12. Set count to zero and reload configuration. Confirm managed relics retire,
+14. Set count to zero and reload configuration. Confirm managed relics retire,
     clicks grant nothing, historical collection rows remain, and kill-only Hunt
     progression still completes normally.

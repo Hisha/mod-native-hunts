@@ -12,6 +12,7 @@
 #include "CreatureAI.h"
 #include "Chat.h"
 #include "DatabaseEnv.h"
+#include "DBCStructure.h"
 #include "DBCStores.h"
 #include "Field.h"
 #include "Formulas.h"
@@ -31,6 +32,9 @@
 #include "Player.h"
 #include "Random.h"
 #include "ScriptMgr.h"
+#include "Spell.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "TemporarySummon.h"
 #include "Transaction.h"
 #include "World.h"
@@ -52,6 +56,7 @@ namespace {
 constexpr char Package[] = "mod-native-hunts";
 constexpr char SealSymbol[] = "huntmaster-seal";
 constexpr char RelicObjectiveKey[] = "shared-zone-relics-v2";
+constexpr std::uint32_t RelicCollectionSpellId = 3365;
 
 bool IsUuid(std::string const &value) {
 	if (value.size() != 36)
@@ -1426,6 +1431,7 @@ void NativeHuntsManager::Initialize() {
 	_relicPoolGenerationJobs.clear();
 	_relicPoolGenerationOrder.clear();
 	_relicPoolRetryAfter.clear();
+	_pendingRelicCollections.clear();
 	_relicDisableCleanupComplete = false;
 	_runtimes.clear();
 	_uncertainTurnIns.clear();
@@ -1483,6 +1489,7 @@ void NativeHuntsManager::Shutdown() {
 	_relicPoolGenerationJobs.clear();
 	_relicPoolGenerationOrder.clear();
 	_relicPoolRetryAfter.clear();
+	_pendingRelicCollections.clear();
 	for (auto &[guid, runtime] : _runtimes)
 		RemoveRuntimeObjects(ConnectedPlayer(guid), runtime);
 	_runtimes.clear();
@@ -1552,6 +1559,7 @@ void NativeHuntsManager::LoadAssignments() {
 			changed = ReconcileTrackingMilestones(nullptr, runtime) || changed;
 		if (changed)
 			SaveAssignment(runtime);
+		LoadCollectedRelics(runtime);
 		_runtimes[runtime.CharacterGuid] = std::move(runtime);
 	} while (result->NextRow());
 }
@@ -1865,6 +1873,65 @@ void NativeHuntsManager::SpawnRelicPool(RelicPool &pool) {
 		pool.SpawnShortfallReported = true;
 	} else if (spawned == pool.RequiredCount)
 		pool.SpawnShortfallReported = false;
+}
+
+void NativeHuntsManager::LoadCollectedRelics(HuntRuntime &runtime) {
+	runtime.CollectedRelicKeys.clear();
+	runtime.HiddenRelicGuids.clear();
+	if (!IsUuid(runtime.HuntInstanceId))
+		return;
+	QueryResult result = CharacterDatabase.Query(
+		"SELECT `relic_key` FROM `native_hunt_collection` WHERE "
+		"`hunt_instance_id`='{}' AND `objective_key`='{}'",
+		runtime.HuntInstanceId, RelicObjectiveKey);
+	if (!result)
+		return;
+	do
+		runtime.CollectedRelicKeys.insert(
+			result->Fetch()[0].Get<std::string>());
+	while (result->NextRow());
+}
+
+void NativeHuntsManager::HideCollectedRelic(Player *player,
+		HuntRuntime &runtime, GameObject *object, std::string const &relicKey) {
+	if (!player || !object || !runtime.CollectedRelicKeys.count(relicKey) ||
+		!player->HaveAtClient(object))
+		return;
+	if (runtime.HiddenRelicGuids.insert(object->GetGUID()).second)
+		object->DestroyForPlayer(player);
+}
+
+void NativeHuntsManager::RefreshRelicInteractionState(Player *player,
+		HuntRuntime &runtime) {
+	if (!player || runtime.RelicPoolId.empty() ||
+		runtime.CollectedRelicKeys.empty())
+		return;
+	auto poolIt = _relicPools.find(runtime.RelicPoolId);
+	if (poolIt == _relicPools.end())
+		return;
+	std::unordered_set<ObjectGuid> liveGuids;
+	for (RelicPosition const &position : poolIt->second.Positions) {
+		if (position.Guid.IsEmpty())
+			continue;
+		liveGuids.insert(position.Guid);
+		std::string const relicKey = poolIt->second.Id + ":" +
+			std::to_string(position.Index);
+		if (!runtime.CollectedRelicKeys.count(relicKey))
+			continue;
+		GameObject *object = ObjectAccessor::GetGameObject(*player, position.Guid);
+		if (!object || !object->IsInWorld() || !player->HaveAtClient(object)) {
+			runtime.HiddenRelicGuids.erase(position.Guid);
+			continue;
+		}
+		HideCollectedRelic(player, runtime, object, relicKey);
+	}
+	for (auto iterator = runtime.HiddenRelicGuids.begin();
+			iterator != runtime.HiddenRelicGuids.end();) {
+		if (!liveGuids.count(*iterator))
+			iterator = runtime.HiddenRelicGuids.erase(iterator);
+		else
+			++iterator;
+	}
 }
 
 RelicPersistenceObservation NativeHuntsManager::LoadPersistedRelicPool(
@@ -2868,7 +2935,12 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		message = "The relic cannot be examined.";
 		return false;
 	}
-	auto runtimeIt = _runtimes.find(player->GetGUID().GetCounter());
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	if (_pendingRelicCollections.count(guid)) {
+		message = "You are already examining a relic.";
+		return false;
+	}
+	auto runtimeIt = _runtimes.find(guid);
 	HuntRuntime *runtime = runtimeIt == _runtimes.end()
 		? nullptr : &runtimeIt->second;
 	std::uint32_t relicIndex = 0;
@@ -2898,6 +2970,130 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		message = "This relic has no connection to an active Hunt.";
 		return false;
 	}
+	if (!player->IsWithinDistInMap(object, INTERACTION_DISTANCE)) {
+		message = "The relic is too far away to examine.";
+		return false;
+	}
+	std::string const relicKey = pool->Id + ":" +
+		std::to_string(relicIndex);
+	QueryResult duplicate = CharacterDatabase.Query(
+		"SELECT 1 FROM `native_hunt_collection` WHERE "
+		"`hunt_instance_id`='{}' AND `objective_key`='{}' AND `relic_key`='{}'",
+		runtime->HuntInstanceId, RelicObjectiveKey, relicKey);
+	if (duplicate) {
+		runtime->CollectedRelicKeys.insert(relicKey);
+		HideCollectedRelic(player, *runtime, object, relicKey);
+		message = "You have already examined this relic during this Hunt.";
+		return false;
+	}
+	PendingRelicCollection pending{runtime->HuntInstanceId, pool->Id,
+		relicIndex, object->GetGUID()};
+	_pendingRelicCollections.emplace(guid, std::move(pending));
+	if (_config.RelicCollectionCastTimeMs == 0)
+		return CompleteRelicCollection(player, object, message);
+
+	if (!_relicCollectionSpell) {
+		SpellEntry const *spellEntry = sSpellStore.LookupEntry(
+			RelicCollectionSpellId);
+		SpellInfo const *sourceSpell = sSpellMgr->GetSpellInfo(
+			RelicCollectionSpellId);
+		if (spellEntry && sourceSpell) {
+			_relicCollectionSpell = std::make_shared<SpellInfo>(spellEntry);
+			_relicCollectionCastTime =
+				std::make_shared<SpellCastTimesEntry>();
+			_relicCollectionSpell->AttributesCu = sourceSpell->AttributesCu;
+			_relicCollectionSpell->ExplicitTargetMask =
+				sourceSpell->ExplicitTargetMask;
+			// Spell effect 0 means no server-side effect in build 12340.
+			for (SpellEffectInfo &effect : _relicCollectionSpell->Effects)
+				effect.Effect = 0;
+			_relicCollectionSpell->CastTimeEntry =
+				_relicCollectionCastTime.get();
+		}
+	}
+	if (!_relicCollectionSpell || !_relicCollectionCastTime) {
+		_pendingRelicCollections.erase(guid);
+		message = "The relic's collection spell is unavailable.";
+		return false;
+	}
+	_relicCollectionCastTime->ID = 0;
+	_relicCollectionCastTime->CastTime =
+		static_cast<std::int32_t>(std::min<std::uint32_t>(
+			_config.RelicCollectionCastTimeMs,
+			static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max())));
+	SpellCastTargets targets;
+	targets.SetGOTarget(object);
+	SpellCastResult const result = player->CastSpell(targets,
+		_relicCollectionSpell.get(), nullptr, TRIGGERED_NONE);
+	if (result != SPELL_CAST_OK) {
+		_pendingRelicCollections.erase(guid);
+		message = "You cannot examine this relic right now.";
+		return false;
+	}
+	if (_pendingRelicCollections.count(guid))
+		message = "You begin examining the cursed relic.";
+	return true;
+}
+
+void NativeHuntsManager::CancelRelicCollection(Player *player) {
+	if (player)
+		_pendingRelicCollections.erase(player->GetGUID().GetCounter());
+}
+
+bool NativeHuntsManager::CompleteRelicCollection(Player *player,
+		GameObject *object, std::string &message) {
+	if (!player || !object) {
+		message = "The relic cannot be examined.";
+		return false;
+	}
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	auto pendingIt = _pendingRelicCollections.find(guid);
+	if (pendingIt == _pendingRelicCollections.end()) {
+		message = "No relic collection is awaiting completion.";
+		return false;
+	}
+	PendingRelicCollection const pending = pendingIt->second;
+	_pendingRelicCollections.erase(pendingIt);
+	if (pending.RelicGuid != object->GetGUID()) {
+		message = "The relic changed before you finished examining it.";
+		return false;
+	}
+	auto runtimeIt = _runtimes.find(guid);
+	HuntRuntime *runtime = runtimeIt == _runtimes.end()
+		? nullptr : &runtimeIt->second;
+	std::uint32_t relicIndex = 0;
+	RelicPool *pool = FindRelicPool(object, &relicIndex);
+	RelicCollectionContext context{
+		IsEnabled() && _config.RelicsCountPerZone > 0 && _relicPoolsReady,
+		runtime != nullptr,
+		runtime ? runtime->Aggregate.State : HuntState::Idle,
+		pool && object->GetEntry() == _config.RelicGameObjectEntry && runtime &&
+			runtime->RelicPoolId == pool->Id,
+		runtime && pool && object->GetMap() == player->GetMap() &&
+			runtime->MapId == pool->Scope.MapId &&
+			player->GetMap()->GetInstanceId() == pool->Scope.InstanceId,
+		runtime && pool && player->GetZoneId() == pool->Scope.ZoneId &&
+			object->GetZoneId() == pool->Scope.ZoneId &&
+			runtime->ZoneId == pool->Scope.ZoneId};
+	if (!runtime || runtime->HuntInstanceId != pending.HuntInstanceId ||
+		!pool || pool->Id != pending.PoolId || relicIndex != pending.RelicIndex ||
+		!player->IsWithinDistInMap(object, INTERACTION_DISTANCE)) {
+		message = "The relic is no longer in reach for this Hunt.";
+		return false;
+	}
+	switch (CanCollectRelic(context)) {
+	case GameplayDecision::WrongState:
+		message = "This relic no longer reveals anything about your active Hunt.";
+		return false;
+	case GameplayDecision::WrongLocation:
+		message = "This relic does not belong to your assigned hunting ground.";
+		return false;
+	case GameplayDecision::Allowed:
+		break;
+	default:
+		message = "This relic has no connection to an active Hunt.";
+		return false;
+	}
 	std::string const relicKey = pool->Id + ":" +
 		std::to_string(relicIndex);
 
@@ -2909,6 +3105,8 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
 		runtime->HuntInstanceId, RelicObjectiveKey, relicKey);
 	if (duplicate) {
+		runtime->CollectedRelicKeys.insert(relicKey);
+		HideCollectedRelic(player, *runtime, object, relicKey);
 		Field *field = duplicate->Fetch();
 		std::uint8_t const persistedProgress = field[0].Get<std::uint8_t>();
 		std::uint64_t const persistedRevision = field[1].Get<std::uint64_t>();
@@ -2987,6 +3185,8 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		return false;
 	}
 	Field *field = persisted->Fetch();
+	runtime->CollectedRelicKeys.insert(relicKey);
+	HideCollectedRelic(player, *runtime, object, relicKey);
 	std::uint8_t const persistedAward = field[0].Get<std::uint8_t>();
 	std::uint8_t const persistedProgress = field[1].Get<std::uint8_t>();
 	std::uint64_t const persistedRevision = field[2].Get<std::uint64_t>();
@@ -3260,6 +3460,7 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 		Player *player = ConnectedPlayer(guid);
 		if (!player)
 			continue;
+		RefreshRelicInteractionState(player, runtime);
 		if (runtime.Aggregate.State == HuntState::Tracking &&
 			runtime.AmbushPending) {
 			Creature *ambush = runtime.AmbushGuid.IsEmpty()
@@ -3867,12 +4068,15 @@ void NativeHuntsManager::OnLogin(Player *player) {
 	auto const it = _runtimes.find(player->GetGUID().GetCounter());
 	ReconcileHuntAura(player,
 		it == _runtimes.end() ? nullptr : &it->second.Aggregate);
+	if (it != _runtimes.end())
+		RefreshRelicInteractionState(player, it->second);
 }
 
 void NativeHuntsManager::OnLogout(Player *player) {
 	if (!player)
 		return;
 	std::uint32_t const guid = player->GetGUID().GetCounter();
+	_pendingRelicCollections.erase(guid);
 	_uiLastRequestMs.erase(guid);
 	_uiSequences.erase(guid);
 	_uiLastProjection.erase(guid);
@@ -3880,6 +4084,7 @@ void NativeHuntsManager::OnLogout(Player *player) {
 	auto it = _runtimes.find(guid);
 	if (it == _runtimes.end())
 		return;
+	it->second.HiddenRelicGuids.clear();
 	auto uncertain = _uncertainTurnIns.find(guid);
 	if (uncertain != _uncertainTurnIns.end()) {
 		auto const assignment = AssignmentExists(guid);

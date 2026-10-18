@@ -13,14 +13,18 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class Creature;
 class GameObject;
 class Map;
 class Player;
+class SpellInfo;
+struct SpellCastTimesEntry;
 
 namespace native_hunts {
 enum class SealStoreSlot : std::uint8_t {
@@ -67,6 +71,7 @@ struct NativeHuntsConfig {
 	std::uint32_t RelicsCountPerZone = DefaultRelicsPerZone;
 	std::uint32_t RelicGameObjectEntry = 990000;
 	std::uint32_t RelicProgressTarget = 10;
+	std::uint32_t RelicCollectionCastTimeMs = 3000;
 	std::uint8_t AmbushCount = 2;
 	float AmbushHealthMultiplier = 4.0f;
 	float AmbushEscapeHealthPercent = 50.0f;
@@ -117,6 +122,8 @@ struct HuntRuntime {
 	std::uint32_t ZoneId = 0;
 	std::uint32_t MapId = 0;
 	std::string RelicPoolId;
+	std::unordered_set<std::string> CollectedRelicKeys;
+	std::unordered_set<ObjectGuid> HiddenRelicGuids;
 	ObjectGuid CrystalGuid;
 	ObjectGuid AmbushGuid;
 	ObjectGuid PreyGuid;
@@ -170,6 +177,13 @@ struct RelicPoolGenerationJob {
 	bool PlacementComplete = false;
 };
 
+struct PendingRelicCollection {
+	std::string HuntInstanceId;
+	std::string PoolId;
+	std::uint32_t RelicIndex = 0;
+	ObjectGuid RelicGuid;
+};
+
 class NativeHuntsManager {
 public:
 	static NativeHuntsManager &Instance();
@@ -196,6 +210,9 @@ public:
 	bool Abandon(Player *player, std::string &message);
 	bool CollectRelic(Player *player, GameObject *object,
 		std::string &message);
+	bool CompleteRelicCollection(Player *player, GameObject *object,
+		std::string &message);
+	void CancelRelicCollection(Player *player);
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);
 	void OnCreatureKill(Player *killer, Creature *killed);
@@ -252,6 +269,10 @@ private:
 		RelicPoolScope const &scope) const;
 	void AssociateTrackingHuntsWithRelicPool(RelicPool &pool);
 	void SpawnRelicPool(RelicPool &pool);
+	void LoadCollectedRelics(HuntRuntime &runtime);
+	void RefreshRelicInteractionState(Player *player, HuntRuntime &runtime);
+	void HideCollectedRelic(Player *player, HuntRuntime &runtime,
+		GameObject *object, std::string const &relicKey);
 	RelicPool *FindRelicPool(GameObject const *object,
 		std::uint32_t *relicIndex = nullptr);
 	void ReconcileHuntAura(Player *player, HuntAggregate const *assignment);
@@ -292,6 +313,10 @@ private:
 	std::unordered_map<RelicPoolScope, std::chrono::steady_clock::time_point,
 		RelicPoolScopeHash> _relicPoolRetryAfter;
 	std::unordered_map<std::uint32_t, HuntRuntime> _runtimes;
+	std::unordered_map<std::uint32_t, PendingRelicCollection>
+		_pendingRelicCollections;
+	std::shared_ptr<SpellInfo> _relicCollectionSpell;
+	std::shared_ptr<SpellCastTimesEntry> _relicCollectionCastTime;
 	std::unordered_map<std::uint32_t, std::string> _guardLocators;
 	std::unordered_map<std::uint32_t, ProvisionalTurnIn> _uncertainTurnIns;
 	std::unordered_map<std::uint32_t, std::uint64_t> _uiLastRequestMs;
