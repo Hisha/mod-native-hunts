@@ -4,6 +4,7 @@
 #include "HuntSnapshot.h"
 #include "HuntUiProtocol.h"
 #include "HuntRewards.h"
+#include "RelicPoolPolicy.h"
 #include "SealCatalogPolicy.h"
 
 #include <cstdlib>
@@ -539,6 +540,50 @@ void TestRelicPrototypeRules() {
 		"collection at 100 preserves pending and outstanding ambushes");
 }
 
+void TestRelicPoolPolicy() {
+	auto const defaults = NormalizeRelicsPerZone(DefaultRelicsPerZone);
+	Check(defaults.Count == 60 && !defaults.Adjusted,
+		"relic population defaults to sixty");
+	auto const disabled = NormalizeRelicsPerZone(0);
+	Check(disabled.Count == 0 && !disabled.Adjusted,
+		"zero disables relic pools without coercion");
+	auto const negative = NormalizeRelicsPerZone(-5);
+	Check(negative.Count == 0 && negative.Adjusted,
+		"negative relic counts safely disable the system");
+	auto const excessive = NormalizeRelicsPerZone(1000000);
+	Check(excessive.Count == MaximumRelicsPerZone && excessive.Adjusted,
+		"excessive relic counts are bounded");
+	Check(RelicPlacementAttemptLimit(0) == 0 &&
+		RelicPlacementAttemptLimit(60) == 6000 &&
+		RelicPlacementAttemptLimit(MaximumRelicsPerZone) == 20000,
+		"placement attempts are deterministic and bounded");
+
+	RelicPoolScope westfall{0, 0, 40};
+	RelicPoolScope sameWestfall{0, 0, 40};
+	RelicPoolScope otherMap{1, 0, 40};
+	RelicPoolScope otherInstance{0, 7, 40};
+	Check(westfall == sameWestfall && !(westfall == otherMap) &&
+		!(westfall == otherInstance),
+		"pool scope includes map, instance, and zone");
+	Check(RelicPoolScopeHash{}(westfall) == RelicPoolScopeHash{}(sameWestfall),
+		"equal pool scopes have equal hashes");
+	Check(!ShouldRetireRelicPool(2) && !ShouldRetireRelicPool(1) &&
+		ShouldRetireRelicPool(0),
+		"a pool retires only after its last hunt releases it");
+	std::uint32_t candidates = 0;
+	auto const mixedCandidates = RunRelicPlacementAttempts(3, [&]() {
+		return ++candidates % 2 == 0;
+	});
+	Check(mixedCandidates.Complete && mixedCandidates.Accepted == 3 &&
+		mixedCandidates.Attempts == 6,
+		"invalid placement candidates are rejected until enough valid positions exist");
+	auto const failedCandidates = RunRelicPlacementAttempts(2,
+		[]() { return false; });
+	Check(!failedCandidates.Complete && failedCandidates.Accepted == 0 &&
+		failedCandidates.Attempts == RelicPlacementAttemptLimit(2),
+		"placement failure stops at the configured attempt bound");
+}
+
 void TestAssignmentScopesAndAmbushes() {
 	auto const *corvin = FindHuntmaster("corvin");
 	auto const *varyn = FindHuntmaster("varyn");
@@ -841,6 +886,7 @@ int main(int argc, char **argv) {
 	if (selection == "all" || selection == "tracking") {
 		TestTrackingEligibility();
 		TestRelicPrototypeRules();
+		TestRelicPoolPolicy();
 	}
 	if (selection == "all" || selection == "scope")
 		TestAssignmentScopesAndAmbushes();

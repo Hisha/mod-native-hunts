@@ -114,29 +114,22 @@ abandoning and accepting another Hunt never inherits the prior Hunt's credit.
 Collection history is intentionally retained when the active assignment row is
 removed.
 
-## Phase 1 shared relic prototype
+## Shared randomized relic pools
 
-The optional prototype is disabled by default and does not change the client
-package or tracking UI. Apply the character SQL, including the collection
-migration for an existing installation, and apply
-`data/sql/db-world/base/001_native_hunt_shared_relic.sql`. Existing PTR
-installations must also apply
-`data/sql/db-world/updates/2026_10_18_00_native_hunt_shared_relic_visual.sql`.
-The world SQL defines GameObject entry `990000` with script
-`mod_native_hunts_shared_relic`; it does not create a permanent database spawn.
+Relics are enabled by default with `NativeHunts.Relics.CountPerZone = 60`.
+Each active map/instance/zone scope owns one randomized shared pool. Persisted
+assignments, including offline resumable Hunts, keep that pool alive. Players
+see the same physical objects but collect each indexed relic independently via
+the existing per-hunt collection ledger. Ending the last associated Hunt retires
+the pool; a later Hunt generates and persists a fresh set of positions.
 
-Set `NativeHunts.CollectionPrototype.Enable = 1` and restart worldserver. The
-default placement is in Westfall (zone 40, map 0) and can be changed with the
-documented `CollectionPrototype` placement settings. A single map-owned relic
-is spawned while any persisted Tracking assignment targets that zone, including
-offline characters, and is removed when no such assignment remains.
-
-For a two-character PTR check, give both characters independent Hunts assigned
-to the configured zone, bring them to the configured coordinates, and click the
-same relic. Each character should gain the configured cumulative contribution
-(10 tracking points for the default target of 10). Re-clicking during the same
-Hunt should grant nothing, while abandoning and accepting a new Hunt creates a
-new hunt-instance identity. The relic must remain visible throughout.
+Set the count to `0` to disable generation, spawning, interaction, and awards
+without deleting historical collection credit. Apply the character pool base
+SQL for a new installation or the matching update migration for an existing
+installation. GameObject entry `990000`, display `5011`, and script
+`mod_native_hunts_shared_relic` remain unchanged; there are no permanent world
+spawn rows. See [docs/RELIC_POOLS.md](docs/RELIC_POOLS.md) for placement,
+recovery, troubleshooting, limitations, and PTR validation.
 
 ## Native Huntmaster equipment merchant
 

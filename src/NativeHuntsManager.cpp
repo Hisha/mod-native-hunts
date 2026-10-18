@@ -22,6 +22,7 @@
 #include "Mail.h"
 #include "MailMgr.h"
 #include "Map.h"
+#include "MapCollisionData.h"
 #include "MapMgr.h"
 #include "MotionMaster.h"
 #include "ObjectAccessor.h"
@@ -34,6 +35,8 @@
 #include "Transaction.h"
 #include "World.h"
 #include "WorldPacket.h"
+
+#include "DetourNavMeshQuery.h"
 
 #include <algorithm>
 #include <cctype>
@@ -48,8 +51,7 @@ namespace native_hunts {
 namespace {
 constexpr char Package[] = "mod-native-hunts";
 constexpr char SealSymbol[] = "huntmaster-seal";
-constexpr char PrototypeObjectiveKey[] = "prototype-cursed-relics-v1";
-constexpr char PrototypeRelicKey[] = "prototype-cursed-relic-1";
+constexpr char RelicObjectiveKey[] = "shared-zone-relics-v2";
 
 bool IsUuid(std::string const &value) {
 	if (value.size() != 36)
@@ -1052,7 +1054,15 @@ NativeHuntsManager &NativeHuntsManager::Instance() {
 }
 
 void NativeHuntsManager::Configure(NativeHuntsConfig config) {
+	bool const relicCountChanged =
+		_config.RelicsCountPerZone != config.RelicsCountPerZone;
 	_config = std::move(config);
+	if (relicCountChanged) {
+		_relicDisableCleanupComplete = false;
+		_relicPoolRetryAfter.clear();
+	}
+	if (_initialized && relicCountChanged)
+		ReconcileRelicPools();
 }
 
 bool NativeHuntsManager::IsEnabled() const {
@@ -1409,7 +1419,10 @@ bool NativeHuntsManager::ResolveManagedResources() {
 }
 
 void NativeHuntsManager::Initialize() {
-	RemoveCollectionPrototype();
+	RemoveAllRelicPoolObjects();
+	_relicPools.clear();
+	_relicPoolRetryAfter.clear();
+	_relicDisableCleanupComplete = false;
 	_runtimes.clear();
 	_uncertainTurnIns.clear();
 	_uiLastRequestMs.clear();
@@ -1418,6 +1431,7 @@ void NativeHuntsManager::Initialize() {
 	_uiPending.clear();
 	if (!_config.Enabled) {
 		_resources.Reason = "Native Hunts is disabled by configuration";
+		_initialized = true;
 		return;
 	}
 	LOG_INFO("module.native_hunts",
@@ -1425,8 +1439,10 @@ void NativeHuntsManager::Initialize() {
 	ResolveManagedResources();
 	ResolveGuardLocators();
 	LoadAssignments();
-	InitializeCollectionPrototype();
-	ReconcileCollectionPrototype();
+	InitializeRelicPools();
+	LoadRelicPools();
+	ReconcileRelicPools();
+	_initialized = true;
 	if (_resources.Ready)
 		LOG_INFO("module.native_hunts",
 				 "Native Hunts initialized with {} Huntmasters, {} standard prey, "
@@ -1458,7 +1474,9 @@ void NativeHuntsManager::ResolveGuardLocators() {
 }
 
 void NativeHuntsManager::Shutdown() {
-	RemoveCollectionPrototype();
+	RemoveAllRelicPoolObjects();
+	_relicPools.clear();
+	_relicPoolRetryAfter.clear();
 	for (auto &[guid, runtime] : _runtimes)
 		RemoveRuntimeObjects(ConnectedPlayer(guid), runtime);
 	_runtimes.clear();
@@ -1467,6 +1485,7 @@ void NativeHuntsManager::Shutdown() {
 	_uiSequences.clear();
 	_uiLastProjection.clear();
 	_uiPending.clear();
+	_initialized = false;
 }
 
 void NativeHuntsManager::LoadAssignments() {
@@ -1475,7 +1494,7 @@ void NativeHuntsManager::LoadAssignments() {
 		"`huntmaster_entry`,"
 		"`huntmaster_spawn_guid`,`prey_key`,`zone_key`,`zone_id`,`map_id`,"
 		"`state`,`tracking_progress`,`ambushes_completed`,`ambush_pending`,"
-		"`final_site_key`,`revision`,`tier` "
+		"`final_site_key`,`revision`,`tier`,`relic_pool_id` "
 		"FROM `native_hunt_assignment`");
 	if (!result)
 		return;
@@ -1497,6 +1516,8 @@ void NativeHuntsManager::LoadAssignments() {
 		runtime.AmbushPending = field[12].Get<std::uint8_t>() != 0;
 		runtime.Aggregate.FinalLocationKey = field[13].Get<std::string>();
 		runtime.Aggregate.Revision = field[14].Get<std::uint64_t>();
+		if (!field[16].IsNull())
+			runtime.RelicPoolId = field[16].Get<std::string>();
 
 		auto const *huntmaster = FindHuntmaster(huntmasterKey);
 		auto const *prey = FindPrey(preyKey);
@@ -1539,8 +1560,9 @@ bool NativeHuntsManager::CreateAssignment(HuntRuntime const &runtime) {
 		"(`character_guid`,`hunt_instance_id`,`huntmaster_key`,"
 		"`huntmaster_entry`,`huntmaster_spawn_guid`,`prey_key`,`tier`,"
 		"`zone_key`,`zone_id`,`map_id`,`state`,`tracking_progress`,"
-		"`ambushes_completed`,`ambush_pending`,`final_site_key`,`revision`) "
-		"VALUES ({},'{}','{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{})",
+		"`ambushes_completed`,`ambush_pending`,`final_site_key`,`revision`,"
+		"`relic_pool_id`) VALUES ({},'{}','{}',{},{},'{}',{},'{}',{},{},{},"
+		"{},{},{},'{}',{},NULLIF('{}',''))",
 		runtime.CharacterGuid, runtime.HuntInstanceId,
 		aggregate.Identity.HuntmasterKey, runtime.HuntmasterEntry,
 		runtime.HuntmasterSpawn, aggregate.Identity.PreyKey,
@@ -1550,7 +1572,7 @@ bool NativeHuntsManager::CreateAssignment(HuntRuntime const &runtime) {
 		static_cast<std::uint32_t>(aggregate.Progress),
 		static_cast<std::uint32_t>(runtime.AmbushesCompleted),
 		static_cast<std::uint32_t>(runtime.AmbushPending),
-		aggregate.FinalLocationKey, aggregate.Revision);
+		aggregate.FinalLocationKey, aggregate.Revision, runtime.RelicPoolId);
 	bool const acknowledged = CommitCharacterTransactionAndWait(transaction);
 	QueryResult persisted = CharacterDatabase.Query(
 		"SELECT 1 FROM `native_hunt_assignment` WHERE `character_guid`={} "
@@ -1570,8 +1592,9 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		"(`character_guid`,`hunt_instance_id`,`huntmaster_key`,`huntmaster_entry`,"
 		"`huntmaster_spawn_guid`,`prey_key`,`tier`,`zone_key`,`zone_id`,"
 		"`map_id`,`state`,`tracking_progress`,`ambushes_completed`,"
-		"`ambush_pending`,`final_site_key`,`revision`) "
-		"VALUES ({},'{}','{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{}) "
+		"`ambush_pending`,`final_site_key`,`revision`,`relic_pool_id`) "
+		"VALUES ({},'{}','{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{},"
+		"NULLIF('{}','')) "
 		"ON DUPLICATE KEY UPDATE `huntmaster_key`=VALUES(`huntmaster_key`),"
 		"`huntmaster_entry`=VALUES(`huntmaster_entry`),"
 		"`huntmaster_spawn_guid`=VALUES(`huntmaster_spawn_guid`),"
@@ -1582,6 +1605,7 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		"`ambushes_completed`=VALUES(`ambushes_completed`),"
 		"`ambush_pending`=VALUES(`ambush_pending`),"
 		"`final_site_key`=VALUES(`final_site_key`),"
+		"`relic_pool_id`=VALUES(`relic_pool_id`),"
 		"`revision`=VALUES(`revision`),`updated_at`=CURRENT_TIMESTAMP",
 		runtime.CharacterGuid, runtime.HuntInstanceId,
 		aggregate.Identity.HuntmasterKey,
@@ -1593,7 +1617,7 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		static_cast<std::uint32_t>(aggregate.Progress),
 		static_cast<std::uint32_t>(runtime.AmbushesCompleted),
 		static_cast<std::uint32_t>(runtime.AmbushPending),
-		aggregate.FinalLocationKey, aggregate.Revision);
+		aggregate.FinalLocationKey, aggregate.Revision, runtime.RelicPoolId);
 }
 
 void NativeHuntsManager::RemoveRuntimeObjects(Player *player,
@@ -1629,95 +1653,400 @@ void NativeHuntsManager::DeleteAssignment(HuntRuntime &runtime) {
 	ReconcileHuntAura(player, nullptr);
 }
 
-void NativeHuntsManager::InitializeCollectionPrototype() {
-	_collectionPrototypeReady = false;
-	if (!_config.CollectionPrototypeEnabled)
+void NativeHuntsManager::InitializeRelicPools() {
+	_relicPoolsReady = false;
+	if (_config.RelicsCountPerZone == 0)
 		return;
-	if (!MapMgr::IsValidMapCoord(_config.CollectionPrototypeMapId,
-			_config.CollectionPrototypeX, _config.CollectionPrototypeY,
-			_config.CollectionPrototypeZ,
-			_config.CollectionPrototypeOrientation)) {
-		LOG_ERROR("module.native_hunts",
-			"Native Hunts collection prototype has invalid map coordinates.");
-		return;
-	}
 	auto const *relic = sObjectMgr->GetGameObjectTemplate(
-		_config.CollectionPrototypeGameObjectEntry);
+		_config.RelicGameObjectEntry);
 	if (!relic || relic->type != GAMEOBJECT_TYPE_BUTTON ||
 		relic->ScriptId !=
 			sObjectMgr->GetScriptId("mod_native_hunts_shared_relic") ||
 		relic->button.startOpen != 0 || relic->button.lockId != 0 ||
 		relic->button.autoCloseTime != 0 || relic->button.linkedTrap != 0) {
 		LOG_ERROR("module.native_hunts",
-			"Native Hunts collection prototype entry {} is missing or is not "
-			"the expected non-consuming scripted button.",
-			_config.CollectionPrototypeGameObjectEntry);
+			"Native Hunts relic entry {} is missing or is not the expected "
+			"non-consuming scripted button.", _config.RelicGameObjectEntry);
 		return;
 	}
-	_collectionPrototypeReady = true;
+	_relicPoolsReady = true;
 }
 
-void NativeHuntsManager::RemoveCollectionPrototype() {
-	if (_collectionPrototypeGuid.IsEmpty())
+void NativeHuntsManager::RemoveRelicPoolObjects(RelicPool &pool) {
+	Map *map = sMapMgr->FindMap(pool.Scope.MapId, pool.Scope.InstanceId);
+	for (auto &position : pool.Positions) {
+		if (map && !position.Guid.IsEmpty())
+			if (GameObject *relic = map->GetGameObject(position.Guid))
+				relic->Delete();
+		position.Guid.Clear();
+	}
+}
+
+void NativeHuntsManager::RemoveAllRelicPoolObjects() {
+	for (auto &[id, pool] : _relicPools) {
+		(void)id;
+		RemoveRelicPoolObjects(pool);
+	}
+}
+
+void NativeHuntsManager::LoadRelicPools() {
+	_relicPools.clear();
+	if (!_relicPoolsReady)
 		return;
-	if (Map *map = sMapMgr->FindBaseMap(_config.CollectionPrototypeMapId))
-		if (GameObject *relic = map->GetGameObject(_collectionPrototypeGuid))
-			relic->Delete();
-	_collectionPrototypeGuid.Clear();
-}
-
-void NativeHuntsManager::ReconcileCollectionPrototype() {
-	bool required = _collectionPrototypeReady && IsEnabled();
-	if (required) {
-		required = false;
-		for (auto const &[guid, runtime] : _runtimes) {
-			(void)guid;
-			if (runtime.Aggregate.State == HuntState::Tracking &&
-				runtime.ZoneId == _config.CollectionPrototypeZoneId &&
-				runtime.MapId == _config.CollectionPrototypeMapId) {
-				required = true;
-				break;
-			}
+	std::vector<std::string> invalidPools;
+	CharacterDatabase.DirectExecute(
+		"DELETE pool FROM `native_hunt_relic_pool` pool LEFT JOIN "
+		"`native_hunt_assignment` assignment ON assignment.`relic_pool_id`="
+		"pool.`pool_id` WHERE assignment.`relic_pool_id` IS NULL");
+	QueryResult pools = CharacterDatabase.Query(
+		"SELECT DISTINCT pool.`pool_id`,pool.`map_id`,pool.`instance_id`,"
+		"pool.`zone_id`,pool.`relic_count` FROM `native_hunt_relic_pool` pool "
+		"JOIN `native_hunt_assignment` assignment ON "
+		"assignment.`relic_pool_id`=pool.`pool_id` WHERE pool.`retired_at` IS NULL");
+	if (pools) {
+		do {
+			Field *field = pools->Fetch();
+			RelicPool pool;
+			pool.Id = field[0].Get<std::string>();
+			pool.Scope.MapId = field[1].Get<std::uint32_t>();
+			pool.Scope.InstanceId = field[2].Get<std::uint32_t>();
+			pool.Scope.ZoneId = field[3].Get<std::uint32_t>();
+			pool.RequiredCount = field[4].Get<std::uint32_t>();
+			if (IsUuid(pool.Id) && pool.RequiredCount > 0 &&
+				pool.RequiredCount <= MaximumRelicsPerZone)
+				_relicPools.emplace(pool.Id, std::move(pool));
+			else
+				invalidPools.push_back(pool.Id);
+		} while (pools->NextRow());
+	}
+	for (auto &[id, pool] : _relicPools) {
+		bool positionsValid = true;
+		QueryResult positions = CharacterDatabase.Query(
+			"SELECT `relic_index`,`position_x`,`position_y`,`position_z`,"
+			"`orientation` FROM `native_hunt_relic_position` WHERE "
+			"`pool_id`='{}' ORDER BY `relic_index`", id);
+		if (positions) {
+			do {
+				Field *field = positions->Fetch();
+				RelicPosition position{field[0].Get<std::uint32_t>(),
+					field[1].Get<float>(), field[2].Get<float>(),
+					field[3].Get<float>(), field[4].Get<float>(), {}};
+				positionsValid = positionsValid &&
+					position.Index == pool.Positions.size() &&
+					std::isfinite(position.X) && std::isfinite(position.Y) &&
+					std::isfinite(position.Z) &&
+					std::isfinite(position.Orientation) &&
+					MapMgr::IsValidMapCoord(pool.Scope.MapId, position.X,
+						position.Y, position.Z, position.Orientation);
+				pool.Positions.push_back(position);
+			} while (positions->NextRow());
+		}
+		if (!positionsValid || pool.Positions.size() != pool.RequiredCount) {
+			LOG_ERROR("module.native_hunts",
+				"Relic pool {} expected {} persisted positions but loaded {}; "
+				"the corrupt pool will be retired and regenerated.", id,
+				pool.RequiredCount,
+				pool.Positions.size());
+			invalidPools.push_back(id);
 		}
 	}
+	for (auto const &id : invalidPools) {
+		for (auto &[guid, runtime] : _runtimes) {
+			(void)guid;
+			if (runtime.RelicPoolId == id)
+				runtime.RelicPoolId.clear();
+		}
+		RetireRelicPool(id);
+	}
+}
 
-	Map *map = sMapMgr->FindBaseMap(_config.CollectionPrototypeMapId);
-	GameObject *relic = map && !_collectionPrototypeGuid.IsEmpty()
-		? map->GetGameObject(_collectionPrototypeGuid) : nullptr;
-	if (!relic)
-		_collectionPrototypeGuid.Clear();
-	if (!required) {
-		RemoveCollectionPrototype();
-		return;
+bool NativeHuntsManager::GenerateRelicPositions(RelicPool &pool, Map *map) {
+	if (!map || pool.RequiredCount == 0)
+		return false;
+	auto *navQuery = map->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
+	if (!navQuery) {
+		LOG_ERROR("module.native_hunts",
+			"Cannot generate relic pool {} for map {} zone {}: MMap navigation "
+			"data is unavailable.", pool.Id, pool.Scope.MapId, pool.Scope.ZoneId);
+		return false;
 	}
-	if (relic)
-		return;
+	dtQueryFilter filter;
+	filter.setIncludeFlags(0xffff);
+	filter.setExcludeFlags(0);
+	auto const placement = RunRelicPlacementAttempts(pool.RequiredCount, [&]() {
+		float x = frand(0.0f, 100.0f);
+		float y = frand(0.0f, 100.0f);
+		Zone2MapCoordinates(x, y, pool.Scope.ZoneId);
+		map->LoadGrid(x, y);
+		float const terrain = map->GetHeight(x, y, MAX_HEIGHT, false);
+		if (terrain <= INVALID_HEIGHT)
+			return false;
+		float point[3] = {y, terrain + 0.5f, x};
+		float extents[3] = {3.0f, 100.0f, 3.0f};
+		float closest[3] = {};
+		dtPolyRef polygon = 0;
+		if (dtStatusFailed(navQuery->findNearestPoly(point, extents, &filter,
+				&polygon, closest)) || polygon == 0)
+			return false;
+		float const candidateX = closest[2];
+		float const candidateY = closest[0];
+		float const candidateZ = closest[1] + 0.5f;
+		if (std::hypot(candidateX - x, candidateY - y) > 3.0f ||
+			!MapMgr::IsValidMapCoord(pool.Scope.MapId, candidateX, candidateY,
+				candidateZ) ||
+			map->GetZoneId(PHASEMASK_NORMAL, candidateX, candidateY,
+				candidateZ) != pool.Scope.ZoneId)
+			return false;
+		pool.Positions.push_back({
+			static_cast<std::uint32_t>(pool.Positions.size()), candidateX,
+			candidateY, candidateZ, frand(0.0f, 6.2831853f), {}});
+		return true;
+	});
+	if (!placement.Complete) {
+		LOG_ERROR("module.native_hunts",
+			"Relic pool {} generated only {} of {} valid MMap-backed positions "
+			"after {} attempts; no partial pool will be persisted or spawned.",
+			pool.Id, placement.Accepted, pool.RequiredCount, placement.Attempts);
+		pool.Positions.clear();
+		return false;
+	}
+	return true;
+}
 
-	map = sMapMgr->CreateBaseMap(_config.CollectionPrototypeMapId);
-	if (!map || map->GetZoneId(PHASEMASK_NORMAL,
-			_config.CollectionPrototypeX, _config.CollectionPrototypeY,
-			_config.CollectionPrototypeZ) != _config.CollectionPrototypeZoneId) {
+void NativeHuntsManager::SpawnRelicPool(RelicPool &pool) {
+	if (!_relicPoolsReady || pool.Positions.size() != pool.RequiredCount)
+		return;
+	Map *map = sMapMgr->FindMap(pool.Scope.MapId, pool.Scope.InstanceId);
+	if (!map && pool.Scope.InstanceId == 0)
+		map = sMapMgr->CreateBaseMap(pool.Scope.MapId);
+	if (!map)
+		return;
+	std::size_t spawned = 0;
+	for (auto &position : pool.Positions) {
+		GameObject *relic = position.Guid.IsEmpty()
+			? nullptr : map->GetGameObject(position.Guid);
+		if (!relic) {
+			position.Guid.Clear();
+			float const halfOrientation = position.Orientation * 0.5f;
+			relic = map->SummonGameObject(_config.RelicGameObjectEntry,
+				position.X, position.Y, position.Z, position.Orientation,
+				0.0f, 0.0f, std::sin(halfOrientation),
+				std::cos(halfOrientation), 0, false);
+			if (relic) {
+				relic->SetGoState(GO_STATE_READY);
+				relic->RemoveGameObjectFlag(GO_FLAG_IN_USE | GO_FLAG_LOCKED |
+					GO_FLAG_INTERACT_COND | GO_FLAG_NOT_SELECTABLE);
+				position.Guid = relic->GetGUID();
+			}
+		}
+		if (relic)
+			++spawned;
+	}
+	if (spawned != pool.RequiredCount && !pool.SpawnShortfallReported) {
 		LOG_ERROR("module.native_hunts",
-			"Native Hunts collection prototype coordinates do not resolve to "
-			"configured zone {}.", _config.CollectionPrototypeZoneId);
-		_collectionPrototypeReady = false;
+			"Relic pool {} spawned {} of {} objects on map {} instance {}; "
+			"the missing objects will be retried during reconciliation.", pool.Id,
+			spawned, pool.RequiredCount, pool.Scope.MapId, pool.Scope.InstanceId);
+		pool.SpawnShortfallReported = true;
+	} else if (spawned == pool.RequiredCount)
+		pool.SpawnShortfallReported = false;
+}
+
+bool NativeHuntsManager::CreateRelicPool(RelicPoolScope const &scope,
+		HuntRuntime &runtime) {
+	auto const poolId = NewHuntInstanceId();
+	if (!poolId)
+		return false;
+	Map *map = sMapMgr->FindMap(scope.MapId, scope.InstanceId);
+	if (!map && scope.InstanceId == 0)
+		map = sMapMgr->CreateBaseMap(scope.MapId);
+	RelicPool pool{*poolId, scope, _config.RelicsCountPerZone, {}};
+	if (!GenerateRelicPositions(pool, map))
+		return false;
+	auto transaction = CharacterDatabase.BeginTransaction();
+	transaction->Append(
+		"INSERT INTO `native_hunt_relic_pool` (`pool_id`,`map_id`,"
+		"`instance_id`,`zone_id`,`relic_count`) VALUES ('{}',{},{},{},{})",
+		pool.Id, scope.MapId, scope.InstanceId, scope.ZoneId,
+		pool.RequiredCount);
+	for (auto const &position : pool.Positions)
+		transaction->Append(
+			"INSERT INTO `native_hunt_relic_position` (`pool_id`,"
+			"`relic_index`,`position_x`,`position_y`,`position_z`,"
+			"`orientation`) VALUES ('{}',{},{},{},{},{})", pool.Id,
+			position.Index, position.X, position.Y, position.Z,
+			position.Orientation);
+	transaction->Append(
+		"UPDATE `native_hunt_assignment` SET `relic_pool_id`='{}' WHERE "
+		"`character_guid`={} AND `hunt_instance_id`='{}' AND "
+		"(`relic_pool_id` IS NULL OR `relic_pool_id`='')", pool.Id,
+		runtime.CharacterGuid, runtime.HuntInstanceId);
+	bool const acknowledged = CommitCharacterTransactionAndWait(transaction);
+	QueryResult persisted = CharacterDatabase.Query(
+		"SELECT 1 FROM `native_hunt_assignment` assignment JOIN "
+		"`native_hunt_relic_pool` pool ON pool.`pool_id`="
+		"assignment.`relic_pool_id` WHERE assignment.`character_guid`={} "
+		"AND assignment.`hunt_instance_id`='{}' AND pool.`pool_id`='{}'",
+		runtime.CharacterGuid, runtime.HuntInstanceId, pool.Id);
+	if (!persisted)
+		return false;
+	if (!acknowledged)
+		LOG_WARN("module.native_hunts",
+			"Relic pool {} commit acknowledgement was lost, but persistence "
+			"was verified.", pool.Id);
+	runtime.RelicPoolId = pool.Id;
+	auto [iterator, inserted] = _relicPools.emplace(pool.Id, std::move(pool));
+	if (!inserted)
+		return false;
+	SpawnRelicPool(iterator->second);
+	return true;
+}
+
+bool NativeHuntsManager::AssociateRelicPool(Player *player,
+		HuntRuntime &runtime) {
+	if (!_relicPoolsReady || runtime.Aggregate.State != HuntState::Tracking)
+		return false;
+	bool const playerInAssignedZone = player &&
+		player->GetMapId() == runtime.MapId &&
+		player->GetZoneId() == runtime.ZoneId;
+	if (!runtime.RelicPoolId.empty()) {
+		auto existing = _relicPools.find(runtime.RelicPoolId);
+		if (existing != _relicPools.end()) {
+			if (!playerInAssignedZone ||
+				existing->second.Scope.InstanceId ==
+					player->GetMap()->GetInstanceId())
+				return true;
+			// The Hunt moved into a different live instance. Release its old
+			// association; reconciliation retires that pool if this was its last
+			// resumable Hunt and creates/reuses the correctly scoped pool below.
+			CharacterDatabase.DirectExecute(
+				"UPDATE `native_hunt_assignment` SET `relic_pool_id`=NULL WHERE "
+				"`character_guid`={} AND `hunt_instance_id`='{}'",
+				runtime.CharacterGuid, runtime.HuntInstanceId);
+		}
+		runtime.RelicPoolId.clear();
+	}
+	RelicPoolScope scope{runtime.MapId, 0, runtime.ZoneId};
+	if (playerInAssignedZone)
+		scope.InstanceId = player->GetMap()->GetInstanceId();
+	else {
+		auto const *entry = sMapStore.LookupEntry(runtime.MapId);
+		if (!entry || entry->Instanceable())
+			return false;
+	}
+	for (auto &[id, pool] : _relicPools) {
+		if (!(pool.Scope == scope))
+			continue;
+		CharacterDatabase.DirectExecute(
+			"UPDATE `native_hunt_assignment` SET `relic_pool_id`='{}' WHERE "
+			"`character_guid`={} AND `hunt_instance_id`='{}'", id,
+			runtime.CharacterGuid, runtime.HuntInstanceId);
+		if (!CharacterDatabase.Query(
+				"SELECT 1 FROM `native_hunt_assignment` WHERE `character_guid`={} "
+				"AND `hunt_instance_id`='{}' AND `relic_pool_id`='{}'",
+				runtime.CharacterGuid, runtime.HuntInstanceId, id))
+			return false;
+		runtime.RelicPoolId = id;
+		return true;
+	}
+	auto const now = std::chrono::steady_clock::now();
+	if (auto retry = _relicPoolRetryAfter.find(scope);
+		retry != _relicPoolRetryAfter.end() && now < retry->second)
+		return false;
+	if (CreateRelicPool(scope, runtime)) {
+		_relicPoolRetryAfter.erase(scope);
+		return true;
+	}
+	// MMap gaps and unusually sparse zone rectangles must not turn the 500 ms
+	// reconciliation tick into an unbounded placement workload or log storm.
+	_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1);
+	return false;
+}
+
+void NativeHuntsManager::RetireRelicPool(std::string const &poolId) {
+	auto found = _relicPools.find(poolId);
+	if (found != _relicPools.end())
+		RemoveRelicPoolObjects(found->second);
+	auto transaction = CharacterDatabase.BeginTransaction();
+	transaction->Append(
+		"UPDATE `native_hunt_assignment` SET `relic_pool_id`=NULL WHERE "
+		"`relic_pool_id`='{}'", poolId);
+	transaction->Append(
+		"DELETE FROM `native_hunt_relic_position` WHERE `pool_id`='{}'",
+		poolId);
+	transaction->Append(
+		"DELETE FROM `native_hunt_relic_pool` WHERE `pool_id`='{}'", poolId);
+	CommitCharacterTransactionAndWait(transaction);
+	_relicPools.erase(poolId);
+}
+
+void NativeHuntsManager::ReconcileRelicPools() {
+	if (_config.RelicsCountPerZone == 0) {
+		RemoveAllRelicPoolObjects();
+		_relicPools.clear();
+		_relicPoolRetryAfter.clear();
+		for (auto &[guid, runtime] : _runtimes) {
+			(void)guid;
+			runtime.RelicPoolId.clear();
+		}
+		if (!_relicDisableCleanupComplete) {
+			CharacterDatabase.DirectExecute(
+				"UPDATE `native_hunt_assignment` SET `relic_pool_id`=NULL WHERE "
+				"`relic_pool_id` IS NOT NULL");
+			CharacterDatabase.DirectExecute(
+				"DELETE FROM `native_hunt_relic_position`");
+			CharacterDatabase.DirectExecute(
+				"DELETE FROM `native_hunt_relic_pool`");
+			_relicDisableCleanupComplete = true;
+		}
 		return;
 	}
-	float const halfOrientation = _config.CollectionPrototypeOrientation * 0.5f;
-	relic = map->SummonGameObject(_config.CollectionPrototypeGameObjectEntry,
-		_config.CollectionPrototypeX, _config.CollectionPrototypeY,
-		_config.CollectionPrototypeZ, _config.CollectionPrototypeOrientation,
-		0.0f, 0.0f, std::sin(halfOrientation), std::cos(halfOrientation), 0,
-		false);
-	if (!relic) {
-		LOG_ERROR("module.native_hunts",
-			"Native Hunts could not spawn the shared collection prototype.");
+	// A transient managed-resource failure makes gameplay unavailable but must
+	// not erase a logically resumable pool. CountPerZone=0 is the only setting
+	// that explicitly authorizes retirement while assignments still exist.
+	if (!IsEnabled()) {
+		RemoveAllRelicPoolObjects();
 		return;
 	}
-	relic->SetGoState(GO_STATE_READY);
-	relic->RemoveGameObjectFlag(GO_FLAG_IN_USE | GO_FLAG_LOCKED |
-		GO_FLAG_INTERACT_COND | GO_FLAG_NOT_SELECTABLE);
-	_collectionPrototypeGuid = relic->GetGUID();
+	_relicDisableCleanupComplete = false;
+	if (!_relicPoolsReady)
+		InitializeRelicPools();
+	if (!_relicPoolsReady)
+		return;
+	for (auto &[guid, runtime] : _runtimes)
+		if (runtime.Aggregate.State == HuntState::Tracking)
+			AssociateRelicPool(ConnectedPlayer(guid), runtime);
+	std::unordered_map<std::string, std::size_t> references;
+	for (auto const &[guid, runtime] : _runtimes) {
+		(void)guid;
+		if (!runtime.RelicPoolId.empty())
+			++references[runtime.RelicPoolId];
+	}
+	std::vector<std::string> retire;
+	for (auto &[id, pool] : _relicPools) {
+		if (ShouldRetireRelicPool(references[id]))
+			retire.push_back(id);
+		else
+			SpawnRelicPool(pool);
+	}
+	for (auto const &id : retire)
+		RetireRelicPool(id);
+}
+
+RelicPool *NativeHuntsManager::FindRelicPool(GameObject const *object,
+		std::uint32_t *relicIndex) {
+	if (!object)
+		return nullptr;
+	for (auto &[id, pool] : _relicPools) {
+		(void)id;
+		for (auto const &position : pool.Positions)
+			if (!position.Guid.IsEmpty() && position.Guid == object->GetGUID()) {
+				if (relicIndex)
+					*relicIndex = position.Index;
+				return &pool;
+			}
+	}
+	return nullptr;
 }
 
 void NativeHuntsManager::ReconcileHuntAura(Player *player,
@@ -1856,6 +2185,7 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 		return false;
 	}
 	_runtimes.emplace(guid, runtime);
+	AssociateRelicPool(player, _runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	QueueUiState(player);
 	message = "Your quarry is " + std::string(prey.Name) + ". Travel to " +
@@ -1952,6 +2282,7 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 		"CURRENT_DATE(),`elite_daily_accepted`+1,1),"
 		"`elite_daily_accept_reset_date`=CURRENT_DATE()", guid);
 	_runtimes.emplace(guid, runtime);
+	AssociateRelicPool(player, _runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	QueueUiState(player);
 	message = "Elite quarry: " + std::string(chosen->Name) + ". Travel to " +
@@ -2001,6 +2332,7 @@ bool NativeHuntsManager::Abandon(Player *player, std::string &message) {
 	HuntDomain::Execute(it->second.Aggregate, AbandonHunt{});
 	DeleteAssignment(it->second);
 	_runtimes.erase(it);
+	ReconcileRelicPools();
 	QueueUiState(player);
 	message = "Your Hunt has been abandoned.";
 	return true;
@@ -2291,7 +2623,7 @@ bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 	return true;
 }
 
-bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
+bool NativeHuntsManager::CollectRelic(Player *player,
 		GameObject *object, std::string &message) {
 	if (!player || !object) {
 		message = "The relic cannot be examined.";
@@ -2300,20 +2632,20 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 	auto runtimeIt = _runtimes.find(player->GetGUID().GetCounter());
 	HuntRuntime *runtime = runtimeIt == _runtimes.end()
 		? nullptr : &runtimeIt->second;
+	std::uint32_t relicIndex = 0;
+	RelicPool *pool = FindRelicPool(object, &relicIndex);
 	RelicCollectionContext context{
-		IsEnabled() && _config.CollectionPrototypeEnabled &&
-			_collectionPrototypeReady,
+		IsEnabled() && _config.RelicsCountPerZone > 0 && _relicPoolsReady,
 		runtime != nullptr,
 		runtime ? runtime->Aggregate.State : HuntState::Idle,
-		!_collectionPrototypeGuid.IsEmpty() &&
-			object->GetGUID() == _collectionPrototypeGuid &&
-			object->GetEntry() == _config.CollectionPrototypeGameObjectEntry,
-		runtime && object->GetMap() == player->GetMap() &&
-			player->GetMapId() == _config.CollectionPrototypeMapId &&
-			runtime->MapId == _config.CollectionPrototypeMapId,
-		runtime && player->GetZoneId() == _config.CollectionPrototypeZoneId &&
-			object->GetZoneId() == _config.CollectionPrototypeZoneId &&
-			runtime->ZoneId == _config.CollectionPrototypeZoneId};
+		pool && object->GetEntry() == _config.RelicGameObjectEntry && runtime &&
+			runtime->RelicPoolId == pool->Id,
+		runtime && pool && object->GetMap() == player->GetMap() &&
+			runtime->MapId == pool->Scope.MapId &&
+			player->GetMap()->GetInstanceId() == pool->Scope.InstanceId,
+		runtime && pool && player->GetZoneId() == pool->Scope.ZoneId &&
+			object->GetZoneId() == pool->Scope.ZoneId &&
+			runtime->ZoneId == pool->Scope.ZoneId};
 	switch (CanCollectRelic(context)) {
 	case GameplayDecision::WrongState:
 		message = "This relic no longer reveals anything about your active Hunt.";
@@ -2327,6 +2659,8 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 		message = "This relic has no connection to an active Hunt.";
 		return false;
 	}
+	std::string const relicKey = pool->Id + ":" +
+		std::to_string(relicIndex);
 
 	QueryResult duplicate = CharacterDatabase.Query(
 		"SELECT assignment.`tracking_progress`,assignment.`revision` FROM "
@@ -2334,7 +2668,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 		"assignment ON assignment.`hunt_instance_id`=collection.`hunt_instance_id` "
 		"WHERE collection.`hunt_instance_id`='{}' AND "
 		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
-		runtime->HuntInstanceId, PrototypeObjectiveKey, PrototypeRelicKey);
+		runtime->HuntInstanceId, RelicObjectiveKey, relicKey);
 	if (duplicate) {
 		Field *field = duplicate->Fetch();
 		std::uint8_t const persistedProgress = field[0].Get<std::uint8_t>();
@@ -2349,7 +2683,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 			if (runtime->Aggregate.State != oldState)
 				ReconcileHuntAura(player, &runtime->Aggregate);
 			QueueUiState(player);
-			ReconcileCollectionPrototype();
+			ReconcileRelicPools();
 		}
 		message = "You have already examined this relic during this Hunt.";
 		return false;
@@ -2357,7 +2691,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 	QueryResult countResult = CharacterDatabase.Query(
 		"SELECT COUNT(*) FROM `native_hunt_collection` WHERE "
 		"`hunt_instance_id`='{}' AND `objective_key`='{}'",
-		runtime->HuntInstanceId, PrototypeObjectiveKey);
+		runtime->HuntInstanceId, RelicObjectiveKey);
 	if (!countResult) {
 		message = "The relic's collection record is temporarily unavailable.";
 		return false;
@@ -2365,7 +2699,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 	std::uint32_t const collected = static_cast<std::uint32_t>(
 		countResult->Fetch()[0].Get<std::uint64_t>() + 1u);
 	std::uint8_t const amount = RelicProgressIncrement(collected,
-		_config.CollectionPrototypeTarget);
+		_config.RelicProgressTarget);
 	if (amount == 0) {
 		message = "This objective cannot grant additional tracking progress.";
 		return false;
@@ -2381,7 +2715,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 		"`character_guid`={} AND `hunt_instance_id`='{}' AND `state`={} "
 		"AND `zone_id`={} AND `map_id`={} AND `revision`={} "
 		"AND `tracking_progress`={}",
-		runtime->HuntInstanceId, PrototypeObjectiveKey, PrototypeRelicKey,
+		runtime->HuntInstanceId, RelicObjectiveKey, relicKey,
 		static_cast<std::uint32_t>(amount), runtime->CharacterGuid,
 		runtime->HuntInstanceId,
 		static_cast<std::uint32_t>(HuntState::Tracking), runtime->ZoneId,
@@ -2406,7 +2740,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 		"assignment.`hunt_instance_id`=collection.`hunt_instance_id` WHERE "
 		"collection.`hunt_instance_id`='{}' AND "
 		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
-		runtime->HuntInstanceId, PrototypeObjectiveKey, PrototypeRelicKey);
+		runtime->HuntInstanceId, RelicObjectiveKey, relicKey);
 	if (!persisted) {
 		message = acknowledged
 			? "The relic credit could not be verified; no local progress was changed."
@@ -2448,7 +2782,7 @@ bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
 			ReconcileHuntAura(player, &runtime->Aggregate);
 		QueueUiState(player);
 	}
-	ReconcileCollectionPrototype();
+	ReconcileRelicPools();
 	message = "The cursed relic sharpens your quarry's trail.";
 	return true;
 }
@@ -2671,7 +3005,7 @@ void NativeHuntsManager::UpdatePreyAbilities(Player *player,
 
 void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 	if (!IsEnabled()) {
-		RemoveCollectionPrototype();
+		RemoveAllRelicPoolObjects();
 		return;
 	}
 	_updateAccumulator += elapsedMs;
@@ -2759,7 +3093,7 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 		if (Player *player = ConnectedPlayer(guid))
 			PublishUiState(player);
 	}
-	ReconcileCollectionPrototype();
+	ReconcileRelicPools();
 }
 
 bool NativeHuntsManager::UseReturnRift(Player *player, GameObject *object,
@@ -2848,6 +3182,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 			HuntDomain::Execute(runtime.Aggregate,TurnInHunt{});
 			ReconcileHuntAura(player, nullptr);
 			RemoveRuntimeObjects(player,runtime); _runtimes.erase(it);
+			ReconcileRelicPools();
 			QueueUiState(player);
 			message = "The earlier Hunt completion is now confirmed.";
 			return true;
@@ -3136,6 +3471,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 	ReconcileHuntAura(player, nullptr);
 	RemoveRuntimeObjects(player,runtime);
 	_runtimes.erase(it);
+	ReconcileRelicPools();
 	QueueUiState(player);
 	std::ostringstream out;
 	out << "Hunt complete: " << xp << " XP, " << money/10000 << "g " << (money/100)%100 << "s " << money%100 << "c";
@@ -3314,6 +3650,7 @@ void NativeHuntsManager::OnLogout(Player *player) {
 			ReconcileHuntAura(player, nullptr);
 			RemoveRuntimeObjects(player, it->second);
 			_runtimes.erase(it);
+			ReconcileRelicPools();
 			return;
 		}
 		// Do not let a normal logout save make an unconfirmed live reward durable

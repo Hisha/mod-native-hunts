@@ -41,7 +41,7 @@ def run_domain_tests() -> None:
         command = [compiler(), "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic", "-Isrc",
             "tests/hunt_domain_tests.cpp", "src/HuntDomain.cpp", "src/HuntGameplay.cpp",
             "src/HuntSnapshot.cpp", "src/HuntUiProtocol.cpp", "src/HuntCatalog.cpp", "src/HuntRewards.cpp",
-            "src/SealCatalogPolicy.cpp", "-o", str(executable)]
+            "src/RelicPoolPolicy.cpp", "src/SealCatalogPolicy.cpp", "-o", str(executable)]
         subprocess.run(command, cwd=ROOT, check=True)
         subprocess.run([str(executable)], cwd=ROOT, check=True)
         print("PASS hunt domain, gameplay, recovery, and snapshot tests", flush=True)
@@ -72,9 +72,16 @@ def run_relic_persistence_contract_checks() -> None:
         encoding="utf-8")
     collection = (ROOT / "data/sql/db-characters/base/003_native_hunt_collection.sql").read_text(
         encoding="utf-8")
+    pools = (ROOT / "data/sql/db-characters/base/004_native_hunt_relic_pool.sql").read_text(
+        encoding="utf-8")
     migration = (ROOT / "data/sql/db-characters/updates/2026_10_17_01_native_hunt_collection.sql").read_text(
         encoding="utf-8")
+    pool_migration = (ROOT / "data/sql/db-characters/updates/2026_10_18_02_native_hunt_relic_pools.sql").read_text(
+        encoding="utf-8")
     manager = (ROOT / "src/NativeHuntsManager.cpp").read_text(encoding="utf-8")
+    module = (ROOT / "src/NativeHuntsModule.cpp").read_text(encoding="utf-8")
+    configuration = (ROOT / "conf/mod_native_hunts.conf.dist").read_text(
+        encoding="utf-8")
     world = (ROOT / "data/sql/db-world/base/001_native_hunt_shared_relic.sql").read_text(
         encoding="utf-8")
     visual_update = (ROOT / "data/sql/db-world/updates/2026_10_18_00_native_hunt_shared_relic_visual.sql").read_text(
@@ -90,19 +97,56 @@ def run_relic_persistence_contract_checks() -> None:
                   "CREATE TABLE IF NOT EXISTS `native_hunt_collection`"):
         if token not in migration:
             raise AssertionError(f"existing-install collection migration missing: {token}")
+    for token in ("`relic_pool_id`", "idx_native_hunt_relic_pool"):
+        if token not in assignment or token not in pool_migration:
+            raise AssertionError(f"assignment-to-pool migration contract missing: {token}")
+    for token in ("native_hunt_relic_pool", "native_hunt_relic_position",
+                  "`map_id`", "`instance_id`", "`zone_id`",
+                  "PRIMARY KEY (`pool_id`, `relic_index`)",
+                  "(`map_id`, `instance_id`, `zone_id`)"):
+        if token not in pools or token not in pool_migration:
+            raise AssertionError(f"relic-pool persistence contract missing: {token}")
+    if "NativeHunts.Relics.CountPerZone = 60" not in configuration:
+        raise AssertionError("default relic population is not documented as 60")
+    if "NativeHunts.CollectionPrototype.Enable" in configuration:
+        raise AssertionError("obsolete separate relic enable setting remains")
+    for token in ('"NativeHunts.Relics.CountPerZone"',
+                  "NormalizeRelicsPerZone", "std::int32_t"):
+        if token not in module:
+            raise AssertionError(f"relic count validation is missing: {token}")
     for token in ("INSERT IGNORE INTO `native_hunt_collection`",
                   "SET @native_hunts_relic_inserted := ROW_COUNT()",
                   "UPDATE `native_hunt_assignment` SET `tracking_progress`=LEAST(100,",
                   "CommitCharacterTransactionAndWait(transaction)",
                   "AwardTrackingProgress(player, *runtime, amount)",
-                  "object->GetGUID() == _collectionPrototypeGuid",
-                  "map->SummonGameObject(_config.CollectionPrototypeGameObjectEntry"):
+                  "FindRelicPool(object, &relicIndex)",
+                  "map->SummonGameObject(_config.RelicGameObjectEntry",
+                  "Zone2MapCoordinates(x, y, pool.Scope.ZoneId)",
+                  "findNearestPoly", "RunRelicPlacementAttempts"):
         if token not in manager:
             raise AssertionError(f"transactional shared-relic integration missing: {token}")
+    for token in ("LoadRelicPools()", "AssociateRelicPool(",
+                  "RetireRelicPool(", "RemoveRelicPoolObjects(",
+                  "pool.Scope.InstanceId", "runtime.RelicPoolId",
+                  "_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1)"):
+        if token not in manager:
+            raise AssertionError(f"shared relic pool lifecycle missing: {token}")
     if "DELETE FROM `native_hunt_collection`" in manager:
         raise AssertionError("assignment lifecycle deletes durable relic collection history")
+    reconcile_start = manager.index("void NativeHuntsManager::ReconcileRelicPools()")
+    reconcile_end = manager.index("RelicPool *NativeHuntsManager::FindRelicPool", reconcile_start)
+    reconcile = manager[reconcile_start:reconcile_end]
+    if ("if (_config.RelicsCountPerZone == 0)" not in reconcile or
+            "DELETE FROM `native_hunt_relic_position`" not in reconcile or
+            "if (!IsEnabled())" not in reconcile):
+        raise AssertionError("zero-count disable cleanup is not isolated from transient outages")
+    logout_start = manager.index("void NativeHuntsManager::OnLogout")
+    logout = manager[logout_start:]
+    ordinary_logout = logout[logout.rindex("_uncertainTurnIns.erase(uncertain);") :]
+    if "_runtimes.erase" in ordinary_logout or "SaveAssignment(it->second)" not in ordinary_logout:
+        raise AssertionError("ordinary logout releases a resumable Hunt or its pool reference")
     collection_start = manager.index(
-        "bool NativeHuntsManager::CollectPrototypeRelic")
+        "bool NativeHuntsManager::CollectRelic")
     collection_end = manager.index(
         "bool NativeHuntsManager::UseCrystal", collection_start)
     if "object->Delete()" in manager[collection_start:collection_end]:
@@ -130,7 +174,8 @@ def run_relic_persistence_contract_checks() -> None:
             CREATE TABLE assignment (
                 character_guid INTEGER PRIMARY KEY,
                 hunt_instance_id TEXT NOT NULL UNIQUE,
-                progress INTEGER NOT NULL DEFAULT 0
+                progress INTEGER NOT NULL DEFAULT 0,
+                relic_pool_id TEXT
             );
             CREATE TABLE collection (
                 hunt_instance_id TEXT NOT NULL,
@@ -147,6 +192,22 @@ def run_relic_persistence_contract_checks() -> None:
             );
             INSERT INTO gameobject_template VALUES
                 (990000, 3991, 1.0, 'mod_native_hunts_shared_relic');
+            CREATE TABLE relic_pool (
+                pool_id TEXT PRIMARY KEY,
+                map_id INTEGER NOT NULL,
+                instance_id INTEGER NOT NULL,
+                zone_id INTEGER NOT NULL,
+                relic_count INTEGER NOT NULL,
+                UNIQUE (map_id, instance_id, zone_id)
+            );
+            CREATE TABLE relic_position (
+                pool_id TEXT NOT NULL,
+                relic_index INTEGER NOT NULL,
+                x REAL NOT NULL,
+                y REAL NOT NULL,
+                z REAL NOT NULL,
+                PRIMARY KEY (pool_id, relic_index)
+            );
         """)
         connection.executescript(visual_update)
         connection.executescript(visual_update)
@@ -155,8 +216,17 @@ def run_relic_persistence_contract_checks() -> None:
             "WHERE entry=990000").fetchone()
         if relic_visual != (5011, 1.0, "mod_native_hunts_shared_relic"):
             raise AssertionError("repeatable relic visual update changed its template contract")
-        connection.executemany("INSERT INTO assignment VALUES (?, ?, 0)",
+        connection.executemany(
+            "INSERT INTO assignment(character_guid,hunt_instance_id,progress) VALUES (?, ?, 0)",
                                ((1, "hunt-a"), (2, "hunt-b")))
+        connection.execute("INSERT INTO relic_pool VALUES ('pool-a', 0, 0, 40, 60)")
+        connection.executemany(
+            "INSERT INTO relic_position VALUES ('pool-a', ?, ?, ?, ?)",
+            ((index, float(index), float(index * 2), 40.0) for index in range(60)))
+        connection.execute("UPDATE assignment SET relic_pool_id='pool-a'")
+        if connection.execute(
+                "SELECT COUNT(DISTINCT relic_pool_id) FROM assignment").fetchone()[0] != 1:
+            raise AssertionError("two hunts in one world scope did not share one pool")
         for instance in ("hunt-a", "hunt-b"):
             connection.execute("INSERT INTO collection VALUES (?, 'objective', 'relic', 10)",
                                (instance,))
@@ -173,13 +243,21 @@ def run_relic_persistence_contract_checks() -> None:
         connection = sqlite3.connect(database)
         if connection.execute("SELECT COUNT(*) FROM collection").fetchone()[0] != 2:
             raise AssertionError("collection credit did not survive restart")
+        if connection.execute(
+                "SELECT COUNT(*) FROM relic_position WHERE pool_id='pool-a'").fetchone()[0] != 60:
+            raise AssertionError("relic locations did not survive restart")
         connection.execute("DELETE FROM assignment WHERE character_guid=1")
-        connection.execute("INSERT INTO assignment VALUES (1, 'hunt-a-new', 0)")
+        if connection.execute(
+                "SELECT COUNT(*) FROM assignment WHERE relic_pool_id='pool-a'").fetchone()[0] != 1:
+            raise AssertionError("one completion retired a pool still used by another hunt")
+        connection.execute(
+            "INSERT INTO assignment(character_guid,hunt_instance_id,progress) VALUES (1, 'hunt-a-new', 0)")
         connection.execute("INSERT INTO collection VALUES ('hunt-a-new', 'objective', 'relic', 10)")
         if connection.execute(
                 "SELECT COUNT(*) FROM collection WHERE relic_key='relic'").fetchone()[0] != 3:
             raise AssertionError("a newly accepted hunt inherited the abandoned hunt ledger")
-        connection.execute("INSERT INTO assignment VALUES (3, 'hunt-c', 0)")
+        connection.execute(
+            "INSERT INTO assignment(character_guid,hunt_instance_id,progress) VALUES (3, 'hunt-c', 0)")
         connection.commit()
         try:
             connection.execute("BEGIN")
@@ -198,6 +276,27 @@ def run_relic_persistence_contract_checks() -> None:
                 "SELECT progress FROM assignment WHERE "
                 "hunt_instance_id='hunt-c'").fetchone()[0] != 0:
             raise AssertionError("failed collection transaction retained tracking progress")
+        original_positions = connection.execute(
+            "SELECT relic_index,x,y,z FROM relic_position WHERE pool_id='pool-a' "
+            "ORDER BY relic_index").fetchall()
+        connection.execute("DELETE FROM assignment WHERE hunt_instance_id='hunt-b'")
+        if connection.execute(
+                "SELECT COUNT(*) FROM assignment WHERE relic_pool_id='pool-a'").fetchone()[0] != 0:
+            raise AssertionError("last hunt did not release the shared pool")
+        connection.execute("DELETE FROM relic_position WHERE pool_id='pool-a'")
+        connection.execute("DELETE FROM relic_pool WHERE pool_id='pool-a'")
+        if connection.execute("SELECT COUNT(*) FROM relic_position").fetchone()[0] != 0:
+            raise AssertionError("pool retirement did not clean up positions")
+        connection.execute("INSERT INTO relic_pool VALUES ('pool-b', 0, 0, 40, 60)")
+        connection.executemany(
+            "INSERT INTO relic_position VALUES ('pool-b', ?, ?, ?, ?)",
+            ((index, float(index) + 0.25, float(index * 2) + 0.5, 41.0)
+             for index in range(60)))
+        fresh_positions = connection.execute(
+            "SELECT relic_index,x,y,z FROM relic_position WHERE pool_id='pool-b' "
+            "ORDER BY relic_index").fetchall()
+        if fresh_positions == original_positions:
+            raise AssertionError("a later hunt reused retired relic coordinates")
         connection.close()
     print("PASS shared relic persistence and transaction contracts", flush=True)
 
@@ -1759,6 +1858,7 @@ def run_source_safety_checks() -> None:
         ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql",
         ROOT / "data/sql/db-characters/base/002_native_hunt_stats.sql",
         ROOT / "data/sql/db-characters/base/003_native_hunt_collection.sql",
+        ROOT / "data/sql/db-characters/base/004_native_hunt_relic_pool.sql",
     }
     if not all(path.is_file() for path in required_schema):
         raise AssertionError("native persistence schema is incomplete")

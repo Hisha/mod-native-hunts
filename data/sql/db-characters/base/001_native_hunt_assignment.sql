@@ -17,10 +17,12 @@ CREATE TABLE IF NOT EXISTS `native_hunt_assignment` (
   `ambush_pending` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `final_site_key` VARCHAR(64) NOT NULL DEFAULT '',
   `revision` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `relic_pool_id` CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
   `accepted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`character_guid`),
   UNIQUE KEY `uq_native_hunt_instance` (`hunt_instance_id`),
   KEY `idx_native_hunt_state` (`state`),
+  KEY `idx_native_hunt_relic_pool` (`relic_pool_id`),
   CONSTRAINT `chk_native_hunt_progress` CHECK (`tracking_progress` <= 100)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

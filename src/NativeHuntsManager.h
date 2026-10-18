@@ -4,6 +4,7 @@
 #include "HuntDomain.h"
 #include "HuntCatalog.h"
 #include "HuntSnapshot.h"
+#include "RelicPoolPolicy.h"
 
 #include "ObjectGuid.h"
 
@@ -17,6 +18,7 @@
 
 class Creature;
 class GameObject;
+class Map;
 class Player;
 
 namespace native_hunts {
@@ -61,15 +63,9 @@ struct NativeHuntsConfig {
 	std::uint32_t TrackingProgressMax = 7;
 	float GroupCreditRadius = 100.0f;
 	HuntSearchScope SearchScope = HuntSearchScope::Local;
-	bool CollectionPrototypeEnabled = false;
-	std::uint32_t CollectionPrototypeGameObjectEntry = 990000;
-	std::uint32_t CollectionPrototypeTarget = 10;
-	std::uint32_t CollectionPrototypeZoneId = 40;
-	std::uint32_t CollectionPrototypeMapId = 0;
-	float CollectionPrototypeX = -10229.946f;
-	float CollectionPrototypeY = 1225.396f;
-	float CollectionPrototypeZ = 43.795517f;
-	float CollectionPrototypeOrientation = 0.0f;
+	std::uint32_t RelicsCountPerZone = DefaultRelicsPerZone;
+	std::uint32_t RelicGameObjectEntry = 990000;
+	std::uint32_t RelicProgressTarget = 10;
 	std::uint8_t AmbushCount = 2;
 	float AmbushHealthMultiplier = 4.0f;
 	float AmbushEscapeHealthPercent = 50.0f;
@@ -119,6 +115,7 @@ struct HuntRuntime {
 	std::uint32_t HuntmasterSpawn = 0;
 	std::uint32_t ZoneId = 0;
 	std::uint32_t MapId = 0;
+	std::string RelicPoolId;
 	ObjectGuid CrystalGuid;
 	ObjectGuid AmbushGuid;
 	ObjectGuid PreyGuid;
@@ -149,6 +146,23 @@ struct ProvisionalTurnIn {
 	std::vector<ObjectGuid> MailItemGuids;
 };
 
+struct RelicPosition {
+	std::uint32_t Index = 0;
+	float X = 0.0f;
+	float Y = 0.0f;
+	float Z = 0.0f;
+	float Orientation = 0.0f;
+	ObjectGuid Guid;
+};
+
+struct RelicPool {
+	std::string Id;
+	RelicPoolScope Scope;
+	std::uint32_t RequiredCount = 0;
+	std::vector<RelicPosition> Positions;
+	bool SpawnShortfallReported = false;
+};
+
 class NativeHuntsManager {
 public:
 	static NativeHuntsManager &Instance();
@@ -173,7 +187,7 @@ public:
 		std::string &message);
 	bool TurnIn(Player *player, Creature *huntmaster, std::string &message);
 	bool Abandon(Player *player, std::string &message);
-	bool CollectPrototypeRelic(Player *player, GameObject *object,
+	bool CollectRelic(Player *player, GameObject *object,
 		std::string &message);
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);
@@ -213,9 +227,18 @@ private:
 	bool CreateAssignment(HuntRuntime const &runtime);
 	void SaveAssignment(HuntRuntime const &runtime);
 	void DeleteAssignment(HuntRuntime &runtime);
-	void InitializeCollectionPrototype();
-	void ReconcileCollectionPrototype();
-	void RemoveCollectionPrototype();
+	void InitializeRelicPools();
+	void LoadRelicPools();
+	void ReconcileRelicPools();
+	void RemoveRelicPoolObjects(RelicPool &pool);
+	void RemoveAllRelicPoolObjects();
+	void RetireRelicPool(std::string const &poolId);
+	bool AssociateRelicPool(Player *player, HuntRuntime &runtime);
+	bool CreateRelicPool(RelicPoolScope const &scope, HuntRuntime &runtime);
+	bool GenerateRelicPositions(RelicPool &pool, Map *map);
+	void SpawnRelicPool(RelicPool &pool);
+	RelicPool *FindRelicPool(GameObject const *object,
+		std::uint32_t *relicIndex = nullptr);
 	void ReconcileHuntAura(Player *player, HuntAggregate const *assignment);
 	void RemoveRuntimeObjects(Player *player, HuntRuntime &runtime);
 	bool EnsureCrystal(Player *player, HuntRuntime &runtime);
@@ -244,8 +267,12 @@ private:
 
 	NativeHuntsConfig _config;
 	ManagedResources _resources;
-	bool _collectionPrototypeReady = false;
-	ObjectGuid _collectionPrototypeGuid;
+	bool _relicPoolsReady = false;
+	bool _relicDisableCleanupComplete = false;
+	bool _initialized = false;
+	std::unordered_map<std::string, RelicPool> _relicPools;
+	std::unordered_map<RelicPoolScope, std::chrono::steady_clock::time_point,
+		RelicPoolScopeHash> _relicPoolRetryAfter;
 	std::unordered_map<std::uint32_t, HuntRuntime> _runtimes;
 	std::unordered_map<std::uint32_t, std::string> _guardLocators;
 	std::unordered_map<std::uint32_t, ProvisionalTurnIn> _uncertainTurnIns;
