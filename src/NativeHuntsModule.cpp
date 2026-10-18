@@ -501,6 +501,26 @@ public:
 			? native_hunts::HuntSearchScope::World
 			: scope == "continent" ? native_hunts::HuntSearchScope::Continent
 								 : native_hunts::HuntSearchScope::Local;
+		Config.CollectionPrototypeEnabled = sConfigMgr->GetOption<bool>(
+			"NativeHunts.CollectionPrototype.Enable", false);
+		Config.CollectionPrototypeGameObjectEntry =
+			sConfigMgr->GetOption<std::uint32_t>(
+				"NativeHunts.CollectionPrototype.GameObjectEntry", 990000);
+		Config.CollectionPrototypeTarget = std::clamp<std::uint32_t>(
+			sConfigMgr->GetOption<std::uint32_t>(
+				"NativeHunts.CollectionPrototype.Target", 10), 1, 100);
+		Config.CollectionPrototypeZoneId = sConfigMgr->GetOption<std::uint32_t>(
+			"NativeHunts.CollectionPrototype.ZoneId", 40);
+		Config.CollectionPrototypeMapId = sConfigMgr->GetOption<std::uint32_t>(
+			"NativeHunts.CollectionPrototype.MapId", 0);
+		Config.CollectionPrototypeX = sConfigMgr->GetOption<float>(
+			"NativeHunts.CollectionPrototype.X", -10229.946f);
+		Config.CollectionPrototypeY = sConfigMgr->GetOption<float>(
+			"NativeHunts.CollectionPrototype.Y", 1225.396f);
+		Config.CollectionPrototypeZ = sConfigMgr->GetOption<float>(
+			"NativeHunts.CollectionPrototype.Z", 43.795517f);
+		Config.CollectionPrototypeOrientation = sConfigMgr->GetOption<float>(
+			"NativeHunts.CollectionPrototype.Orientation", 0.0f);
 		Config.AmbushCount = static_cast<std::uint8_t>(std::clamp<std::uint32_t>(
 			sConfigMgr->GetOption<std::uint32_t>("NativeHunts.Ambush.Count", 2),
 			0, 5));
@@ -849,6 +869,21 @@ public:
 	}
 };
 
+class NativeSharedRelicScript final : public GameObjectScript {
+public:
+	NativeSharedRelicScript() :
+		GameObjectScript("mod_native_hunts_shared_relic") {}
+	bool OnGossipHello(Player *player, GameObject *object) override {
+		std::string message;
+		sNativeHunts.CollectPrototypeRelic(player, object, message);
+		if (!message.empty())
+			ChatHandler(player->GetSession()).PSendSysMessage(
+				"|cff33ccff[Native Hunts]|r {}", message);
+		// Returning true prevents the button's default state/despawn behavior.
+		return true;
+	}
+};
+
 class NativeReturnRiftScript final : public GameObjectScript {
 public:
 	NativeReturnRiftScript() :
@@ -1026,6 +1061,7 @@ void AddNativeHuntsModuleScripts() {
 	new NativeHuntsWorldScript();
 	new NativeHuntmasterScript();
 	new NativeTrailCrystalScript();
+	new NativeSharedRelicScript();
 	new NativeReturnRiftScript();
 	new NativeHuntsPlayerScript();
 	new NativeHuntGuardLocatorScript();

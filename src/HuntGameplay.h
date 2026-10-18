@@ -27,6 +27,15 @@ struct TrackingKillContext {
 	bool AmbushPending = false;
 };
 
+struct RelicCollectionContext {
+	bool PrototypeEnabled = false;
+	bool HasAssignment = false;
+	HuntState State = HuntState::Idle;
+	bool CorrectObject = false;
+	bool SameMap = false;
+	bool InAssignedZone = false;
+};
+
 struct CrystalUseContext {
 	HuntState State = HuntState::Idle;
 	bool CorrectPlayer = false;
@@ -83,6 +92,9 @@ bool CanUseIssuingHuntmaster(HuntState state, std::uint32_t creatureEntry,
 	std::uint32_t issuingSpawn);
 
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context);
+GameplayDecision CanCollectRelic(RelicCollectionContext const &context);
+std::uint8_t RelicProgressIncrement(std::uint32_t collected,
+	std::uint32_t target);
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,
 								 std::uint8_t count);
 TrackingMilestoneAction NextTrackingMilestone(std::uint8_t progress,

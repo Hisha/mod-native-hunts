@@ -61,6 +61,15 @@ struct NativeHuntsConfig {
 	std::uint32_t TrackingProgressMax = 7;
 	float GroupCreditRadius = 100.0f;
 	HuntSearchScope SearchScope = HuntSearchScope::Local;
+	bool CollectionPrototypeEnabled = false;
+	std::uint32_t CollectionPrototypeGameObjectEntry = 990000;
+	std::uint32_t CollectionPrototypeTarget = 10;
+	std::uint32_t CollectionPrototypeZoneId = 40;
+	std::uint32_t CollectionPrototypeMapId = 0;
+	float CollectionPrototypeX = -10229.946f;
+	float CollectionPrototypeY = 1225.396f;
+	float CollectionPrototypeZ = 43.795517f;
+	float CollectionPrototypeOrientation = 0.0f;
 	std::uint8_t AmbushCount = 2;
 	float AmbushHealthMultiplier = 4.0f;
 	float AmbushEscapeHealthPercent = 50.0f;
@@ -104,6 +113,7 @@ struct ManagedResources {
 
 struct HuntRuntime {
 	std::uint32_t CharacterGuid = 0;
+	std::string HuntInstanceId;
 	HuntAggregate Aggregate;
 	std::uint32_t HuntmasterEntry = 0;
 	std::uint32_t HuntmasterSpawn = 0;
@@ -163,6 +173,8 @@ public:
 		std::string &message);
 	bool TurnIn(Player *player, Creature *huntmaster, std::string &message);
 	bool Abandon(Player *player, std::string &message);
+	bool CollectPrototypeRelic(Player *player, GameObject *object,
+		std::string &message);
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);
 	void OnCreatureKill(Player *killer, Creature *killed);
@@ -198,8 +210,12 @@ private:
 	bool ResolveManagedResources();
 	void ResolveGuardLocators();
 	void LoadAssignments();
+	bool CreateAssignment(HuntRuntime const &runtime);
 	void SaveAssignment(HuntRuntime const &runtime);
 	void DeleteAssignment(HuntRuntime &runtime);
+	void InitializeCollectionPrototype();
+	void ReconcileCollectionPrototype();
+	void RemoveCollectionPrototype();
 	void ReconcileHuntAura(Player *player, HuntAggregate const *assignment);
 	void RemoveRuntimeObjects(Player *player, HuntRuntime &runtime);
 	bool EnsureCrystal(Player *player, HuntRuntime &runtime);
@@ -228,6 +244,8 @@ private:
 
 	NativeHuntsConfig _config;
 	ManagedResources _resources;
+	bool _collectionPrototypeReady = false;
+	ObjectGuid _collectionPrototypeGuid;
 	std::unordered_map<std::uint32_t, HuntRuntime> _runtimes;
 	std::unordered_map<std::uint32_t, std::string> _guardLocators;
 	std::unordered_map<std::uint32_t, ProvisionalTurnIn> _uncertainTurnIns;

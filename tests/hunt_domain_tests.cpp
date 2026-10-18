@@ -480,6 +480,65 @@ void TestTrackingEligibility() {
 		  "pending ambush pauses ordinary tracking");
 }
 
+void TestRelicPrototypeRules() {
+	RelicCollectionContext eligible{true, true, HuntState::Tracking, true,
+		true, true};
+	Check(CanCollectRelic(eligible) == GameplayDecision::Allowed,
+		"eligible tracking assignment can collect its zone relic");
+	auto noAssignment = eligible;
+	noAssignment.HasAssignment = false;
+	Check(CanCollectRelic(noAssignment) == GameplayDecision::WrongResource,
+		"player without an active Hunt cannot collect");
+	auto wrongObject = eligible;
+	wrongObject.CorrectObject = false;
+	Check(CanCollectRelic(wrongObject) == GameplayDecision::WrongResource,
+		"unmanaged GameObject cannot report relic collection");
+	auto wrongZone = eligible;
+	wrongZone.InAssignedZone = false;
+	Check(CanCollectRelic(wrongZone) == GameplayDecision::WrongLocation,
+		"relic outside the assigned Hunt zone cannot collect");
+	auto wrongMap = eligible;
+	wrongMap.SameMap = false;
+	Check(CanCollectRelic(wrongMap) == GameplayDecision::WrongLocation,
+		"relic interaction on the wrong map cannot collect");
+	auto wrongStage = eligible;
+	wrongStage.State = HuntState::FinalRevealed;
+	Check(CanCollectRelic(wrongStage) == GameplayDecision::WrongState,
+		"only Tracking-stage assignments can collect");
+
+	std::uint32_t tenTargetTotal = 0;
+	for (std::uint32_t collected = 1; collected <= 10; ++collected)
+		tenTargetTotal += RelicProgressIncrement(collected, 10);
+	Check(RelicProgressIncrement(1, 10) == 10 && tenTargetTotal == 100,
+		"ten-target relic contributions are cumulative and total 100");
+	Check(RelicProgressIncrement(1, 3) == 33 &&
+			RelicProgressIncrement(2, 3) == 33 &&
+			RelicProgressIncrement(3, 3) == 34,
+		"arbitrary targets distribute rounding without cumulative loss");
+	Check(RelicProgressIncrement(0, 10) == 0 &&
+			RelicProgressIncrement(11, 10) == 0,
+		"invalid or over-target collection ordinals grant no progress");
+
+	HuntAggregate mixed = Accepted();
+	ExpectStatus(HuntDomain::Execute(mixed, AdvanceTracking{25}),
+		TransitionStatus::Applied, "kill progress starts mixed tracking");
+	ExpectStatus(HuntDomain::Execute(mixed,
+			AdvanceTracking{RelicProgressIncrement(1, 10)}),
+		TransitionStatus::Applied, "relic contributes to the shared tracking bar");
+	Check(mixed.Progress == 35 &&
+			NextTrackingMilestone(mixed.Progress, 0, 2, false) ==
+				TrackingMilestoneAction::StartAmbush,
+		"collection progress can cross an ambush threshold");
+	ExpectStatus(HuntDomain::Execute(mixed, AdvanceTracking{100}),
+		TransitionStatus::Applied, "mixed tracking reaches the cap");
+	Check(mixed.Progress == 100 &&
+			NextTrackingMilestone(mixed.Progress, 0, 2, true) ==
+				TrackingMilestoneAction::None &&
+			NextTrackingMilestone(mixed.Progress, 0, 2, false) ==
+				TrackingMilestoneAction::StartAmbush,
+		"collection at 100 preserves pending and outstanding ambushes");
+}
+
 void TestAssignmentScopesAndAmbushes() {
 	auto const *corvin = FindHuntmaster("corvin");
 	auto const *varyn = FindHuntmaster("varyn");
@@ -565,6 +624,12 @@ void TestAssignmentScopesAndAmbushes() {
 	Check(NextTrackingMilestone(100, 0, 0, false) ==
 			TrackingMilestoneAction::RevealFinal,
 		"zero configured ambushes reveal immediately at 100");
+	Check(NextAmbushThreshold(0, 1) == 50 &&
+			NextTrackingMilestone(100, 0, 1, false) ==
+				TrackingMilestoneAction::StartAmbush &&
+			NextTrackingMilestone(100, 1, 1, false) ==
+				TrackingMilestoneAction::RevealFinal,
+		"one configured ambush resolves before final reveal");
 	Check(NextAmbushThreshold(0, 3) == 25 &&
 			NextAmbushThreshold(1, 3) == 50 &&
 			NextAmbushThreshold(2, 3) == 75,
@@ -773,8 +838,10 @@ int main(int argc, char **argv) {
 		TestUiProtocol();
 	if (selection == "all" || selection == "seal-catalog")
 		TestSealCatalogFiltering();
-	if (selection == "all" || selection == "tracking")
+	if (selection == "all" || selection == "tracking") {
 		TestTrackingEligibility();
+		TestRelicPrototypeRules();
+	}
 	if (selection == "all" || selection == "scope")
 		TestAssignmentScopesAndAmbushes();
 	if (selection == "all" || selection == "crystal")

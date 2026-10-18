@@ -2,6 +2,7 @@
 -- compatibility relationship with mod-hunts tables.
 CREATE TABLE IF NOT EXISTS `native_hunt_assignment` (
   `character_guid` INT UNSIGNED NOT NULL,
+  `hunt_instance_id` CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `huntmaster_key` VARCHAR(40) NOT NULL,
   `huntmaster_entry` MEDIUMINT UNSIGNED NOT NULL,
   `huntmaster_spawn_guid` INT UNSIGNED NOT NULL,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `native_hunt_assignment` (
   `accepted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`character_guid`),
+  UNIQUE KEY `uq_native_hunt_instance` (`hunt_instance_id`),
   KEY `idx_native_hunt_state` (`state`),
   CONSTRAINT `chk_native_hunt_progress` CHECK (`tracking_progress` <= 100)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -36,6 +36,7 @@
 #include "WorldPacket.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -47,6 +48,30 @@ namespace native_hunts {
 namespace {
 constexpr char Package[] = "mod-native-hunts";
 constexpr char SealSymbol[] = "huntmaster-seal";
+constexpr char PrototypeObjectiveKey[] = "prototype-cursed-relics-v1";
+constexpr char PrototypeRelicKey[] = "prototype-cursed-relic-1";
+
+bool IsUuid(std::string const &value) {
+	if (value.size() != 36)
+		return false;
+	for (std::size_t index = 0; index < value.size(); ++index) {
+		if (index == 8 || index == 13 || index == 18 || index == 23) {
+			if (value[index] != '-')
+				return false;
+		} else if (!std::isxdigit(static_cast<unsigned char>(value[index])))
+			return false;
+	}
+	return true;
+}
+
+std::optional<std::string> NewHuntInstanceId() {
+	QueryResult result = CharacterDatabase.Query("SELECT UUID()");
+	if (!result)
+		return std::nullopt;
+	std::string value = result->Fetch()[0].Get<std::string>();
+	return IsUuid(value) ? std::optional<std::string>(std::move(value))
+		: std::nullopt;
+}
 
 ContentResourcesV1::Provider const *FindContentProvider(std::string &reason) {
 	ContentResourcesV1::Provider const *provider = nullptr;
@@ -1384,6 +1409,7 @@ bool NativeHuntsManager::ResolveManagedResources() {
 }
 
 void NativeHuntsManager::Initialize() {
+	RemoveCollectionPrototype();
 	_runtimes.clear();
 	_uncertainTurnIns.clear();
 	_uiLastRequestMs.clear();
@@ -1399,6 +1425,8 @@ void NativeHuntsManager::Initialize() {
 	ResolveManagedResources();
 	ResolveGuardLocators();
 	LoadAssignments();
+	InitializeCollectionPrototype();
+	ReconcileCollectionPrototype();
 	if (_resources.Ready)
 		LOG_INFO("module.native_hunts",
 				 "Native Hunts initialized with {} Huntmasters, {} standard prey, "
@@ -1430,6 +1458,7 @@ void NativeHuntsManager::ResolveGuardLocators() {
 }
 
 void NativeHuntsManager::Shutdown() {
+	RemoveCollectionPrototype();
 	for (auto &[guid, runtime] : _runtimes)
 		RemoveRuntimeObjects(ConnectedPlayer(guid), runtime);
 	_runtimes.clear();
@@ -1442,7 +1471,8 @@ void NativeHuntsManager::Shutdown() {
 
 void NativeHuntsManager::LoadAssignments() {
 	QueryResult result = CharacterDatabase.Query(
-		"SELECT `character_guid`,`huntmaster_key`,`huntmaster_entry`,"
+		"SELECT `character_guid`,`hunt_instance_id`,`huntmaster_key`,"
+		"`huntmaster_entry`,"
 		"`huntmaster_spawn_guid`,`prey_key`,`zone_key`,`zone_id`,`map_id`,"
 		"`state`,`tracking_progress`,`ambushes_completed`,`ambush_pending`,"
 		"`final_site_key`,`revision`,`tier` "
@@ -1453,26 +1483,27 @@ void NativeHuntsManager::LoadAssignments() {
 		Field *field = result->Fetch();
 		HuntRuntime runtime;
 		runtime.CharacterGuid = field[0].Get<std::uint32_t>();
-		std::string const huntmasterKey = field[1].Get<std::string>();
-		runtime.HuntmasterEntry = field[2].Get<std::uint32_t>();
-		runtime.HuntmasterSpawn = field[3].Get<std::uint32_t>();
-		std::string const preyKey = field[4].Get<std::string>();
-		std::string const zoneKey = field[5].Get<std::string>();
-		runtime.ZoneId = field[6].Get<std::uint32_t>();
-		runtime.MapId = field[7].Get<std::uint32_t>();
-		runtime.Aggregate.State = static_cast<HuntState>(field[8].Get<std::uint8_t>());
-		runtime.Aggregate.Progress = field[9].Get<std::uint8_t>();
-		runtime.AmbushesCompleted = field[10].Get<std::uint8_t>();
-		runtime.AmbushPending = field[11].Get<std::uint8_t>() != 0;
-		runtime.Aggregate.FinalLocationKey = field[12].Get<std::string>();
-		runtime.Aggregate.Revision = field[13].Get<std::uint64_t>();
+		runtime.HuntInstanceId = field[1].Get<std::string>();
+		std::string const huntmasterKey = field[2].Get<std::string>();
+		runtime.HuntmasterEntry = field[3].Get<std::uint32_t>();
+		runtime.HuntmasterSpawn = field[4].Get<std::uint32_t>();
+		std::string const preyKey = field[5].Get<std::string>();
+		std::string const zoneKey = field[6].Get<std::string>();
+		runtime.ZoneId = field[7].Get<std::uint32_t>();
+		runtime.MapId = field[8].Get<std::uint32_t>();
+		runtime.Aggregate.State = static_cast<HuntState>(field[9].Get<std::uint8_t>());
+		runtime.Aggregate.Progress = field[10].Get<std::uint8_t>();
+		runtime.AmbushesCompleted = field[11].Get<std::uint8_t>();
+		runtime.AmbushPending = field[12].Get<std::uint8_t>() != 0;
+		runtime.Aggregate.FinalLocationKey = field[13].Get<std::string>();
+		runtime.Aggregate.Revision = field[14].Get<std::uint64_t>();
 
 		auto const *huntmaster = FindHuntmaster(huntmasterKey);
 		auto const *prey = FindPrey(preyKey);
 		auto const *zone = FindZone(zoneKey);
 		if (!huntmaster || !prey || !zone)
 			continue;
-		PreyTier const tier = static_cast<PreyTier>(field[14].Get<std::uint8_t>());
+		PreyTier const tier = static_cast<PreyTier>(field[15].Get<std::uint8_t>());
 		runtime.Aggregate.Identity =
 			{huntmaster->Key, huntmaster->Name, huntmaster->City, prey->Key,
 			 prey->Name, tier, zone->ZoneKey, zone->ZoneName};
@@ -1482,7 +1513,8 @@ void NativeHuntsManager::LoadAssignments() {
 				continue;
 			runtime.Aggregate.FinalLocationName = site->ZoneName;
 		}
-		if (!HuntDomain::IsValid(runtime.Aggregate))
+		if (!IsUuid(runtime.HuntInstanceId) ||
+			!HuntDomain::IsValid(runtime.Aggregate))
 			continue;
 		bool changed = false;
 		if (runtime.Aggregate.State == HuntState::PreyActive) {
@@ -1497,15 +1529,49 @@ void NativeHuntsManager::LoadAssignments() {
 	} while (result->NextRow());
 }
 
+bool NativeHuntsManager::CreateAssignment(HuntRuntime const &runtime) {
+	if (!IsUuid(runtime.HuntInstanceId))
+		return false;
+	auto const &aggregate = runtime.Aggregate;
+	auto transaction = CharacterDatabase.BeginTransaction();
+	transaction->Append(
+		"INSERT INTO `native_hunt_assignment` "
+		"(`character_guid`,`hunt_instance_id`,`huntmaster_key`,"
+		"`huntmaster_entry`,`huntmaster_spawn_guid`,`prey_key`,`tier`,"
+		"`zone_key`,`zone_id`,`map_id`,`state`,`tracking_progress`,"
+		"`ambushes_completed`,`ambush_pending`,`final_site_key`,`revision`) "
+		"VALUES ({},'{}','{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{})",
+		runtime.CharacterGuid, runtime.HuntInstanceId,
+		aggregate.Identity.HuntmasterKey, runtime.HuntmasterEntry,
+		runtime.HuntmasterSpawn, aggregate.Identity.PreyKey,
+		static_cast<std::uint32_t>(aggregate.Identity.Tier),
+		aggregate.Identity.ZoneKey, runtime.ZoneId, runtime.MapId,
+		static_cast<std::uint32_t>(aggregate.State),
+		static_cast<std::uint32_t>(aggregate.Progress),
+		static_cast<std::uint32_t>(runtime.AmbushesCompleted),
+		static_cast<std::uint32_t>(runtime.AmbushPending),
+		aggregate.FinalLocationKey, aggregate.Revision);
+	bool const acknowledged = CommitCharacterTransactionAndWait(transaction);
+	QueryResult persisted = CharacterDatabase.Query(
+		"SELECT 1 FROM `native_hunt_assignment` WHERE `character_guid`={} "
+		"AND `hunt_instance_id`='{}'", runtime.CharacterGuid,
+		runtime.HuntInstanceId);
+	if (!acknowledged && persisted)
+		LOG_WARN("module.native_hunts",
+			"Assignment transaction acknowledgement was lost for Hunt instance "
+			"{}, but the committed row was verified.", runtime.HuntInstanceId);
+	return persisted != nullptr;
+}
+
 void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 	auto const &aggregate = runtime.Aggregate;
 	CharacterDatabase.DirectExecute(
 		"INSERT INTO `native_hunt_assignment` "
-		"(`character_guid`,`huntmaster_key`,`huntmaster_entry`,"
+		"(`character_guid`,`hunt_instance_id`,`huntmaster_key`,`huntmaster_entry`,"
 		"`huntmaster_spawn_guid`,`prey_key`,`tier`,`zone_key`,`zone_id`,"
 		"`map_id`,`state`,`tracking_progress`,`ambushes_completed`,"
 		"`ambush_pending`,`final_site_key`,`revision`) "
-		"VALUES ({},'{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{}) "
+		"VALUES ({},'{}','{}',{},{},'{}',{},'{}',{},{},{},{},{},{},'{}',{}) "
 		"ON DUPLICATE KEY UPDATE `huntmaster_key`=VALUES(`huntmaster_key`),"
 		"`huntmaster_entry`=VALUES(`huntmaster_entry`),"
 		"`huntmaster_spawn_guid`=VALUES(`huntmaster_spawn_guid`),"
@@ -1517,7 +1583,8 @@ void NativeHuntsManager::SaveAssignment(HuntRuntime const &runtime) {
 		"`ambush_pending`=VALUES(`ambush_pending`),"
 		"`final_site_key`=VALUES(`final_site_key`),"
 		"`revision`=VALUES(`revision`),`updated_at`=CURRENT_TIMESTAMP",
-		runtime.CharacterGuid, aggregate.Identity.HuntmasterKey,
+		runtime.CharacterGuid, runtime.HuntInstanceId,
+		aggregate.Identity.HuntmasterKey,
 		runtime.HuntmasterEntry, runtime.HuntmasterSpawn,
 		aggregate.Identity.PreyKey,
 		static_cast<std::uint32_t>(aggregate.Identity.Tier),
@@ -1560,6 +1627,97 @@ void NativeHuntsManager::DeleteAssignment(HuntRuntime &runtime) {
 		"DELETE FROM `native_hunt_assignment` WHERE `character_guid`={}",
 		runtime.CharacterGuid);
 	ReconcileHuntAura(player, nullptr);
+}
+
+void NativeHuntsManager::InitializeCollectionPrototype() {
+	_collectionPrototypeReady = false;
+	if (!_config.CollectionPrototypeEnabled)
+		return;
+	if (!MapMgr::IsValidMapCoord(_config.CollectionPrototypeMapId,
+			_config.CollectionPrototypeX, _config.CollectionPrototypeY,
+			_config.CollectionPrototypeZ,
+			_config.CollectionPrototypeOrientation)) {
+		LOG_ERROR("module.native_hunts",
+			"Native Hunts collection prototype has invalid map coordinates.");
+		return;
+	}
+	auto const *relic = sObjectMgr->GetGameObjectTemplate(
+		_config.CollectionPrototypeGameObjectEntry);
+	if (!relic || relic->type != GAMEOBJECT_TYPE_BUTTON ||
+		relic->ScriptId !=
+			sObjectMgr->GetScriptId("mod_native_hunts_shared_relic") ||
+		relic->button.startOpen != 0 || relic->button.lockId != 0 ||
+		relic->button.autoCloseTime != 0 || relic->button.linkedTrap != 0) {
+		LOG_ERROR("module.native_hunts",
+			"Native Hunts collection prototype entry {} is missing or is not "
+			"the expected non-consuming scripted button.",
+			_config.CollectionPrototypeGameObjectEntry);
+		return;
+	}
+	_collectionPrototypeReady = true;
+}
+
+void NativeHuntsManager::RemoveCollectionPrototype() {
+	if (_collectionPrototypeGuid.IsEmpty())
+		return;
+	if (Map *map = sMapMgr->FindBaseMap(_config.CollectionPrototypeMapId))
+		if (GameObject *relic = map->GetGameObject(_collectionPrototypeGuid))
+			relic->Delete();
+	_collectionPrototypeGuid.Clear();
+}
+
+void NativeHuntsManager::ReconcileCollectionPrototype() {
+	bool required = _collectionPrototypeReady && IsEnabled();
+	if (required) {
+		required = false;
+		for (auto const &[guid, runtime] : _runtimes) {
+			(void)guid;
+			if (runtime.Aggregate.State == HuntState::Tracking &&
+				runtime.ZoneId == _config.CollectionPrototypeZoneId &&
+				runtime.MapId == _config.CollectionPrototypeMapId) {
+				required = true;
+				break;
+			}
+		}
+	}
+
+	Map *map = sMapMgr->FindBaseMap(_config.CollectionPrototypeMapId);
+	GameObject *relic = map && !_collectionPrototypeGuid.IsEmpty()
+		? map->GetGameObject(_collectionPrototypeGuid) : nullptr;
+	if (!relic)
+		_collectionPrototypeGuid.Clear();
+	if (!required) {
+		RemoveCollectionPrototype();
+		return;
+	}
+	if (relic)
+		return;
+
+	map = sMapMgr->CreateBaseMap(_config.CollectionPrototypeMapId);
+	if (!map || map->GetZoneId(PHASEMASK_NORMAL,
+			_config.CollectionPrototypeX, _config.CollectionPrototypeY,
+			_config.CollectionPrototypeZ) != _config.CollectionPrototypeZoneId) {
+		LOG_ERROR("module.native_hunts",
+			"Native Hunts collection prototype coordinates do not resolve to "
+			"configured zone {}.", _config.CollectionPrototypeZoneId);
+		_collectionPrototypeReady = false;
+		return;
+	}
+	float const halfOrientation = _config.CollectionPrototypeOrientation * 0.5f;
+	relic = map->SummonGameObject(_config.CollectionPrototypeGameObjectEntry,
+		_config.CollectionPrototypeX, _config.CollectionPrototypeY,
+		_config.CollectionPrototypeZ, _config.CollectionPrototypeOrientation,
+		0.0f, 0.0f, std::sin(halfOrientation), std::cos(halfOrientation), 0,
+		false);
+	if (!relic) {
+		LOG_ERROR("module.native_hunts",
+			"Native Hunts could not spawn the shared collection prototype.");
+		return;
+	}
+	relic->SetGoState(GO_STATE_READY);
+	relic->RemoveGameObjectFlag(GO_FLAG_IN_USE | GO_FLAG_LOCKED |
+		GO_FLAG_INTERACT_COND | GO_FLAG_NOT_SELECTABLE);
+	_collectionPrototypeGuid = relic->GetGUID();
 }
 
 void NativeHuntsManager::ReconcileHuntAura(Player *player,
@@ -1675,6 +1833,12 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 
 	HuntRuntime runtime;
 	runtime.CharacterGuid = guid;
+	auto const instanceId = NewHuntInstanceId();
+	if (!instanceId) {
+		message = "The Hunt database could not create a new assignment identity.";
+		return false;
+	}
+	runtime.HuntInstanceId = *instanceId;
 	runtime.HuntmasterEntry = giver->GetEntry();
 	runtime.HuntmasterSpawn = giver->GetSpawnId();
 	runtime.ZoneId = site->ZoneId;
@@ -1687,8 +1851,11 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 		message = "The Hunt assignment could not be created.";
 		return false;
 	}
+	if (!CreateAssignment(runtime)) {
+		message = "The Hunt assignment could not be persisted.";
+		return false;
+	}
 	_runtimes.emplace(guid, runtime);
-	SaveAssignment(_runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	QueueUiState(player);
 	message = "Your quarry is " + std::string(prey.Name) + ". Travel to " +
@@ -1754,6 +1921,12 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 	auto const *site = zones[urand(0, zones.size() - 1)];
 	HuntRuntime runtime;
 	runtime.CharacterGuid = guid;
+	auto const instanceId = NewHuntInstanceId();
+	if (!instanceId) {
+		message = "The Hunt database could not create a new assignment identity.";
+		return false;
+	}
+	runtime.HuntInstanceId = *instanceId;
 	runtime.HuntmasterEntry = giver->GetEntry();
 	runtime.HuntmasterSpawn = giver->GetSpawnId();
 	runtime.ZoneId = site->ZoneId;
@@ -1767,6 +1940,10 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 	}
 	// Acceptance, not completion, consumes the daily allowance. This is the
 	// reference anti-reroll rule: abandoning forfeits today's assignment.
+	if (!CreateAssignment(runtime)) {
+		message = "The Elite assignment could not be persisted.";
+		return false;
+	}
 	CharacterDatabase.DirectExecute(
 		"INSERT INTO `native_hunt_stats` (`character_guid`,"
 		"`elite_daily_accepted`,`elite_daily_accept_reset_date`) VALUES "
@@ -1775,7 +1952,6 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 		"CURRENT_DATE(),`elite_daily_accepted`+1,1),"
 		"`elite_daily_accept_reset_date`=CURRENT_DATE()", guid);
 	_runtimes.emplace(guid, runtime);
-	SaveAssignment(_runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	QueueUiState(player);
 	message = "Elite quarry: " + std::string(chosen->Name) + ". Travel to " +
@@ -2115,6 +2291,168 @@ bool NativeHuntsManager::SpawnFinalPrey(Player *player, HuntRuntime &runtime,
 	return true;
 }
 
+bool NativeHuntsManager::CollectPrototypeRelic(Player *player,
+		GameObject *object, std::string &message) {
+	if (!player || !object) {
+		message = "The relic cannot be examined.";
+		return false;
+	}
+	auto runtimeIt = _runtimes.find(player->GetGUID().GetCounter());
+	HuntRuntime *runtime = runtimeIt == _runtimes.end()
+		? nullptr : &runtimeIt->second;
+	RelicCollectionContext context{
+		IsEnabled() && _config.CollectionPrototypeEnabled &&
+			_collectionPrototypeReady,
+		runtime != nullptr,
+		runtime ? runtime->Aggregate.State : HuntState::Idle,
+		!_collectionPrototypeGuid.IsEmpty() &&
+			object->GetGUID() == _collectionPrototypeGuid &&
+			object->GetEntry() == _config.CollectionPrototypeGameObjectEntry,
+		runtime && object->GetMap() == player->GetMap() &&
+			player->GetMapId() == _config.CollectionPrototypeMapId &&
+			runtime->MapId == _config.CollectionPrototypeMapId,
+		runtime && player->GetZoneId() == _config.CollectionPrototypeZoneId &&
+			object->GetZoneId() == _config.CollectionPrototypeZoneId &&
+			runtime->ZoneId == _config.CollectionPrototypeZoneId};
+	switch (CanCollectRelic(context)) {
+	case GameplayDecision::WrongState:
+		message = "This relic no longer reveals anything about your active Hunt.";
+		return false;
+	case GameplayDecision::WrongLocation:
+		message = "This relic does not belong to your assigned hunting ground.";
+		return false;
+	case GameplayDecision::Allowed:
+		break;
+	default:
+		message = "This relic has no connection to an active Hunt.";
+		return false;
+	}
+
+	QueryResult duplicate = CharacterDatabase.Query(
+		"SELECT assignment.`tracking_progress`,assignment.`revision` FROM "
+		"`native_hunt_collection` collection JOIN `native_hunt_assignment` "
+		"assignment ON assignment.`hunt_instance_id`=collection.`hunt_instance_id` "
+		"WHERE collection.`hunt_instance_id`='{}' AND "
+		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
+		runtime->HuntInstanceId, PrototypeObjectiveKey, PrototypeRelicKey);
+	if (duplicate) {
+		Field *field = duplicate->Fetch();
+		std::uint8_t const persistedProgress = field[0].Get<std::uint8_t>();
+		std::uint64_t const persistedRevision = field[1].Get<std::uint64_t>();
+		if (runtime->Aggregate.Progress != persistedProgress ||
+			runtime->Aggregate.Revision != persistedRevision) {
+			HuntState const oldState = runtime->Aggregate.State;
+			runtime->Aggregate.Progress = persistedProgress;
+			runtime->Aggregate.Revision = persistedRevision;
+			ReconcileTrackingMilestones(player, *runtime);
+			SaveAssignment(*runtime);
+			if (runtime->Aggregate.State != oldState)
+				ReconcileHuntAura(player, &runtime->Aggregate);
+			QueueUiState(player);
+			ReconcileCollectionPrototype();
+		}
+		message = "You have already examined this relic during this Hunt.";
+		return false;
+	}
+	QueryResult countResult = CharacterDatabase.Query(
+		"SELECT COUNT(*) FROM `native_hunt_collection` WHERE "
+		"`hunt_instance_id`='{}' AND `objective_key`='{}'",
+		runtime->HuntInstanceId, PrototypeObjectiveKey);
+	if (!countResult) {
+		message = "The relic's collection record is temporarily unavailable.";
+		return false;
+	}
+	std::uint32_t const collected = static_cast<std::uint32_t>(
+		countResult->Fetch()[0].Get<std::uint64_t>() + 1u);
+	std::uint8_t const amount = RelicProgressIncrement(collected,
+		_config.CollectionPrototypeTarget);
+	if (amount == 0) {
+		message = "This objective cannot grant additional tracking progress.";
+		return false;
+	}
+
+	std::uint8_t const oldProgress = runtime->Aggregate.Progress;
+	std::uint64_t const oldRevision = runtime->Aggregate.Revision;
+	auto transaction = CharacterDatabase.BeginTransaction();
+	transaction->Append(
+		"INSERT IGNORE INTO `native_hunt_collection` "
+		"(`hunt_instance_id`,`objective_key`,`relic_key`,`tracking_award`) "
+		"SELECT '{}','{}','{}',{} FROM `native_hunt_assignment` WHERE "
+		"`character_guid`={} AND `hunt_instance_id`='{}' AND `state`={} "
+		"AND `zone_id`={} AND `map_id`={} AND `revision`={} "
+		"AND `tracking_progress`={}",
+		runtime->HuntInstanceId, PrototypeObjectiveKey, PrototypeRelicKey,
+		static_cast<std::uint32_t>(amount), runtime->CharacterGuid,
+		runtime->HuntInstanceId,
+		static_cast<std::uint32_t>(HuntState::Tracking), runtime->ZoneId,
+		runtime->MapId, oldRevision, static_cast<std::uint32_t>(oldProgress));
+	transaction->Append("SET @native_hunts_relic_inserted := ROW_COUNT()");
+	transaction->Append(
+		"UPDATE `native_hunt_assignment` SET `tracking_progress`=LEAST(100,"
+		"`tracking_progress`+{}),`revision`=`revision`+1,"
+		"`updated_at`=CURRENT_TIMESTAMP WHERE "
+		"@native_hunts_relic_inserted=1 AND `character_guid`={} AND "
+		"`hunt_instance_id`='{}' AND `state`={} AND `zone_id`={} AND `map_id`={} "
+		"AND `revision`={} AND `tracking_progress`={}",
+		static_cast<std::uint32_t>(amount), runtime->CharacterGuid,
+		runtime->HuntInstanceId,
+		static_cast<std::uint32_t>(HuntState::Tracking), runtime->ZoneId,
+		runtime->MapId, oldRevision, static_cast<std::uint32_t>(oldProgress));
+	bool const acknowledged = CommitCharacterTransactionAndWait(transaction);
+	QueryResult persisted = CharacterDatabase.Query(
+		"SELECT collection.`tracking_award`,assignment.`tracking_progress`,"
+		"assignment.`revision` FROM `native_hunt_collection` collection "
+		"JOIN `native_hunt_assignment` assignment ON "
+		"assignment.`hunt_instance_id`=collection.`hunt_instance_id` WHERE "
+		"collection.`hunt_instance_id`='{}' AND "
+		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
+		runtime->HuntInstanceId, PrototypeObjectiveKey, PrototypeRelicKey);
+	if (!persisted) {
+		message = acknowledged
+			? "The relic credit could not be verified; no local progress was changed."
+			: "The relic credit transaction failed; try again.";
+		return false;
+	}
+	Field *field = persisted->Fetch();
+	std::uint8_t const persistedAward = field[0].Get<std::uint8_t>();
+	std::uint8_t const persistedProgress = field[1].Get<std::uint8_t>();
+	std::uint64_t const persistedRevision = field[2].Get<std::uint64_t>();
+	std::uint8_t const expectedProgress = static_cast<std::uint8_t>(
+		std::min<std::uint16_t>(100,
+			static_cast<std::uint16_t>(oldProgress) + amount));
+	if (persistedAward != amount || persistedProgress != expectedProgress ||
+		persistedRevision != oldRevision + 1u) {
+		HuntState const oldState = runtime->Aggregate.State;
+		runtime->Aggregate.Progress = persistedProgress;
+		runtime->Aggregate.Revision = persistedRevision;
+		ReconcileTrackingMilestones(player, *runtime);
+		SaveAssignment(*runtime);
+		if (runtime->Aggregate.State != oldState)
+			ReconcileHuntAura(player, &runtime->Aggregate);
+		QueueUiState(player);
+		message = "This relic was already recorded; persisted Hunt progress was restored.";
+		return false;
+	}
+	if (!acknowledged)
+		LOG_WARN("module.native_hunts",
+			"Relic transaction acknowledgement was lost for Hunt instance {}, "
+			"but the committed ledger and progress were verified.",
+			runtime->HuntInstanceId);
+	if (!AwardTrackingProgress(player, *runtime, amount)) {
+		HuntState const oldState = runtime->Aggregate.State;
+		runtime->Aggregate.Progress = persistedProgress;
+		runtime->Aggregate.Revision = persistedRevision;
+		ReconcileTrackingMilestones(player, *runtime);
+		SaveAssignment(*runtime);
+		if (runtime->Aggregate.State != oldState)
+			ReconcileHuntAura(player, &runtime->Aggregate);
+		QueueUiState(player);
+	}
+	ReconcileCollectionPrototype();
+	message = "The cursed relic sharpens your quarry's trail.";
+	return true;
+}
+
 bool NativeHuntsManager::UseCrystal(Player *player, GameObject *object,
 									std::string &message) {
 	if (!IsEnabled() || !player || !object) {
@@ -2332,8 +2670,10 @@ void NativeHuntsManager::UpdatePreyAbilities(Player *player,
 }
 
 void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
-	if (!IsEnabled())
+	if (!IsEnabled()) {
+		RemoveCollectionPrototype();
 		return;
+	}
 	_updateAccumulator += elapsedMs;
 	_poiAccumulator += elapsedMs;
 	if (_updateAccumulator < 500)
@@ -2419,6 +2759,7 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 		if (Player *player = ConnectedPlayer(guid))
 			PublishUiState(player);
 	}
+	ReconcileCollectionPrototype();
 }
 
 bool NativeHuntsManager::UseReturnRift(Player *player, GameObject *object,

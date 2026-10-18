@@ -30,6 +30,26 @@ GameplayDecision CanAdvanceTracking(TrackingKillContext const &context) {
 	return GameplayDecision::Allowed;
 }
 
+GameplayDecision CanCollectRelic(RelicCollectionContext const &context) {
+	if (!context.PrototypeEnabled || !context.HasAssignment ||
+		!context.CorrectObject)
+		return GameplayDecision::WrongResource;
+	if (context.State != HuntState::Tracking)
+		return GameplayDecision::WrongState;
+	if (!context.SameMap || !context.InAssignedZone)
+		return GameplayDecision::WrongLocation;
+	return GameplayDecision::Allowed;
+}
+
+std::uint8_t RelicProgressIncrement(std::uint32_t collected,
+		std::uint32_t target) {
+	if (collected == 0 || target == 0 || collected > target)
+		return 0;
+	std::uint32_t const current = 100u * collected / target;
+	std::uint32_t const previous = 100u * (collected - 1u) / target;
+	return static_cast<std::uint8_t>(current - previous);
+}
+
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,
 								 std::uint8_t count) {
 	if (count == 0 || completed >= count)

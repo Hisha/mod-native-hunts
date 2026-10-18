@@ -13,6 +13,7 @@ import tempfile
 import json
 import hashlib
 import re
+import sqlite3
 import struct
 import zipfile
 import xml.etree.ElementTree as ET
@@ -64,6 +65,113 @@ def run_tracking_milestone_source_checks() -> None:
         raise AssertionError(
             "tracking milestones are not reconciled after load, progress, and ambush completion")
     print("PASS tracking milestone manager integration contracts", flush=True)
+
+
+def run_relic_persistence_contract_checks() -> None:
+    assignment = (ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql").read_text(
+        encoding="utf-8")
+    collection = (ROOT / "data/sql/db-characters/base/003_native_hunt_collection.sql").read_text(
+        encoding="utf-8")
+    migration = (ROOT / "data/sql/db-characters/updates/2026_10_17_01_native_hunt_collection.sql").read_text(
+        encoding="utf-8")
+    manager = (ROOT / "src/NativeHuntsManager.cpp").read_text(encoding="utf-8")
+    world = (ROOT / "data/sql/db-world/base/001_native_hunt_shared_relic.sql").read_text(
+        encoding="utf-8")
+    for token in ("`hunt_instance_id`", "UNIQUE KEY `uq_native_hunt_instance`"):
+        if token not in assignment:
+            raise AssertionError(f"hunt-instance persistence contract missing: {token}")
+    for token in ("`hunt_instance_id`", "`objective_key`", "`relic_key`",
+                  "PRIMARY KEY (`hunt_instance_id`, `objective_key`, `relic_key`)"):
+        if token not in collection:
+            raise AssertionError(f"collection uniqueness contract missing: {token}")
+    for token in ("ADD COLUMN `hunt_instance_id`", "SET `hunt_instance_id` = UUID()",
+                  "CREATE TABLE IF NOT EXISTS `native_hunt_collection`"):
+        if token not in migration:
+            raise AssertionError(f"existing-install collection migration missing: {token}")
+    for token in ("INSERT IGNORE INTO `native_hunt_collection`",
+                  "SET @native_hunts_relic_inserted := ROW_COUNT()",
+                  "UPDATE `native_hunt_assignment` SET `tracking_progress`=LEAST(100,",
+                  "CommitCharacterTransactionAndWait(transaction)",
+                  "AwardTrackingProgress(player, *runtime, amount)",
+                  "object->GetGUID() == _collectionPrototypeGuid",
+                  "map->SummonGameObject(_config.CollectionPrototypeGameObjectEntry"):
+        if token not in manager:
+            raise AssertionError(f"transactional shared-relic integration missing: {token}")
+    if "DELETE FROM `native_hunt_collection`" in manager:
+        raise AssertionError("assignment lifecycle deletes durable relic collection history")
+    collection_start = manager.index(
+        "bool NativeHuntsManager::CollectPrototypeRelic")
+    collection_end = manager.index(
+        "bool NativeHuntsManager::UseCrystal", collection_start)
+    if "object->Delete()" in manager[collection_start:collection_end]:
+        raise AssertionError("shared relic interaction consumes the world object")
+    if "mod_native_hunts_shared_relic" not in world or re.search(
+            r"INSERT\s+(?:IGNORE\s+)?INTO\s+`gameobject`(?:\s|\()", world,
+            re.IGNORECASE):
+        raise AssertionError("prototype world SQL must define only the shared relic template")
+
+    with tempfile.TemporaryDirectory(prefix=".native-hunts-relic-", dir=ROOT) as directory:
+        database = Path(directory) / "ledger.sqlite"
+        connection = sqlite3.connect(database)
+        connection.executescript("""
+            CREATE TABLE assignment (
+                character_guid INTEGER PRIMARY KEY,
+                hunt_instance_id TEXT NOT NULL UNIQUE,
+                progress INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE collection (
+                hunt_instance_id TEXT NOT NULL,
+                objective_key TEXT NOT NULL,
+                relic_key TEXT NOT NULL,
+                tracking_award INTEGER NOT NULL,
+                PRIMARY KEY (hunt_instance_id, objective_key, relic_key)
+            );
+        """)
+        connection.executemany("INSERT INTO assignment VALUES (?, ?, 0)",
+                               ((1, "hunt-a"), (2, "hunt-b")))
+        for instance in ("hunt-a", "hunt-b"):
+            connection.execute("INSERT INTO collection VALUES (?, 'objective', 'relic', 10)",
+                               (instance,))
+        if connection.execute("SELECT COUNT(*) FROM collection").fetchone()[0] != 2:
+            raise AssertionError("two hunt instances cannot independently collect one relic")
+        try:
+            connection.execute("INSERT INTO collection VALUES ('hunt-a', 'objective', 'relic', 10)")
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            raise AssertionError("database uniqueness did not reject duplicate relic credit")
+        connection.commit()
+        connection.close()
+        connection = sqlite3.connect(database)
+        if connection.execute("SELECT COUNT(*) FROM collection").fetchone()[0] != 2:
+            raise AssertionError("collection credit did not survive restart")
+        connection.execute("DELETE FROM assignment WHERE character_guid=1")
+        connection.execute("INSERT INTO assignment VALUES (1, 'hunt-a-new', 0)")
+        connection.execute("INSERT INTO collection VALUES ('hunt-a-new', 'objective', 'relic', 10)")
+        if connection.execute(
+                "SELECT COUNT(*) FROM collection WHERE relic_key='relic'").fetchone()[0] != 3:
+            raise AssertionError("a newly accepted hunt inherited the abandoned hunt ledger")
+        connection.execute("INSERT INTO assignment VALUES (3, 'hunt-c', 0)")
+        connection.commit()
+        try:
+            connection.execute("BEGIN")
+            connection.execute("INSERT INTO collection VALUES ('hunt-c', 'objective', 'relic', 10)")
+            connection.execute(
+                "UPDATE assignment SET progress=progress+10 "
+                "WHERE hunt_instance_id='hunt-c'")
+            raise RuntimeError("simulated database failure")
+        except RuntimeError:
+            connection.rollback()
+        if connection.execute(
+                "SELECT COUNT(*) FROM collection WHERE "
+                "hunt_instance_id='hunt-c'").fetchone()[0] != 0:
+            raise AssertionError("failed collection transaction retained ledger credit")
+        if connection.execute(
+                "SELECT progress FROM assignment WHERE "
+                "hunt_instance_id='hunt-c'").fetchone()[0] != 0:
+            raise AssertionError("failed collection transaction retained tracking progress")
+        connection.close()
+    print("PASS shared relic persistence and transaction contracts", flush=True)
 
 
 def run_functional_ui_checks() -> None:
@@ -1574,6 +1682,7 @@ def run_source_safety_checks() -> None:
     required_schema = {
         ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql",
         ROOT / "data/sql/db-characters/base/002_native_hunt_stats.sql",
+        ROOT / "data/sql/db-characters/base/003_native_hunt_collection.sql",
     }
     if not all(path.is_file() for path in required_schema):
         raise AssertionError("native persistence schema is incomplete")
@@ -1582,10 +1691,14 @@ def run_source_safety_checks() -> None:
         if path.is_file() and "native_hunt_assignment" in path.read_text(encoding="utf-8"):
             raise AssertionError("character assignment schema leaked into world SQL")
     current_world_sql = [path for path in world_sql if path.is_file()]
-    if current_world_sql:
-        raise AssertionError("Native Hunts must not provision world spawns through module SQL")
+    if len(current_world_sql) != 1:
+        raise AssertionError("Native Hunts must define exactly one prototype world template SQL file")
+    world_text = current_world_sql[0].read_text(encoding="utf-8")
+    if re.search(r"INSERT\s+(?:IGNORE\s+)?INTO\s+`gameobject`(?:\s|\()",
+                 world_text, re.IGNORECASE):
+        raise AssertionError("Native Hunts must not provision permanent world spawns through SQL")
     assignment = (ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql").read_text(encoding="utf-8")
-    for column in ("`ambushes_completed`", "`ambush_pending`"):
+    for column in ("`hunt_instance_id`", "`ambushes_completed`", "`ambush_pending`"):
         if column not in assignment:
             raise AssertionError(f"persistent ambush column missing: {column}")
     updates = "\n".join(path.read_text(encoding="utf-8") for path in
@@ -2018,6 +2131,7 @@ def main() -> None:
         run_function_shadow_guard,
         run_domain_tests,
         run_tracking_milestone_source_checks,
+        run_relic_persistence_contract_checks,
         run_functional_ui_checks,
         run_frameforge_functional_ui_checks,
         run_frameforge_package_checks,

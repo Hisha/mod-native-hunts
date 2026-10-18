@@ -18,6 +18,23 @@ NativeHunts.Tracking.ProgressMax = 7
 # Nearby members of the killer's group can receive independent tracking credit.
 NativeHunts.GroupCreditRadius = 100.0
 
+# Phase 1 shared collection prototype. Disabled by default. When enabled, one
+# map-owned relic is present only while at least one persisted Tracking-stage
+# assignment targets the configured zone; offline assignments count. The
+# db-world template SQL must be applied and worldserver restarted after changing
+# the entry or placement. Defaults place entry 990000 at an authored Westfall
+# location. Target controls cumulative tracking contribution; with 10, this
+# prototype's one unique relic grants 10 percentage points.
+NativeHunts.CollectionPrototype.Enable = 0
+NativeHunts.CollectionPrototype.GameObjectEntry = 990000
+NativeHunts.CollectionPrototype.Target = 10
+NativeHunts.CollectionPrototype.ZoneId = 40
+NativeHunts.CollectionPrototype.MapId = 0
+NativeHunts.CollectionPrototype.X = -10229.946
+NativeHunts.CollectionPrototype.Y = 1225.396
+NativeHunts.CollectionPrototype.Z = 43.795517
+NativeHunts.CollectionPrototype.Orientation = 0.0
+
 # Required Standard tracking ambushes are spaced evenly through progress.
 # Set Count to 0 to disable them. The assigned prey escapes at the configured
 # health percentage; killing or evading it does not skip the pending ambush.
