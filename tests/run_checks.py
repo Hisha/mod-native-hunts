@@ -122,7 +122,7 @@ def run_relic_persistence_contract_checks() -> None:
                   "FindRelicPool(object, &relicIndex)",
                   "map->SummonGameObject(_config.RelicGameObjectEntry",
                   "Zone2MapCoordinates(x, y, pool.Scope.ZoneId)",
-                  "findNearestPoly", "RunRelicPlacementAttempts"):
+                  "findNearestPoly", "AdvanceRelicPlacementAttempts"):
         if token not in manager:
             raise AssertionError(f"transactional shared-relic integration missing: {token}")
     for token in ("LoadRelicPools()", "AssociateRelicPool(",
@@ -131,6 +131,25 @@ def run_relic_persistence_contract_checks() -> None:
                   "_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1)"):
         if token not in manager:
             raise AssertionError(f"shared relic pool lifecycle missing: {token}")
+    for token in ("QueueRelicPoolGeneration(",
+                  "ProcessRelicPoolGenerationJobs()",
+                  "RelicPlacementCandidatesPerUpdate",
+                  "RelicPlacementCandidatesPerJob",
+                  "_relicPoolGenerationJobs.count(scope)",
+                  "ShouldCancelRelicGeneration(",
+                  "LoadPersistedRelicPool(job.Pool.Scope, recovered)",
+                  "completed generation job will be retained"):
+        if token not in manager:
+            raise AssertionError(f"incremental relic generation contract missing: {token}")
+    for function in ("RequestHunt", "RequestEliteHunt"):
+        start = manager.index(f"bool NativeHuntsManager::{function}")
+        end = manager.index("\n}", start)
+        acceptance = manager[start:end]
+        if "AssociateRelicPool(" not in acceptance:
+            raise AssertionError(f"{function} no longer requests relic association")
+        if ("AdvanceRelicPoolGeneration(" in acceptance or
+                "ProcessRelicPoolGenerationJobs(" in acceptance):
+            raise AssertionError(f"{function} performs randomized placement synchronously")
     if "DELETE FROM `native_hunt_collection`" in manager:
         raise AssertionError("assignment lifecycle deletes durable relic collection history")
     reconcile_start = manager.index("void NativeHuntsManager::ReconcileRelicPools()")
@@ -297,6 +316,41 @@ def run_relic_persistence_contract_checks() -> None:
             "ORDER BY relic_index").fetchall()
         if fresh_positions == original_positions:
             raise AssertionError("a later hunt reused retired relic coordinates")
+        connection.executemany(
+            "INSERT INTO assignment(character_guid,hunt_instance_id,progress) "
+            "VALUES (?, ?, 0)", ((4, "hunt-d"), (5, "hunt-e")))
+        connection.commit()
+        connection.execute("BEGIN")
+        connection.execute("INSERT INTO relic_pool VALUES ('pool-uncertain', 1, 0, 12, 3)")
+        connection.executemany(
+            "INSERT INTO relic_position VALUES ('pool-uncertain', ?, ?, ?, ?)",
+            ((0, 1.0, 2.0, 3.0), (1, 4.0, 5.0, 6.0),
+             (2, 7.0, 8.0, 9.0)))
+        connection.execute(
+            "UPDATE assignment SET relic_pool_id='pool-uncertain' "
+            "WHERE hunt_instance_id='hunt-d'")
+        connection.commit()
+        # Simulate losing the commit acknowledgement and verification query.
+        # Recovery must discover the unique scope after reconnect instead of
+        # inserting or regenerating another pool.
+        connection.close()
+        connection = sqlite3.connect(database)
+        recovered = connection.execute(
+            "SELECT pool_id,relic_count FROM relic_pool WHERE "
+            "map_id=1 AND instance_id=0 AND zone_id=12").fetchall()
+        if recovered != [("pool-uncertain", 3)]:
+            raise AssertionError("restart did not recover the uncertain committed pool")
+        if connection.execute(
+                "SELECT COUNT(*) FROM relic_position WHERE "
+                "pool_id='pool-uncertain'").fetchone()[0] != 3:
+            raise AssertionError("uncertain pool recovery accepted incomplete positions")
+        connection.execute(
+            "UPDATE assignment SET relic_pool_id='pool-uncertain' "
+            "WHERE hunt_instance_id='hunt-e' AND relic_pool_id IS NULL")
+        if connection.execute(
+                "SELECT COUNT(*) FROM relic_pool WHERE "
+                "map_id=1 AND instance_id=0 AND zone_id=12").fetchone()[0] != 1:
+            raise AssertionError("concurrent association duplicated an uncertain scope pool")
         connection.close()
     print("PASS shared relic persistence and transaction contracts", flush=True)
 

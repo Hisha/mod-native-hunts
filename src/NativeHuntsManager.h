@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -163,6 +164,12 @@ struct RelicPool {
 	bool SpawnShortfallReported = false;
 };
 
+struct RelicPoolGenerationJob {
+	RelicPool Pool;
+	std::uint32_t Attempts = 0;
+	bool PlacementComplete = false;
+};
+
 class NativeHuntsManager {
 public:
 	static NativeHuntsManager &Instance();
@@ -234,8 +241,16 @@ private:
 	void RemoveAllRelicPoolObjects();
 	void RetireRelicPool(std::string const &poolId);
 	bool AssociateRelicPool(Player *player, HuntRuntime &runtime);
-	bool CreateRelicPool(RelicPoolScope const &scope, HuntRuntime &runtime);
-	bool GenerateRelicPositions(RelicPool &pool, Map *map);
+	bool QueueRelicPoolGeneration(RelicPoolScope const &scope);
+	void ProcessRelicPoolGenerationJobs();
+	bool AdvanceRelicPoolGeneration(RelicPoolGenerationJob &job,
+		std::uint32_t budget);
+	bool PersistRelicPoolGeneration(RelicPoolGenerationJob &job);
+	RelicPersistenceObservation LoadPersistedRelicPool(
+		RelicPoolScope const &scope, RelicPool &pool) const;
+	std::size_t CountTrackingHuntsForRelicScope(
+		RelicPoolScope const &scope) const;
+	void AssociateTrackingHuntsWithRelicPool(RelicPool &pool);
 	void SpawnRelicPool(RelicPool &pool);
 	RelicPool *FindRelicPool(GameObject const *object,
 		std::uint32_t *relicIndex = nullptr);
@@ -271,6 +286,9 @@ private:
 	bool _relicDisableCleanupComplete = false;
 	bool _initialized = false;
 	std::unordered_map<std::string, RelicPool> _relicPools;
+	std::unordered_map<RelicPoolScope, RelicPoolGenerationJob,
+		RelicPoolScopeHash> _relicPoolGenerationJobs;
+	std::deque<RelicPoolScope> _relicPoolGenerationOrder;
 	std::unordered_map<RelicPoolScope, std::chrono::steady_clock::time_point,
 		RelicPoolScopeHash> _relicPoolRetryAfter;
 	std::unordered_map<std::uint32_t, HuntRuntime> _runtimes;

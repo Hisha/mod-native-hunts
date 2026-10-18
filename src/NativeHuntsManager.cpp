@@ -1059,6 +1059,8 @@ void NativeHuntsManager::Configure(NativeHuntsConfig config) {
 	_config = std::move(config);
 	if (relicCountChanged) {
 		_relicDisableCleanupComplete = false;
+		_relicPoolGenerationJobs.clear();
+		_relicPoolGenerationOrder.clear();
 		_relicPoolRetryAfter.clear();
 	}
 	if (_initialized && relicCountChanged)
@@ -1421,6 +1423,8 @@ bool NativeHuntsManager::ResolveManagedResources() {
 void NativeHuntsManager::Initialize() {
 	RemoveAllRelicPoolObjects();
 	_relicPools.clear();
+	_relicPoolGenerationJobs.clear();
+	_relicPoolGenerationOrder.clear();
 	_relicPoolRetryAfter.clear();
 	_relicDisableCleanupComplete = false;
 	_runtimes.clear();
@@ -1476,6 +1480,8 @@ void NativeHuntsManager::ResolveGuardLocators() {
 void NativeHuntsManager::Shutdown() {
 	RemoveAllRelicPoolObjects();
 	_relicPools.clear();
+	_relicPoolGenerationJobs.clear();
+	_relicPoolGenerationOrder.clear();
 	_relicPoolRetryAfter.clear();
 	for (auto &[guid, runtime] : _runtimes)
 		RemoveRuntimeObjects(ConnectedPlayer(guid), runtime);
@@ -1760,7 +1766,12 @@ void NativeHuntsManager::LoadRelicPools() {
 	}
 }
 
-bool NativeHuntsManager::GenerateRelicPositions(RelicPool &pool, Map *map) {
+bool NativeHuntsManager::AdvanceRelicPoolGeneration(
+		RelicPoolGenerationJob &job, std::uint32_t budget) {
+	RelicPool &pool = job.Pool;
+	Map *map = sMapMgr->FindMap(pool.Scope.MapId, pool.Scope.InstanceId);
+	if (!map && pool.Scope.InstanceId == 0)
+		map = sMapMgr->CreateBaseMap(pool.Scope.MapId);
 	if (!map || pool.RequiredCount == 0)
 		return false;
 	auto *navQuery = map->GetMapCollisionData().GetMMapData().GetNavMeshQuery();
@@ -1773,7 +1784,9 @@ bool NativeHuntsManager::GenerateRelicPositions(RelicPool &pool, Map *map) {
 	dtQueryFilter filter;
 	filter.setIncludeFlags(0xffff);
 	filter.setExcludeFlags(0);
-	auto const placement = RunRelicPlacementAttempts(pool.RequiredCount, [&]() {
+	auto const placement = AdvanceRelicPlacementAttempts(pool.RequiredCount,
+		static_cast<std::uint32_t>(pool.Positions.size()), job.Attempts, budget,
+		[&]() {
 		float x = frand(0.0f, 100.0f);
 		float y = frand(0.0f, 100.0f);
 		Zone2MapCoordinates(x, y, pool.Scope.ZoneId);
@@ -1802,7 +1815,9 @@ bool NativeHuntsManager::GenerateRelicPositions(RelicPool &pool, Map *map) {
 			candidateY, candidateZ, frand(0.0f, 6.2831853f), {}});
 		return true;
 	});
-	if (!placement.Complete) {
+	job.Attempts = placement.Attempts;
+	job.PlacementComplete = placement.Complete;
+	if (placement.Exhausted) {
 		LOG_ERROR("module.native_hunts",
 			"Relic pool {} generated only {} of {} valid MMap-backed positions "
 			"after {} attempts; no partial pool will be persisted or spawned.",
@@ -1852,54 +1867,253 @@ void NativeHuntsManager::SpawnRelicPool(RelicPool &pool) {
 		pool.SpawnShortfallReported = false;
 }
 
-bool NativeHuntsManager::CreateRelicPool(RelicPoolScope const &scope,
-		HuntRuntime &runtime) {
+RelicPersistenceObservation NativeHuntsManager::LoadPersistedRelicPool(
+		RelicPoolScope const &scope, RelicPool &pool) const {
+	QueryResult summary = CharacterDatabase.Query(
+		"SELECT COUNT(*),COALESCE(MAX(`pool_id`),''),"
+		"COALESCE(MAX(`relic_count`),0) FROM `native_hunt_relic_pool` WHERE "
+		"`map_id`={} AND `instance_id`={} AND `zone_id`={} AND "
+		"`retired_at` IS NULL", scope.MapId, scope.InstanceId, scope.ZoneId);
+	if (!summary)
+		return RelicPersistenceObservation::Unavailable;
+	Field *summaryField = summary->Fetch();
+	if (summaryField[0].Get<std::uint64_t>() == 0)
+		return RelicPersistenceObservation::Missing;
+	pool = {};
+	pool.Id = summaryField[1].Get<std::string>();
+	pool.Scope = scope;
+	pool.RequiredCount = summaryField[2].Get<std::uint32_t>();
+	if (!IsUuid(pool.Id) || pool.RequiredCount == 0 ||
+			pool.RequiredCount > MaximumRelicsPerZone)
+		return RelicPersistenceObservation::Invalid;
+	QueryResult count = CharacterDatabase.Query(
+		"SELECT COUNT(*) FROM `native_hunt_relic_position` WHERE `pool_id`='{}'",
+		pool.Id);
+	if (!count)
+		return RelicPersistenceObservation::Unavailable;
+	if (count->Fetch()[0].Get<std::uint64_t>() != pool.RequiredCount)
+		return RelicPersistenceObservation::Invalid;
+	QueryResult positions = CharacterDatabase.Query(
+		"SELECT `relic_index`,`position_x`,`position_y`,`position_z`,"
+		"`orientation` FROM `native_hunt_relic_position` WHERE `pool_id`='{}' "
+		"ORDER BY `relic_index`", pool.Id);
+	if (!positions)
+		return RelicPersistenceObservation::Unavailable;
+	bool valid = true;
+	do {
+		Field *field = positions->Fetch();
+		RelicPosition position{field[0].Get<std::uint32_t>(),
+			field[1].Get<float>(), field[2].Get<float>(), field[3].Get<float>(),
+			field[4].Get<float>(), {}};
+		valid = valid && position.Index == pool.Positions.size() &&
+			std::isfinite(position.X) && std::isfinite(position.Y) &&
+			std::isfinite(position.Z) && std::isfinite(position.Orientation) &&
+			MapMgr::IsValidMapCoord(scope.MapId, position.X, position.Y,
+				position.Z, position.Orientation);
+		pool.Positions.push_back(position);
+	} while (positions->NextRow());
+	return valid && pool.Positions.size() == pool.RequiredCount
+		? RelicPersistenceObservation::Complete
+		: RelicPersistenceObservation::Invalid;
+}
+
+std::size_t NativeHuntsManager::CountTrackingHuntsForRelicScope(
+		RelicPoolScope const &scope) const {
+	std::size_t count = 0;
+	for (auto const &[guid, runtime] : _runtimes) {
+		if (runtime.Aggregate.State != HuntState::Tracking ||
+			runtime.MapId != scope.MapId || runtime.ZoneId != scope.ZoneId)
+			continue;
+		if (scope.InstanceId == 0) {
+			auto const *entry = sMapStore.LookupEntry(runtime.MapId);
+			if (entry && !entry->Instanceable())
+				++count;
+			continue;
+		}
+		Player *player = ConnectedPlayer(guid);
+		if (player && player->GetMapId() == scope.MapId &&
+				player->GetZoneId() == scope.ZoneId &&
+				player->GetMap()->GetInstanceId() == scope.InstanceId)
+			++count;
+	}
+	return count;
+}
+
+void NativeHuntsManager::AssociateTrackingHuntsWithRelicPool(RelicPool &pool) {
+	for (auto &[guid, runtime] : _runtimes) {
+		if (runtime.Aggregate.State != HuntState::Tracking ||
+			runtime.MapId != pool.Scope.MapId ||
+			runtime.ZoneId != pool.Scope.ZoneId ||
+			!runtime.RelicPoolId.empty())
+			continue;
+		if (pool.Scope.InstanceId != 0) {
+			Player *player = ConnectedPlayer(guid);
+			if (!player || player->GetMapId() != pool.Scope.MapId ||
+					player->GetZoneId() != pool.Scope.ZoneId ||
+					player->GetMap()->GetInstanceId() != pool.Scope.InstanceId)
+				continue;
+		}
+		CharacterDatabase.DirectExecute(
+			"UPDATE `native_hunt_assignment` SET `relic_pool_id`='{}' WHERE "
+			"`character_guid`={} AND `hunt_instance_id`='{}' AND "
+			"(`relic_pool_id` IS NULL OR `relic_pool_id`='')", pool.Id,
+			runtime.CharacterGuid, runtime.HuntInstanceId);
+		if (CharacterDatabase.Query(
+				"SELECT 1 FROM `native_hunt_assignment` WHERE `character_guid`={} "
+				"AND `hunt_instance_id`='{}' AND `relic_pool_id`='{}'",
+				runtime.CharacterGuid, runtime.HuntInstanceId, pool.Id))
+			runtime.RelicPoolId = pool.Id;
+	}
+}
+
+bool NativeHuntsManager::QueueRelicPoolGeneration(RelicPoolScope const &scope) {
+	if (_relicPoolGenerationJobs.count(scope))
+		return true;
 	auto const poolId = NewHuntInstanceId();
 	if (!poolId)
 		return false;
-	Map *map = sMapMgr->FindMap(scope.MapId, scope.InstanceId);
-	if (!map && scope.InstanceId == 0)
-		map = sMapMgr->CreateBaseMap(scope.MapId);
-	RelicPool pool{*poolId, scope, _config.RelicsCountPerZone, {}};
-	if (!GenerateRelicPositions(pool, map))
+	RelicPoolGenerationJob job;
+	job.Pool = {*poolId, scope, _config.RelicsCountPerZone, {}};
+	_relicPoolGenerationJobs.emplace(scope, std::move(job));
+	_relicPoolGenerationOrder.push_back(scope);
+	return true;
+}
+
+bool NativeHuntsManager::PersistRelicPoolGeneration(
+		RelicPoolGenerationJob &job) {
+	auto activate = [&](RelicPool recovered) {
+		std::string const recoveredId = recovered.Id;
+		auto [iterator, inserted] = _relicPools.emplace(
+			recoveredId, std::move(recovered));
+		RelicPool &active = iterator->second;
+		if (!inserted && !(active.Scope == job.Pool.Scope))
+			return false;
+		AssociateTrackingHuntsWithRelicPool(active);
+		SpawnRelicPool(active);
+		return true;
+	};
+	RelicPool recovered;
+	auto observation = LoadPersistedRelicPool(job.Pool.Scope, recovered);
+	auto action = DecideRelicPersistenceAction(observation,
+		job.PlacementComplete);
+	if (action == RelicPersistenceAction::RecoverPersisted)
+		return activate(std::move(recovered));
+	if (action == RelicPersistenceAction::Wait)
+		return false;
+	if (action == RelicPersistenceAction::ReplaceInvalid) {
+		LOG_ERROR("module.native_hunts",
+			"Persisted relic pool {} for map {} instance {} zone {} is invalid; "
+			"it will be retired before the completed generation job is retried.",
+			recovered.Id, job.Pool.Scope.MapId, job.Pool.Scope.InstanceId,
+			job.Pool.Scope.ZoneId);
+		RetireRelicPool(recovered.Id);
+		return false;
+	}
+
+	HuntRuntime *owner = nullptr;
+	for (auto &[guid, runtime] : _runtimes) {
+		(void)guid;
+		if (runtime.Aggregate.State != HuntState::Tracking ||
+			runtime.MapId != job.Pool.Scope.MapId ||
+			runtime.ZoneId != job.Pool.Scope.ZoneId)
+			continue;
+		if (job.Pool.Scope.InstanceId != 0) {
+			Player *player = ConnectedPlayer(runtime.CharacterGuid);
+			if (!player || player->GetMapId() != job.Pool.Scope.MapId ||
+					player->GetZoneId() != job.Pool.Scope.ZoneId ||
+					player->GetMap()->GetInstanceId() !=
+						job.Pool.Scope.InstanceId)
+				continue;
+		}
+		owner = &runtime;
+		break;
+	}
+	if (!owner)
 		return false;
 	auto transaction = CharacterDatabase.BeginTransaction();
 	transaction->Append(
 		"INSERT INTO `native_hunt_relic_pool` (`pool_id`,`map_id`,"
 		"`instance_id`,`zone_id`,`relic_count`) VALUES ('{}',{},{},{},{})",
-		pool.Id, scope.MapId, scope.InstanceId, scope.ZoneId,
-		pool.RequiredCount);
-	for (auto const &position : pool.Positions)
+		job.Pool.Id, job.Pool.Scope.MapId, job.Pool.Scope.InstanceId,
+		job.Pool.Scope.ZoneId, job.Pool.RequiredCount);
+	for (auto const &position : job.Pool.Positions)
 		transaction->Append(
 			"INSERT INTO `native_hunt_relic_position` (`pool_id`,"
 			"`relic_index`,`position_x`,`position_y`,`position_z`,"
-			"`orientation`) VALUES ('{}',{},{},{},{},{})", pool.Id,
+			"`orientation`) VALUES ('{}',{},{},{},{},{})", job.Pool.Id,
 			position.Index, position.X, position.Y, position.Z,
 			position.Orientation);
 	transaction->Append(
 		"UPDATE `native_hunt_assignment` SET `relic_pool_id`='{}' WHERE "
 		"`character_guid`={} AND `hunt_instance_id`='{}' AND "
-		"(`relic_pool_id` IS NULL OR `relic_pool_id`='')", pool.Id,
-		runtime.CharacterGuid, runtime.HuntInstanceId);
+		"(`relic_pool_id` IS NULL OR `relic_pool_id`='')", job.Pool.Id,
+		owner->CharacterGuid, owner->HuntInstanceId);
 	bool const acknowledged = CommitCharacterTransactionAndWait(transaction);
-	QueryResult persisted = CharacterDatabase.Query(
-		"SELECT 1 FROM `native_hunt_assignment` assignment JOIN "
-		"`native_hunt_relic_pool` pool ON pool.`pool_id`="
-		"assignment.`relic_pool_id` WHERE assignment.`character_guid`={} "
-		"AND assignment.`hunt_instance_id`='{}' AND pool.`pool_id`='{}'",
-		runtime.CharacterGuid, runtime.HuntInstanceId, pool.Id);
-	if (!persisted)
-		return false;
-	if (!acknowledged)
-		LOG_WARN("module.native_hunts",
-			"Relic pool {} commit acknowledgement was lost, but persistence "
-			"was verified.", pool.Id);
-	runtime.RelicPoolId = pool.Id;
-	auto [iterator, inserted] = _relicPools.emplace(pool.Id, std::move(pool));
-	if (!inserted)
-		return false;
-	SpawnRelicPool(iterator->second);
-	return true;
+	recovered = {};
+	observation = LoadPersistedRelicPool(job.Pool.Scope, recovered);
+	if (observation == RelicPersistenceObservation::Complete) {
+		if (!acknowledged)
+			LOG_WARN("module.native_hunts",
+				"Relic pool {} commit acknowledgement was lost, but the complete "
+				"scope pool was recovered.", recovered.Id);
+		return activate(std::move(recovered));
+	}
+	LOG_WARN("module.native_hunts",
+		"Relic pool {} persistence could not be verified after commit; the "
+		"completed generation job will be retained and verified before retry.",
+		job.Pool.Id);
+	return false;
+}
+
+void NativeHuntsManager::ProcessRelicPoolGenerationJobs() {
+	std::uint32_t remaining = RelicPlacementCandidatesPerUpdate;
+	std::size_t const scheduled = _relicPoolGenerationOrder.size();
+	for (std::size_t index = 0; index < scheduled && remaining > 0 &&
+			!_relicPoolGenerationOrder.empty(); ++index) {
+		RelicPoolScope const scope = _relicPoolGenerationOrder.front();
+		_relicPoolGenerationOrder.pop_front();
+		auto found = _relicPoolGenerationJobs.find(scope);
+		if (found == _relicPoolGenerationJobs.end())
+			continue;
+		if (ShouldCancelRelicGeneration(_config.RelicsCountPerZone > 0,
+				CountTrackingHuntsForRelicScope(scope))) {
+			RelicPool persisted;
+			auto const observation = LoadPersistedRelicPool(scope, persisted);
+			if (observation == RelicPersistenceObservation::Complete ||
+					observation == RelicPersistenceObservation::Invalid)
+				RetireRelicPool(persisted.Id);
+			_relicPoolGenerationJobs.erase(found);
+			_relicPoolRetryAfter.erase(scope);
+			continue;
+		}
+		auto const now = std::chrono::steady_clock::now();
+		if (auto retry = _relicPoolRetryAfter.find(scope);
+				retry != _relicPoolRetryAfter.end() && now < retry->second) {
+			_relicPoolGenerationOrder.push_back(scope);
+			continue;
+		}
+		RelicPoolGenerationJob &job = found->second;
+		bool keep = true;
+		if (!job.PlacementComplete) {
+			std::uint32_t const slice = std::min(
+				RelicPlacementCandidatesPerJob, remaining);
+			std::uint32_t const before = job.Attempts;
+			keep = AdvanceRelicPoolGeneration(job, slice);
+			remaining -= job.Attempts - before;
+		}
+		if (keep && job.PlacementComplete && PersistRelicPoolGeneration(job)) {
+			_relicPoolGenerationJobs.erase(found);
+			_relicPoolRetryAfter.erase(scope);
+			continue;
+		}
+		if (!keep || job.PlacementComplete)
+			_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1);
+		if (!keep) {
+			_relicPoolGenerationJobs.erase(found);
+			continue;
+		}
+		_relicPoolGenerationOrder.push_back(scope);
+	}
 }
 
 bool NativeHuntsManager::AssociateRelicPool(Player *player,
@@ -1950,16 +2164,36 @@ bool NativeHuntsManager::AssociateRelicPool(Player *player,
 		return true;
 	}
 	auto const now = std::chrono::steady_clock::now();
-	if (auto retry = _relicPoolRetryAfter.find(scope);
-		retry != _relicPoolRetryAfter.end() && now < retry->second)
+	auto retry = _relicPoolRetryAfter.find(scope);
+	bool const retryScheduled = retry != _relicPoolRetryAfter.end();
+	bool const retryDue = !retryScheduled || now >= retry->second;
+	auto const request = DecideRelicGenerationRequest(false,
+		_relicPoolGenerationJobs.count(scope) != 0, retryScheduled, retryDue);
+	if (request == RelicGenerationRequest::JoinPending)
 		return false;
-	if (CreateRelicPool(scope, runtime)) {
+	if (request == RelicGenerationRequest::WaitForRetry)
+		return false;
+	RelicPool persisted;
+	auto const observation = LoadPersistedRelicPool(scope, persisted);
+	if (observation == RelicPersistenceObservation::Complete) {
+		std::string const persistedId = persisted.Id;
+		auto [iterator, inserted] = _relicPools.emplace(
+			persistedId, std::move(persisted));
+		if (!inserted && !(iterator->second.Scope == scope))
+			return false;
+		AssociateTrackingHuntsWithRelicPool(iterator->second);
+		SpawnRelicPool(iterator->second);
 		_relicPoolRetryAfter.erase(scope);
-		return true;
+		return runtime.RelicPoolId == iterator->second.Id;
 	}
-	// MMap gaps and unusually sparse zone rectangles must not turn the 500 ms
-	// reconciliation tick into an unbounded placement workload or log storm.
-	_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1);
+	if (observation == RelicPersistenceObservation::Invalid) {
+		RetireRelicPool(persisted.Id);
+	} else if (observation == RelicPersistenceObservation::Unavailable) {
+		_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1);
+		return false;
+	}
+	if (!QueueRelicPoolGeneration(scope))
+		_relicPoolRetryAfter[scope] = now + std::chrono::minutes(1);
 	return false;
 }
 
@@ -1984,6 +2218,8 @@ void NativeHuntsManager::ReconcileRelicPools() {
 	if (_config.RelicsCountPerZone == 0) {
 		RemoveAllRelicPoolObjects();
 		_relicPools.clear();
+		_relicPoolGenerationJobs.clear();
+		_relicPoolGenerationOrder.clear();
 		_relicPoolRetryAfter.clear();
 		for (auto &[guid, runtime] : _runtimes) {
 			(void)guid;
@@ -2006,6 +2242,8 @@ void NativeHuntsManager::ReconcileRelicPools() {
 	// that explicitly authorizes retirement while assignments still exist.
 	if (!IsEnabled()) {
 		RemoveAllRelicPoolObjects();
+		_relicPoolGenerationJobs.clear();
+		_relicPoolGenerationOrder.clear();
 		return;
 	}
 	_relicDisableCleanupComplete = false;
@@ -2016,6 +2254,7 @@ void NativeHuntsManager::ReconcileRelicPools() {
 	for (auto &[guid, runtime] : _runtimes)
 		if (runtime.Aggregate.State == HuntState::Tracking)
 			AssociateRelicPool(ConnectedPlayer(guid), runtime);
+	ProcessRelicPoolGenerationJobs();
 	std::unordered_map<std::string, std::size_t> references;
 	for (auto const &[guid, runtime] : _runtimes) {
 		(void)guid;

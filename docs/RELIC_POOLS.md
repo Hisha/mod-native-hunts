@@ -64,14 +64,31 @@ including roads, steep areas, ruins, structures, and shallows when those areas
 have navigation polygons. Natural random clustering is retained.
 
 Generation is bounded at 100 candidates per requested relic (6,000 attempts for
-the default pool and at most 20,000 after configuration clamping). The pool is
-persisted only if the exact configured count is generated. Spawn shortfalls are
-logged with actual and required counts and retried; they are never reported as
-a successful smaller pool.
+the default pool and at most 20,000 after configuration clamping). Acceptance
+only queues a scope-level generation job. The 500 ms world update processes at
+most 32 candidates globally and at most 8 for one scope before rotating to the
+next scope; map and navigation access therefore stays on the world thread
+without making Hunt acceptance perform the full search. Hunts sharing a scope
+join the same job. A job is cancelled when no Tracking Hunt still needs its
+scope or relic collection is disabled.
+
+The pool is persisted only if the exact configured count is generated. Spawn
+shortfalls are logged with actual and required counts and retried; they are
+never reported as a successful smaller pool.
 
 After a generation failure, the scope waits one minute before another bounded
 attempt. This prevents the normal 500 ms reconciliation tick from repeatedly
 loading terrain or flooding logs when MMap data is absent or incomplete.
+
+Pool scope is unique in the character database. Before generation or a retry,
+the manager checks for a complete persisted pool in that scope and recovers it.
+If commit acknowledgement or the verification query is unavailable, the
+completed in-memory job and its positions are retained; a later retry verifies
+and reuses a committed pool before issuing another transaction. Because the
+pool, all positions, and one assignment association commit atomically, restart
+recovery can also load a transaction that committed immediately before a
+worldserver interruption. Historical collection rows are never part of pool
+cleanup.
 
 ### Placement limitation
 

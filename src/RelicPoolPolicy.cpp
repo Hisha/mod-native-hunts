@@ -26,17 +26,60 @@ bool ShouldRetireRelicPool(std::size_t associatedHunts) {
 	return associatedHunts == 0;
 }
 
-RelicPlacementRun RunRelicPlacementAttempts(std::uint32_t count,
+bool ShouldCancelRelicGeneration(bool relicsEnabled,
+		std::size_t associatedHunts) {
+	return !relicsEnabled || associatedHunts == 0;
+}
+
+RelicGenerationRequest DecideRelicGenerationRequest(bool poolExists,
+		bool generationPending, bool retryScheduled, bool retryDue) {
+	if (poolExists)
+		return RelicGenerationRequest::UseExisting;
+	if (generationPending)
+		return RelicGenerationRequest::JoinPending;
+	if (retryScheduled && !retryDue)
+		return RelicGenerationRequest::WaitForRetry;
+	return RelicGenerationRequest::Start;
+}
+
+RelicPersistenceAction DecideRelicPersistenceAction(
+		RelicPersistenceObservation observation, bool generationComplete) {
+	switch (observation) {
+	case RelicPersistenceObservation::Complete:
+		return RelicPersistenceAction::RecoverPersisted;
+	case RelicPersistenceObservation::Invalid:
+		return RelicPersistenceAction::ReplaceInvalid;
+	case RelicPersistenceObservation::Missing:
+		return generationComplete ? RelicPersistenceAction::CommitGenerated
+			: RelicPersistenceAction::Wait;
+	case RelicPersistenceObservation::Unavailable:
+		return RelicPersistenceAction::Wait;
+	}
+	return RelicPersistenceAction::Wait;
+}
+
+RelicPlacementRun AdvanceRelicPlacementAttempts(std::uint32_t count,
+		std::uint32_t accepted, std::uint32_t attempts, std::uint32_t budget,
 		std::function<bool()> const &tryCandidate) {
-	RelicPlacementRun result;
+	RelicPlacementRun result{accepted, attempts, accepted == count, false};
 	std::uint32_t const limit = RelicPlacementAttemptLimit(count);
-	while (result.Attempts < limit && result.Accepted < count) {
+	std::uint32_t processed = 0;
+	while (processed < budget && result.Attempts < limit &&
+			result.Accepted < count) {
+		++processed;
 		++result.Attempts;
 		if (tryCandidate && tryCandidate())
 			++result.Accepted;
 	}
 	result.Complete = result.Accepted == count;
+	result.Exhausted = !result.Complete && result.Attempts >= limit;
 	return result;
+}
+
+RelicPlacementRun RunRelicPlacementAttempts(std::uint32_t count,
+		std::function<bool()> const &tryCandidate) {
+	return AdvanceRelicPlacementAttempts(count, 0, 0,
+		RelicPlacementAttemptLimit(count), tryCandidate);
 }
 
 } // namespace native_hunts

@@ -570,7 +570,47 @@ void TestRelicPoolPolicy() {
 	Check(!ShouldRetireRelicPool(2) && !ShouldRetireRelicPool(1) &&
 		ShouldRetireRelicPool(0),
 		"a pool retires only after its last hunt releases it");
+	Check(!ShouldCancelRelicGeneration(true, 2) &&
+		!ShouldCancelRelicGeneration(true, 1) &&
+		ShouldCancelRelicGeneration(true, 0) &&
+		ShouldCancelRelicGeneration(false, 2),
+		"generation cancels when its last hunt ends or relics are disabled");
+	Check(DecideRelicGenerationRequest(true, false, false, true) ==
+			RelicGenerationRequest::UseExisting &&
+		DecideRelicGenerationRequest(false, true, false, true) ==
+			RelicGenerationRequest::JoinPending &&
+		DecideRelicGenerationRequest(false, false, true, false) ==
+			RelicGenerationRequest::WaitForRetry &&
+		DecideRelicGenerationRequest(false, false, true, true) ==
+			RelicGenerationRequest::Start,
+		"concurrent associations join one job and retry deadlines are honored");
+	Check(DecideRelicPersistenceAction(RelicPersistenceObservation::Unavailable,
+			true) == RelicPersistenceAction::Wait &&
+		DecideRelicPersistenceAction(RelicPersistenceObservation::Complete,
+			true) == RelicPersistenceAction::RecoverPersisted &&
+		DecideRelicPersistenceAction(RelicPersistenceObservation::Missing,
+			true) == RelicPersistenceAction::CommitGenerated &&
+		DecideRelicPersistenceAction(RelicPersistenceObservation::Invalid,
+			true) == RelicPersistenceAction::ReplaceInvalid,
+		"transaction uncertainty waits for verification and recovers committed pools");
 	std::uint32_t candidates = 0;
+	auto incremental = AdvanceRelicPlacementAttempts(3, 0, 0, 2, [&]() {
+		return ++candidates % 2 == 0;
+	});
+	Check(!incremental.Complete && !incremental.Exhausted &&
+		incremental.Accepted == 1 && incremental.Attempts == 2,
+		"incremental placement stops at its per-update candidate budget");
+	incremental = AdvanceRelicPlacementAttempts(3, incremental.Accepted,
+		incremental.Attempts, 2, [&]() { return ++candidates % 2 == 0; });
+	Check(!incremental.Complete && incremental.Accepted == 2 &&
+		incremental.Attempts == 4,
+		"incremental placement resumes without discarding prior candidates");
+	incremental = AdvanceRelicPlacementAttempts(3, incremental.Accepted,
+		incremental.Attempts, 2, [&]() { return ++candidates % 2 == 0; });
+	Check(incremental.Complete && !incremental.Exhausted &&
+		incremental.Accepted == 3 && incremental.Attempts == 6,
+		"incremental placement completes across multiple update slices");
+	candidates = 0;
 	auto const mixedCandidates = RunRelicPlacementAttempts(3, [&]() {
 		return ++candidates % 2 == 0;
 	});
