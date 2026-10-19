@@ -1,161 +1,132 @@
-# mod-native-hunts
+# Native Hunts
 
-`mod-native-hunts` is an independent AzerothCore WotLK Hunt implementation. It
-uses Content Manager resources and its own `native_hunt_*` persistence; it does
-not read, migrate, or preserve `mod-hunts` runtime or currency data.
+**A hunt-driven adventure system for AzerothCore (Wrath of the Lich King, 3.3.5a).**
 
-## Implemented standard loop
+Native Hunts adds repeatable hunts across Azeroth and beyond. Visit a Huntmaster, track a dangerous quarry through a level-appropriate zone, withstand ambushes, and follow the trail to a final encounter. Along the way, discover cursed relics that offer another way to advance your search. Complete hunts to earn rewards and work toward more challenging Elite Hunts.
 
-Ten managed capital-city Huntmasters issue a random standard-prey assignment
-and an authored, level-appropriate hunting zone. Non-grey ordinary creature
-kills made by the hunter, their pet, or a nearby party member advance tracking.
-Assignment geography is configurable as `Local`, `Continent`, or `World`.
-`Local` is the default and uses the established explicit Huntmaster-to-zone
-allowlists; `Continent` uses authored gameplay regions rather than raw map IDs;
-`World` retains unrestricted level-appropriate selection. Candidate zones are
-deduplicated before selection, so additional final sites never weight a zone.
-The catalog contains all 195 established authored sites (84 Eastern Kingdoms,
-63 Kalimdor, 21 Outland, and 27 Northrend). At 100%, one site is selected from
-the assigned zone's complete pool, persisted, and reconstructed as an
-owner-bound trail crystal when the hunter approaches it.
+The experience is integrated into the original WoW client, with a dedicated Hunts tab in the Dungeon Finder interface, world-map guidance, Huntmasters in major cities, and a native equipment merchant. **No standalone client addon is required.** Client content is delivered through the project's managed Content Manager/MPQ pipeline.
 
-Standard tracking includes two required ambushes by default, at approximately
-one-third and two-thirds progress. The assigned prey attacks as a temporary
-owner summon and must be driven below its escape-health threshold. While it is
-pending, ordinary kills cannot advance tracking. Pending state survives logout
-and restart, while temporary creature GUIDs do not.
+## The hunt
 
-The crystal validates the player, assignment, state, managed object identity,
-map, zone, and persisted site before summoning the assigned managed prey. A
-successful summon changes the state to `PreyActive`; failure leaves the crystal
-encounter retryable. Standard prey use player-relative health scaling and the
-established two-ability profiles from the reference implementation.
+1. **Accept an assignment.** Speak with a Huntmaster to receive a quarry and a level-appropriate hunting zone.
+2. **Follow the trail.** Defeat eligible creatures in the hunting grounds, or examine scattered cursed relics for optional tracking progress. Your pet and nearby party members can also contribute eligible kill credit.
+3. **Survive the ambushes.** Your quarry strikes back during the search. Drive it below its escape-health threshold to resume tracking.
+4. **Find the final site.** When tracking is complete, follow the in-game guidance to a trail crystal and summon the final confrontation.
+5. **Claim your reward.** Defeat the quarry and return to the issuing Huntmaster. A temporary Return Rift can help with the journey back.
 
-At final reveal the player receives an explicit server message. A stock-client
-`SMSG_GOSSIP_POI` marker is sent and periodically refreshed while the player is
-on the final site's map. The 3.3.5a protocol cannot reliably place a remote-map
-POI, so the message says when no pin is available until map arrival. No HuntsUI
-or other addon is required. `.nativehunts status` and `.nativehunts reset` are
-bounded GM diagnostics using the normal server-info RBAC permission.
+Hunts are designed to be resumed: assignment progress, ambush milestones, final-site selection, and relic collection history are persisted. Temporary summoned creatures and objects are reconstructed or recovered as appropriate rather than treated as permanent world spawns.
 
-The correct final kill changes the assignment to `ReadyToTurnIn` and may create
-a temporary owner-bound Return Rift. The rift returns the player near the exact
-issuing managed Huntmaster and never completes the Hunt. Turn-in preflights bag
-space and creates the physical Huntmaster's Seal in the live inventory. The
-public AzerothCore `SaveInventoryAndGoldToDB` API then appends that inventory
-state, lifetime statistics, and assignment deletion to one character-database
-transaction whose asynchronous result is waited on. A confirmed rollback
-removes the provisional live Seal and leaves the Hunt ready to retry.
+## Features
 
-The residual failure window is a lost or indeterminate commit acknowledgement
-while the character database is also unreadable. The module cannot safely know
-whether the transaction committed, so it leaves the provisional live Seal in
-place and blocks another reward. On the next turn-in attempt after database
-recovery it treats the persisted assignment as authoritative: a missing
-assignment confirms completion without another Seal; a retained assignment
-causes the provisional Seal to be removed and leaves the Hunt ready to retry.
-Logout performs the same check and removes the provisional live Seal whenever
-the assignment is retained. If the database remains unreadable at logout, the
-module also removes that provisional Seal to prevent a later character save
-from making it durable beside the assignment. The residual tradeoff is possible
-reward loss if the transaction actually committed but its result and the
-confirming read were both unavailable at logout; this case requires operational
-recovery rather than risking duplicate rewards. A process loss before any
-independent character save is resolved by the transaction's already-durable
-inventory and assignment state on login. Out-of-band edits to these rows during
-turn-in remain unsupported. Abandonment clears the assignment and temporary
-runtime objects.
+### Standard and Elite Hunts
+
+Standard Hunts are available from managed Huntmasters in ten capital-city locations, with assignments drawn from authored hunting grounds appropriate to the character's level. The module includes **195 authored final encounter sites** across Eastern Kingdoms, Kalimdor, Outland, and Northrend.
+
+Standard tracking includes **two required ambushes by default**. Elite Hunts unlock after the configured number of Standard completions and offer their own difficulty, daily limit, and reward settings. The Huntmaster explains the assignment and its objectives in-game.
+
+### Cursed relics
+
+Cursed relics are optional discoveries scattered across the assigned hunting zone. Interacting with one begins the custom **Examine Cursed Relic** cast; a successful examination contributes to tracking. Players can complete hunts through creature kills without collecting relics.
+
+Relics use **randomized, shared pools** rather than fixed permanent spawn points. Players hunting the same zone share the physical relic locations but collect each relic independently. Pools persist while active or resumable hunts depend on them; after the last associated hunt ends, the pool retires and a future hunt generates new locations. Collection credit survives relogs and restarts, and already-collected relics are hidden from the collector without removing them for others.
+
+The default is **60 relics per active zone pool**, with a **three-second interruptible examination cast**. Administrators can adjust both settings, including disabling relics entirely with a count of `0`.
+
+See [Relic Pools](docs/RELIC_POOLS.md) for generation, persistence, placement limitations, and troubleshooting.
+
+### Native client interface
+
+Native Hunts adds a **Hunts** tab alongside the stock Dungeon Finder interface, presenting hunt details and progression without requiring an independently installed addon. The client UI is packaged as managed FrameXML, Lua, and artwork through Content Manager. Final-site guidance also uses stock-client map-point-of-interest messages when the player is on the appropriate map.
+
+See [Client UI](docs/CLIENT_UI.md) for implementation and content details.
+
+### Rewards and the Huntmaster's Seal
+
+Completing hunts awards the configured rewards and updates lifetime hunt statistics. Elite Hunts can award **Huntmaster's Seals**, which are represented as a physical item and managed currency.
+
+Huntmasters offer a native equipment merchant using Blizzard's MerchantFrame. The catalog is generated from eligible equipment and supports a specialization dropdown for the character's three talent trees. Purchases are validated server-side against the selected item, price, currency, and available inventory space. The legacy gossip store remains as a compatibility fallback.
+
+### Designed for persistence and safe recovery
+
+Hunt assignments, milestones, statistics, relic pools, and per-hunt collection credit are stored in the character database. The module validates completion and reward delivery against persistent state to reduce duplicate rewards and preserve recoverable hunts across worldserver restarts. See the implementation documentation and source for transaction and failure-recovery behavior.
+
+## Requirements
+
+- **AzerothCore** with the compatible **mod-playerbots**-based server environment used by this module.
+- **World of Warcraft 3.3.5a (build 12340)** client.
+- **mod-content-manager**, including managed spell cloning and the resource API required by this package.
+- The module's character-database SQL schema and updates.
+- A compatible client MPQ produced and distributed through the existing Content Manager pipeline.
+
+Native Hunts is a standalone implementation with its own `native_hunt_*` data. It does **not** import or migrate the runtime state or currency data of the older `mod-hunts` module.
+
+## Installation and deployment
+
+Native Hunts has **two coordinated parts**: the AzerothCore server module and the managed client/server content package. They must be deployed as a compatible set.
+
+1. Install `mod-native-hunts` and a compatible `mod-content-manager` in the AzerothCore modules tree.
+2. Apply the appropriate character-database base SQL for a fresh installation, or the supplied update migrations for an existing installation, through your normal AzerothCore module SQL workflow.
+3. Configure Native Hunts using `conf/mod_native_hunts.conf.dist` as the reference, preserving your deployment's existing configuration.
+4. Build and install the AzerothCore worldserver with both modules enabled.
+5. Import `content/mod-native-hunts.epf` into Content Manager, build cumulative content, and inspect the resource allocation and parity results.
+6. Activate the matching managed content so the required resources are **ACTIVE/APPLIED**, including the custom relic examination spell and its server-side `spell_dbc` record.
+7. Publish the generated MPQ through the managed client distribution pipeline, then restart the worldserver and patched client.
+8. Verify hunt acceptance, UI display, tracking, relic examination, completion, and Huntmaster rewards in-game.
+
+**Do not copy a custom spell ID or an MPQ from another realm without verifying that realm's allocation registry and content state.** Content Manager assigns and retains symbolic resource IDs independently for each environment. Native Hunts resolves required resources at runtime and refuses to expose gameplay when required active content is missing or mismatched.
+
+See [Server Parity](docs/SERVER_PARITY.md) for the client/server content contract.
+
+## Configuration
+
+The full set of settings and explanations is in [`conf/mod_native_hunts.conf.dist`](conf/mod_native_hunts.conf.dist). Common settings include:
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `NativeHunts.Enable` | `1` | Enable Native Hunts. |
+| `NativeHunts.MinimumLevel` | `10` | Minimum level for assignments. |
+| `NativeHunts.AssignmentScope` | `Local` | Huntmaster-local, continent, or world-wide eligible zone selection. |
+| `NativeHunts.Tracking.ProgressMin` / `ProgressMax` | `3` / `7` | Tracking progress range. |
+| `NativeHunts.GroupCreditRadius` | `100.0` | Radius for eligible nearby party kill credit. |
+| `NativeHunts.Ambush.Count` | `2` | Required Standard Hunt ambushes; `0` disables them. |
+| `NativeHunts.Relics.CountPerZone` | `60` | Shared relic count per active zone pool; `0` disables relic collection. |
+| `NativeHunts.Relics.CollectionCastTimeMs` | `3000` | Examination cast time; `0` makes collection instant. |
+| `NativeHunts.Elite.RequiredStandardCompletions` | `10` | Standard completions needed to unlock Elite Hunts. |
+| `NativeHunts.Elite.DailyLimit` | `1` | Daily Elite assignment allowance. |
+| `NativeHunts.ReturnRift.Enable` | `1` | Enable the temporary return portal after the final encounter. |
+
+Other options control XP, ambush and Elite difficulty, Elite rewards, equipment merchant tiers, and Return Rift duration and placement. Assignment scope defaults to authored Huntmaster-local zone lists; `Continent` and `World` broaden selection to other eligible authored zones.
 
 ## Managed content
 
-Package version 23 preserves the protected, functional FrameXML/Lua
-architecture and packages the authoritative 49-object FrameForge layout plus
-its eleven generated TGAs as explicit files. Module-owned Lua maps the existing
-Native Hunts snapshot to the exported visual states and dynamic values. The
-load chain is stock `LFDFrame.xml`, the preserved Native Hunts host, the
-unchanged FrameForge layout, then the initializer. The PNG sources, FrameForge
-metadata, `.fforge` authoring source, and Blizzard-owned assets are not packaged.
+The EPF package at [`content/mod-native-hunts.epf`](content/mod-native-hunts.epf) describes the module's client and server content without assigning fixed numeric resource IDs. It includes Huntmasters, prey templates, trail and Return Rift objects, the Hunts interface, Huntmaster's Seal and merchant costs, and the **Examine Cursed Relic** spell cloned from stock spell 61413.
 
-`content/mod-native-hunts.epf` declares, without authored allocated IDs:
+Content Manager generates the corresponding managed resources, client patch, and server-side data. Native Hunts uses `ContentResourceApiV1` to resolve and verify required resources at runtime. The original donor spell remains unchanged.
 
-- a functional Native Hunts view loaded additively after stock `LFDFrame.xml`, with
-  Dungeon Finder and Hunts tabs inside the unchanged `LFDParentFrame` shell;
-- ten Huntmaster templates and permanent managed spawns;
-- sixteen standard-prey templates copied from established stock donors;
-- permanent trail-crystal and Return Rift templates (runtime instances remain
-  temporary and are never managed spawns);
-- the physical Huntmaster's Seal item, CurrencyTypes row, and `Hunts` currency
-  category;
-- four allocator-managed ItemExtendedCost rows used to present the configured
-  default Seal tier prices in Blizzard's MerchantFrame;
-- the allocator-managed `examine-cursed-relic` spell, cloned from stock spell
-  61413 with the client name `Examine Cursed Relic`;
-- the existing Huntmasters with both gossip and vendor interaction flags.
+## Administration and testing
 
-Every allocated resource is resolved at runtime through `ContentResourceApiV1`.
-Gameplay stays unavailable with a specific logged reason unless every required
-resource belongs to the ACTIVE/APPLIED, parity-verified package and is loaded by
-the worldserver.
-
-## Persistence and restart behavior
-
-Apply the character database files under `data/sql/db-characters/base` through
-the normal AzerothCore module SQL process. `native_hunt_assignment` persists the
-issuer, prey, tier, zone, domain state, progress, final site, timestamps, and
-revision. `native_hunt_stats` owns lifetime completion statistics.
-
-- `Tracking`, its completed/pending ambush state, `FinalRevealed`, and
-  `ReadyToTurnIn` remain unchanged.
-- `PreyActive` recovers to `FinalRevealed`; temporary creature/object GUIDs are
-  never persisted.
-- an idle character has no assignment row.
-
-Each assignment also owns a database-generated `hunt_instance_id`.
-`native_hunt_collection` retains objective/relic credit by that identifier, so
-abandoning and accepting another Hunt never inherits the prior Hunt's credit.
-Collection history is intentionally retained when the active assignment row is
-removed.
-
-## Shared randomized relic pools
-
-Relics are enabled by default with `NativeHunts.Relics.CountPerZone = 60`.
-Each active map/instance/zone scope owns one randomized shared pool. Persisted
-assignments, including offline resumable Hunts, keep that pool alive. Players
-see the same physical objects but collect each indexed relic independently via
-the existing per-hunt collection ledger. Ending the last associated Hunt retires
-the pool; a later Hunt generates and persists a fresh set of positions.
-
-Set the count to `0` to disable generation, spawning, interaction, and awards
-without deleting historical collection credit. Apply the character pool base
-SQL for a new installation or the matching update migration for an existing
-installation. GameObject entry `990000`, display `5011`, and script
-`mod_native_hunts_shared_relic` remain unchanged; there are no permanent world
-spawn rows. See [docs/RELIC_POOLS.md](docs/RELIC_POOLS.md) for placement,
-recovery, troubleshooting, limitations, and PTR validation.
-
-## Native Huntmaster equipment merchant
-
-The equipment action opens Blizzard's MerchantFrame with a player-specific
-catalog generated by the existing Seal store eligibility code. A small
-protected-FrameXML extension adds only the character's three talent trees as a
-shopping-specialization dropdown; it does not change active talents. The server
-owns each short-lived vendor session, revalidates the vendor, slot, item,
-specialization, price, currency and storage on every buy, and delegates delivery
-and the single Seal deduction to the existing purchase backend. The former
-gossip store remains a compatibility fallback when native merchant resources
-cannot be used.
-
-Static checks cannot prove protected-FrameXML placement or packet behavior in
-the 3.3.5a client, so package 22 still requires PTR installation and in-game
-validation before activation.
-
-## Checks
-
-Run:
+The module provides bounded GM diagnostics through:
 
 ```text
+.nativehunts status
+.nativehunts reset
+```
+
+These use the normal server-info RBAC permission. For automated checks, run:
+
+```bash
 python3 tests/run_checks.py
 ```
 
-The runner compiles strict C++17 domain/gameplay tests, verifies the EPF resource
-contract, checks native-only source safety, and confirms the persistence files.
+The test runner covers C++17 domain/gameplay behavior, managed package contracts, persistence expectations, and source-safety checks. A successful build and automated checks do not replace in-game verification of the patched 3.3.5a client.
+
+## Documentation
+
+- [Relic Pools](docs/RELIC_POOLS.md) — shared spawning, collection, recovery, and placement constraints.
+- [Client UI](docs/CLIENT_UI.md) — Hunts interface and managed client assets.
+- [Server Parity](docs/SERVER_PARITY.md) — managed resources and client/server consistency.
+- [Managed Spells](https://github.com/Hisha/mod-content-manager) — Content Manager repository and spell-management implementation.
+
+---
+
+**Native Hunts** brings tracking, ambushes, exploration, and rewards into a repeatable hunt experience built for the AzerothCore WotLK world.
