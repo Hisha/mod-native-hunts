@@ -212,6 +212,7 @@ public:
 		std::string &message);
 	bool CompleteRelicCollection(Player *player, std::string &message);
 	void CancelRelicCollection(Player *player);
+	bool IsRelicCollectionSpell(SpellInfo const *spellInfo) const;
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);
 	void OnCreatureKill(Player *killer, Creature *killed);

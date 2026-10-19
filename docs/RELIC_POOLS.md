@@ -48,13 +48,14 @@ loaded on restart and remains the authoritative duplicate guard; visibility is
 reapplied after login and whenever the object re-enters that player's client
 visibility range.
 
-The collection cast uses stock build-12340 spell 3365 (`Opening`) for its
-client cast bar and normal interruption lifecycle. The server invokes it with
-effects disabled, so it does not open, loot, despawn, or change the shared
-relic. Hunt, pool, indexed relic, map, zone, range, and duplicate eligibility
-are checked again only after a successful cast. One pending attempt is allowed
-per player, and the database uniqueness key remains the final concurrency
-guard.
+The collection cast uses stock build-12340 spell 61413 (`[DND] Herb
+Gathering`) for its client cast bar and normal interruption lifecycle. This is
+a self-targeted dummy gathering cast with no GameObject, item, or lock target,
+so it does not open, loot, despawn, or change the shared relic. Native Hunts
+only substitutes the configured cast duration. Hunt, pool, indexed relic, map,
+zone, range, and duplicate eligibility are checked again only after a
+successful cast. One pending attempt is allowed per player, and the database
+uniqueness key remains the final concurrency guard.
 
 ## Restart recovery
 

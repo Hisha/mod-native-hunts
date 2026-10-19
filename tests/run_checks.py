@@ -180,13 +180,18 @@ def run_relic_persistence_contract_checks() -> None:
     complete_code = collection_code[begin_end:]
     for token in ("_pendingRelicCollections.count(guid)",
                   "std::make_shared<SpellInfo>", "SpellCastTimesEntry",
-                  "effect.Effect = 0", "TRIGGERED_NONE",
+                  "SPELL_EFFECT_DUMMY",
+                  "TARGET_UNIT_CASTER", "SPELL_INTERRUPT_FLAG_MOVEMENT",
+                  "TRIGGERED_NONE",
                   "RelicCollectionSpellId", "CompleteRelicCollection(player, message)"):
         if token not in begin_code:
             raise AssertionError(f"interruptible relic cast setup missing: {token}")
     if begin_code.index("_config.RelicCollectionCastTimeMs == 0") > begin_code.index(
             "sSpellMgr->GetSpellInfo"):
         raise AssertionError("zero cast time no longer preserves instant collection")
+    if begin_code.index("_config.RelicCollectionCastTimeMs == 0") > begin_code.index(
+            "RemoveAurasByType(SPELL_AURA_MOUNTED)"):
+        raise AssertionError("instant collection now changes mounted state")
     for token in ("ObjectAccessor::GetGameObject(*player,",
                   "pending.RelicGuid",
                   "runtime->HuntInstanceId != pending.HuntInstanceId",
@@ -199,14 +204,18 @@ def run_relic_persistence_contract_checks() -> None:
         raise AssertionError("relic progress can be committed before cast completion")
     if "TRIGGERED_IGNORE_EFFECTS" in begin_code:
         raise AssertionError("relic cast suppresses the client-visible spell packets")
-    for token in ("_relicCollectionSpell->Targets = TARGET_FLAG_NONE",
-                  "_relicCollectionSpell->ExplicitTargetMask = TARGET_FLAG_NONE"):
-        if token not in begin_code:
-            raise AssertionError(f"relic cast retains an invalid OPEN_LOCK target contract: {token}")
+    if "RelicCollectionSpellId = 61413" not in manager:
+        raise AssertionError("verified gathering spell is not selected for relic casting")
+    if "RelicCollectionSpellId = 3365" in manager:
+        raise AssertionError("relic casting still uses the incompatible Opening spell")
+    for token in ("effect.Effect = 0", "_relicCollectionSpell->Targets ="):
+        if token in begin_code:
+            raise AssertionError(f"stock gathering spell semantics are being rewritten: {token}")
     if "targets.SetGOTarget(object)" in begin_code:
-        raise AssertionError("lockless shared relic is still sent as an OPEN_LOCK spell target")
+        raise AssertionError("shared relic is still sent as a spell GameObject target")
     for token in ("OnSpellCastCancel", "CancelRelicCollection",
-                  "OnSpellCast(Spell *spell", "CompleteRelicCollection(player, message)"):
+                  "OnSpellCast(Spell *spell", "IsRelicCollectionSpell(spellInfo)",
+                  "CompleteRelicCollection(player, message)"):
         if token not in module:
             raise AssertionError(f"relic cast lifecycle hook missing: {token}")
     for token in ("LoadCollectedRelics(runtime)", "HaveAtClient(object)",

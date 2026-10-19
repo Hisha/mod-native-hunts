@@ -33,7 +33,6 @@
 
 namespace {
 native_hunts::NativeHuntsConfig Config;
-constexpr std::uint32_t RelicCollectionSpellId = 3365;
 
 Player *GetCommandPlayer(ChatHandler *handler) {
 	return handler && handler->GetSession()
@@ -886,14 +885,14 @@ public:
 
 	void OnSpellCastCancel(Spell *, Unit *caster, SpellInfo const *spellInfo,
 			bool) override {
-		if (spellInfo && spellInfo->Id == RelicCollectionSpellId && caster &&
+		if (sNativeHunts.IsRelicCollectionSpell(spellInfo) && caster &&
 			caster->IsPlayer())
 			sNativeHunts.CancelRelicCollection(caster->ToPlayer());
 	}
 
 	void OnSpellCast(Spell *spell, Unit *caster, SpellInfo const *spellInfo,
 			bool) override {
-		if (!spell || !spellInfo || spellInfo->Id != RelicCollectionSpellId ||
+		if (!spell || !sNativeHunts.IsRelicCollectionSpell(spellInfo) ||
 			!caster || !caster->IsPlayer())
 			return;
 		Player *player = caster->ToPlayer();

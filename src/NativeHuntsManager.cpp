@@ -56,7 +56,10 @@ namespace {
 constexpr char Package[] = "mod-native-hunts";
 constexpr char SealSymbol[] = "huntmaster-seal";
 constexpr char RelicObjectiveKey[] = "shared-zone-relics-v2";
-constexpr std::uint32_t RelicCollectionSpellId = 3365;
+// Build-12340 [DND] Herb Gathering: a self-targeted dummy spell with a
+// client-visible gathering visual and movement/damage interrupt flags. Unlike
+// Opening (3365), it has no GameObject, item, or lock target contract.
+constexpr std::uint32_t RelicCollectionSpellId = 61413;
 
 bool IsUuid(std::string const &value) {
 	if (value.size() != 36)
@@ -2992,27 +2995,36 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 	if (_config.RelicCollectionCastTimeMs == 0)
 		return CompleteRelicCollection(player, message);
 
+	// GameObject::Use normally removes mount auras before its built-in spell
+	// handling. Our scripted gossip handler returns before that branch, so mirror
+	// the native behavior for the timed collection path only.
+	player->RemoveAurasByType(SPELL_AURA_MOUNTED);
+
 	if (!_relicCollectionSpell) {
 		SpellEntry const *spellEntry = sSpellStore.LookupEntry(
 			RelicCollectionSpellId);
 		SpellInfo const *sourceSpell = sSpellMgr->GetSpellInfo(
 			RelicCollectionSpellId);
-		if (spellEntry && sourceSpell) {
+		bool const compatible = sourceSpell &&
+			sourceSpell->Targets == TARGET_FLAG_NONE &&
+			sourceSpell->ExplicitTargetMask == TARGET_FLAG_NONE &&
+			sourceSpell->Effects[EFFECT_0].Effect == SPELL_EFFECT_DUMMY &&
+			sourceSpell->Effects[EFFECT_0].TargetA.GetTarget() ==
+				TARGET_UNIT_CASTER &&
+			(sourceSpell->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT) != 0;
+		if (spellEntry && compatible) {
 			_relicCollectionSpell = std::make_shared<SpellInfo>(spellEntry);
 			_relicCollectionCastTime =
 				std::make_shared<SpellCastTimesEntry>();
 			_relicCollectionSpell->AttributesCu = sourceSpell->AttributesCu;
-			// Spell 3365 is the stock Opening visual, but its native OPEN_LOCK
-			// effect only accepts locked GameObjects. The relic is a shared button,
-			// so keep its identity, visual, interrupt flags, and cast bar while the
-			// pending record supplies the authoritative relic GUID server-side.
-			_relicCollectionSpell->Targets = TARGET_FLAG_NONE;
-			_relicCollectionSpell->ExplicitTargetMask = TARGET_FLAG_NONE;
-			// Spell effect 0 means no server-side effect in build 12340.
-			for (SpellEffectInfo &effect : _relicCollectionSpell->Effects)
-				effect.Effect = 0;
+			_relicCollectionSpell->ExplicitTargetMask =
+				sourceSpell->ExplicitTargetMask;
 			_relicCollectionSpell->CastTimeEntry =
 				_relicCollectionCastTime.get();
+		} else if (spellEntry || sourceSpell) {
+			LOG_ERROR("module.native_hunts",
+				"Relic collection spell {} does not match the required self-targeted "
+				"dummy gathering contract.", RelicCollectionSpellId);
 		}
 	}
 	if (!_relicCollectionSpell || !_relicCollectionCastTime) {
@@ -3025,9 +3037,8 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		static_cast<std::int32_t>(std::min<std::uint32_t>(
 			_config.RelicCollectionCastTimeMs,
 			static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max())));
-	// Do not send the BUTTON GameObject as an OPEN_LOCK target. AzerothCore
-	// rejects lockless objects with SPELL_FAILED_BAD_TARGETS. Completion resolves
-	// and revalidates the pending GUID after this real cast succeeds.
+	// Spell 61413 selects the caster implicitly. The pending record binds this
+	// otherwise harmless gathering cast to the relic that must be revalidated.
 	SpellCastTargets targets;
 	SpellCastResult const result = player->CastSpell(targets,
 		_relicCollectionSpell.get(), nullptr, TRIGGERED_NONE);
@@ -3047,6 +3058,12 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 void NativeHuntsManager::CancelRelicCollection(Player *player) {
 	if (player)
 		_pendingRelicCollections.erase(player->GetGUID().GetCounter());
+}
+
+bool NativeHuntsManager::IsRelicCollectionSpell(
+		SpellInfo const *spellInfo) const {
+	return spellInfo && _relicCollectionSpell &&
+		spellInfo == _relicCollectionSpell.get();
 }
 
 bool NativeHuntsManager::CompleteRelicCollection(Player *player,
