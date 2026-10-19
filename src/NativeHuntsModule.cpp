@@ -885,19 +885,21 @@ public:
 
 	void OnSpellCastCancel(Spell *, Unit *caster, SpellInfo const *spellInfo,
 			bool) override {
-		if (sNativeHunts.IsRelicCollectionSpell(spellInfo) && caster &&
-			caster->IsPlayer())
-			sNativeHunts.CancelRelicCollection(caster->ToPlayer());
+		Player *player = caster ? caster->ToPlayer() : nullptr;
+		if (player && sNativeHunts.IsRelicCollectionSpell(player, spellInfo))
+			sNativeHunts.CancelRelicCollection(player,
+				spellInfo ? spellInfo->Id : 0, "spell cancelled or interrupted");
 	}
 
 	void OnSpellCast(Spell *spell, Unit *caster, SpellInfo const *spellInfo,
 			bool) override {
-		if (!spell || !sNativeHunts.IsRelicCollectionSpell(spellInfo) ||
-			!caster || !caster->IsPlayer())
+		Player *player = caster ? caster->ToPlayer() : nullptr;
+		if (!spell || !player ||
+			!sNativeHunts.IsRelicCollectionSpell(player, spellInfo))
 			return;
-		Player *player = caster->ToPlayer();
 		std::string message;
-		sNativeHunts.CompleteRelicCollection(player, message);
+		sNativeHunts.CompleteRelicCollection(player, message,
+			spellInfo ? spellInfo->Id : 0);
 		if (!message.empty())
 			ChatHandler(player->GetSession()).PSendSysMessage(
 				"|cff33ccff[Native Hunts]|r {}", message);
@@ -955,6 +957,9 @@ public:
 	}
 	void OnPlayerLogin(Player *player) override {
 		sNativeHunts.OnLogin(player);
+	}
+	void OnPlayerMapChanged(Player *player) override {
+		sNativeHunts.OnMapChanged(player);
 	}
 	void OnPlayerCreatureKill(Player *killer, Creature *killed) override {
 		sNativeHunts.OnCreatureKill(killer, killed);

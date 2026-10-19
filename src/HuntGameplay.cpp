@@ -41,6 +41,17 @@ GameplayDecision CanCollectRelic(RelicCollectionContext const &context) {
 	return GameplayDecision::Allowed;
 }
 
+bool MatchesPendingRelicCollectionSpell(bool hasPendingCollection,
+		std::uint32_t expectedSpellId, std::uint32_t callbackSpellId) {
+	return hasPendingCollection && expectedSpellId != 0 &&
+		callbackSpellId == expectedSpellId;
+}
+
+bool IsPendingRelicCollectionStale(bool hasPendingCollection,
+		std::uint32_t expectedSpellId, std::uint32_t activeSpellId) {
+	return hasPendingCollection && activeSpellId != expectedSpellId;
+}
+
 std::uint8_t RelicProgressIncrement(std::uint32_t collected,
 		std::uint32_t target) {
 	if (collected == 0 || target == 0 || collected > target)

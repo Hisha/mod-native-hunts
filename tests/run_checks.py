@@ -214,10 +214,20 @@ def run_relic_persistence_contract_checks() -> None:
     if "targets.SetGOTarget(object)" in begin_code:
         raise AssertionError("shared relic is still sent as a spell GameObject target")
     for token in ("OnSpellCastCancel", "CancelRelicCollection",
-                  "OnSpellCast(Spell *spell", "IsRelicCollectionSpell(spellInfo)",
-                  "CompleteRelicCollection(player, message)"):
+                  "OnSpellCast(Spell *spell", "IsRelicCollectionSpell(player, spellInfo)",
+                  "CompleteRelicCollection(player, message,"):
         if token not in module:
             raise AssertionError(f"relic cast lifecycle hook missing: {token}")
+    for token in ("spellInfo->Id", "MatchesPendingRelicCollectionSpell",
+                  "IsPendingRelicCollectionStale", "OnMapChanged",
+                  "stale pending state found during interaction",
+                  "spell completion callback received",
+                  "cancellation or interruption received",
+                  "collection persisted", "pending cleared"):
+        if token not in manager and token not in module:
+            raise AssertionError(f"relic cast recovery/diagnostic contract missing: {token}")
+    if "spellInfo == _relicCollectionSpell.get()" in collection_code:
+        raise AssertionError("relic callbacks still depend on unstable SpellInfo pointer identity")
     for token in ("LoadCollectedRelics(runtime)", "HaveAtClient(object)",
                   "DestroyForPlayer(player)", "CollectedRelicKeys",
                   "RefreshRelicInteractionState(player, runtime)"):

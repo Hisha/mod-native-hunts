@@ -540,6 +540,27 @@ void TestRelicPrototypeRules() {
 		"collection at 100 preserves pending and outstanding ambushes");
 }
 
+void TestRelicCollectionCastLifecycle() {
+	constexpr std::uint32_t collectionSpell = 61413;
+	Check(MatchesPendingRelicCollectionSpell(true, collectionSpell,
+			collectionSpell),
+		"successful collection callback matches by spell ID while pending");
+	Check(!MatchesPendingRelicCollectionSpell(false, collectionSpell,
+			collectionSpell),
+		"completed or duplicate callback cannot match without pending state");
+	Check(!MatchesPendingRelicCollectionSpell(true, collectionSpell, 3365),
+		"unrelated or failed spell callback cannot complete collection");
+	Check(!IsPendingRelicCollectionStale(true, collectionSpell,
+			collectionSpell),
+		"an active collection cast retains its pending state");
+	Check(IsPendingRelicCollectionStale(true, collectionSpell, 0),
+		"a pending record without an active cast is stale");
+	Check(IsPendingRelicCollectionStale(true, collectionSpell, 3365),
+		"a different active spell cannot keep relic collection pending");
+	Check(!IsPendingRelicCollectionStale(false, collectionSpell, 0),
+		"absence of pending state is not treated as stale");
+}
+
 void TestRelicPoolPolicy() {
 	auto const defaults = NormalizeRelicsPerZone(DefaultRelicsPerZone);
 	Check(defaults.Count == 60 && !defaults.Adjusted,
@@ -926,6 +947,7 @@ int main(int argc, char **argv) {
 	if (selection == "all" || selection == "tracking") {
 		TestTrackingEligibility();
 		TestRelicPrototypeRules();
+		TestRelicCollectionCastLifecycle();
 		TestRelicPoolPolicy();
 	}
 	if (selection == "all" || selection == "scope")

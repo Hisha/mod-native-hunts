@@ -61,6 +61,15 @@ constexpr char RelicObjectiveKey[] = "shared-zone-relics-v2";
 // Opening (3365), it has no GameObject, item, or lock target contract.
 constexpr std::uint32_t RelicCollectionSpellId = 61413;
 
+void LogRelicCollectionLifecycle(char const *event,
+		std::uint32_t characterGuid, ObjectGuid relicGuid,
+		std::uint32_t spellId, char const *reason) {
+	LOG_INFO("module.native_hunts",
+		"Relic collection {}: character_guid={}, relic_guid={}, spell_id={}, reason={}",
+		event, characterGuid, relicGuid.GetCounter(), spellId,
+		reason ? reason : "none");
+}
+
 bool IsUuid(std::string const &value) {
 	if (value.size() != 36)
 		return false;
@@ -2638,6 +2647,7 @@ bool NativeHuntsManager::Abandon(Player *player, std::string &message) {
 		message = "You do not have an active Hunt.";
 		return false;
 	}
+	CancelRelicCollection(player, RelicCollectionSpellId, "hunt abandoned");
 	HuntDomain::Execute(it->second.Aggregate, AbandonHunt{});
 	DeleteAssignment(it->second);
 	_runtimes.erase(it);
@@ -2940,6 +2950,16 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 	}
 	std::uint32_t const guid = player->GetGUID().GetCounter();
 	if (_pendingRelicCollections.count(guid)) {
+		Spell const *active = player->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+		std::uint32_t const activeSpellId = active &&
+			active->getState() != SPELL_STATE_FINISHED && active->GetSpellInfo()
+			? active->GetSpellInfo()->Id : 0;
+		if (IsPendingRelicCollectionStale(true, RelicCollectionSpellId,
+				activeSpellId))
+			CancelRelicCollection(player, activeSpellId,
+				"stale pending state found during interaction");
+	}
+	if (_pendingRelicCollections.count(guid)) {
 		message = "You are already examining a relic.";
 		return false;
 	}
@@ -2989,9 +3009,13 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		message = "You have already examined this relic during this Hunt.";
 		return false;
 	}
+	LogRelicCollectionLifecycle("interaction accepted", guid,
+		object->GetGUID(), RelicCollectionSpellId, "eligibility validated");
 	PendingRelicCollection pending{runtime->HuntInstanceId, pool->Id,
 		relicIndex, object->GetGUID()};
 	_pendingRelicCollections.emplace(guid, std::move(pending));
+	LogRelicCollectionLifecycle("pending created", guid, object->GetGUID(),
+		RelicCollectionSpellId, "awaiting collection completion");
 	if (_config.RelicCollectionCastTimeMs == 0)
 		return CompleteRelicCollection(player, message);
 
@@ -3028,7 +3052,8 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 		}
 	}
 	if (!_relicCollectionSpell || !_relicCollectionCastTime) {
-		_pendingRelicCollections.erase(guid);
+		CancelRelicCollection(player, RelicCollectionSpellId,
+			"collection spell unavailable");
 		message = "The relic's collection spell is unavailable.";
 		return false;
 	}
@@ -3043,31 +3068,50 @@ bool NativeHuntsManager::CollectRelic(Player *player,
 	SpellCastResult const result = player->CastSpell(targets,
 		_relicCollectionSpell.get(), nullptr, TRIGGERED_NONE);
 	if (result != SPELL_CAST_OK) {
-		_pendingRelicCollections.erase(guid);
-		LOG_DEBUG("module.native_hunts",
-			"Relic collection cast {} failed for character {} with result {}.",
-			RelicCollectionSpellId, guid, static_cast<std::uint32_t>(result));
+		std::string const reason = "cast start failed with result " +
+			std::to_string(static_cast<std::uint32_t>(result));
+		CancelRelicCollection(player, RelicCollectionSpellId, reason.c_str());
 		message = "You cannot examine this relic right now.";
 		return false;
 	}
+	LogRelicCollectionLifecycle("spell cast started", guid,
+		object->GetGUID(), RelicCollectionSpellId, "cast accepted by core");
 	if (_pendingRelicCollections.count(guid))
 		message = "You begin examining the cursed relic.";
 	return true;
 }
 
-void NativeHuntsManager::CancelRelicCollection(Player *player) {
-	if (player)
-		_pendingRelicCollections.erase(player->GetGUID().GetCounter());
+void NativeHuntsManager::CancelRelicCollection(Player *player,
+		std::uint32_t spellId, char const *reason) {
+	if (!player)
+		return;
+	std::uint32_t const guid = player->GetGUID().GetCounter();
+	auto pending = _pendingRelicCollections.find(guid);
+	if (pending == _pendingRelicCollections.end())
+		return;
+	ObjectGuid const relicGuid = pending->second.RelicGuid;
+	LogRelicCollectionLifecycle("cancellation or interruption received", guid,
+		relicGuid, spellId, reason);
+	_pendingRelicCollections.erase(pending);
+	LogRelicCollectionLifecycle("pending cleared", guid, relicGuid, spellId,
+		reason);
 }
 
 bool NativeHuntsManager::IsRelicCollectionSpell(
-		SpellInfo const *spellInfo) const {
-	return spellInfo && _relicCollectionSpell &&
-		spellInfo == _relicCollectionSpell.get();
+		Player const *player, SpellInfo const *spellInfo) const {
+	if (!player || !spellInfo)
+		return false;
+	// Spell's constructor resolves the supplied clone through
+	// GetSpellForDifficultyFromSpell(), so lifecycle hooks receive the
+	// SpellMgr-owned SpellInfo rather than _relicCollectionSpell.get(). Bind the
+	// stock spell ID to this player's pending record instead of pointer identity.
+	return MatchesPendingRelicCollectionSpell(
+		_pendingRelicCollections.count(player->GetGUID().GetCounter()) != 0,
+		RelicCollectionSpellId, spellInfo->Id);
 }
 
 bool NativeHuntsManager::CompleteRelicCollection(Player *player,
-		std::string &message) {
+		std::string &message, std::uint32_t callbackSpellId) {
 	if (!player) {
 		message = "The relic cannot be examined.";
 		return false;
@@ -3080,9 +3124,16 @@ bool NativeHuntsManager::CompleteRelicCollection(Player *player,
 	}
 	PendingRelicCollection const pending = pendingIt->second;
 	_pendingRelicCollections.erase(pendingIt);
+	if (callbackSpellId)
+		LogRelicCollectionLifecycle("spell completion callback received", guid,
+			pending.RelicGuid, callbackSpellId, "successful core cast");
+	LogRelicCollectionLifecycle("pending cleared", guid, pending.RelicGuid,
+		callbackSpellId, "completion processing started");
 	GameObject *object = ObjectAccessor::GetGameObject(*player,
 		pending.RelicGuid);
 	if (!object || !object->IsInWorld()) {
+		LogRelicCollectionLifecycle("collection validation", guid,
+			pending.RelicGuid, callbackSpellId, "relic missing");
 		message = "The relic is no longer present after you finished examining it.";
 		return false;
 	}
@@ -3106,22 +3157,33 @@ bool NativeHuntsManager::CompleteRelicCollection(Player *player,
 	if (!runtime || runtime->HuntInstanceId != pending.HuntInstanceId ||
 		!pool || pool->Id != pending.PoolId || relicIndex != pending.RelicIndex ||
 		!player->IsWithinDistInMap(object, INTERACTION_DISTANCE)) {
+		LogRelicCollectionLifecycle("collection validation", guid,
+			pending.RelicGuid, callbackSpellId,
+			"hunt, pool, relic, or range changed");
 		message = "The relic is no longer in reach for this Hunt.";
 		return false;
 	}
 	switch (CanCollectRelic(context)) {
 	case GameplayDecision::WrongState:
+		LogRelicCollectionLifecycle("collection validation", guid,
+			pending.RelicGuid, callbackSpellId, "hunt state changed");
 		message = "This relic no longer reveals anything about your active Hunt.";
 		return false;
 	case GameplayDecision::WrongLocation:
+		LogRelicCollectionLifecycle("collection validation", guid,
+			pending.RelicGuid, callbackSpellId, "location changed");
 		message = "This relic does not belong to your assigned hunting ground.";
 		return false;
 	case GameplayDecision::Allowed:
 		break;
 	default:
+		LogRelicCollectionLifecycle("collection validation", guid,
+			pending.RelicGuid, callbackSpellId, "collection resource unavailable");
 		message = "This relic has no connection to an active Hunt.";
 		return false;
 	}
+	LogRelicCollectionLifecycle("collection validation", guid,
+		pending.RelicGuid, callbackSpellId, "passed");
 	std::string const relicKey = pool->Id + ":" +
 		std::to_string(relicIndex);
 
@@ -3151,6 +3213,8 @@ bool NativeHuntsManager::CompleteRelicCollection(Player *player,
 			ReconcileRelicPools();
 		}
 		message = "You have already examined this relic during this Hunt.";
+		LogRelicCollectionLifecycle("collection validation", guid,
+			pending.RelicGuid, callbackSpellId, "duplicate ledger entry");
 		return false;
 	}
 	QueryResult countResult = CharacterDatabase.Query(
@@ -3207,12 +3271,16 @@ bool NativeHuntsManager::CompleteRelicCollection(Player *player,
 		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
 		runtime->HuntInstanceId, RelicObjectiveKey, relicKey);
 	if (!persisted) {
+		LogRelicCollectionLifecycle("collection persistence", guid,
+			pending.RelicGuid, callbackSpellId, "verification query failed");
 		message = acknowledged
 			? "The relic credit could not be verified; no local progress was changed."
 			: "The relic credit transaction failed; try again.";
 		return false;
 	}
 	Field *field = persisted->Fetch();
+	LogRelicCollectionLifecycle("collection persisted", guid,
+		pending.RelicGuid, callbackSpellId, "ledger and assignment verified");
 	runtime->CollectedRelicKeys.insert(relicKey);
 	HideCollectedRelic(player, *runtime, object, relicKey);
 	std::uint8_t const persistedAward = field[0].Get<std::uint8_t>();
@@ -3488,6 +3556,16 @@ void NativeHuntsManager::Update(std::uint32_t elapsedMs) {
 		Player *player = ConnectedPlayer(guid);
 		if (!player)
 			continue;
+		if (_pendingRelicCollections.count(guid)) {
+			Spell const *active = player->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+			std::uint32_t const activeSpellId = active &&
+				active->getState() != SPELL_STATE_FINISHED && active->GetSpellInfo()
+				? active->GetSpellInfo()->Id : 0;
+			if (IsPendingRelicCollectionStale(true, RelicCollectionSpellId,
+					activeSpellId))
+				CancelRelicCollection(player, activeSpellId,
+					"active cast ended without a lifecycle callback");
+		}
 		RefreshRelicInteractionState(player, runtime);
 		if (runtime.Aggregate.State == HuntState::Tracking &&
 			runtime.AmbushPending) {
@@ -3648,6 +3726,8 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		if (!*assignment) {
 			_uncertainTurnIns.erase(uncertain);
 			HuntDomain::Execute(runtime.Aggregate,TurnInHunt{});
+			CancelRelicCollection(player, RelicCollectionSpellId,
+				"hunt ended during turn-in recovery");
 			ReconcileHuntAura(player, nullptr);
 			RemoveRuntimeObjects(player,runtime); _runtimes.erase(it);
 			ReconcileRelicPools();
@@ -3936,6 +4016,7 @@ bool NativeHuntsManager::TurnIn(Player *player, Creature *giver,
 		prey->RewardMultiplier, elite ? _config.EliteXpMultiplier : 1.0f);
 	if (xp) player->GiveXP(xp,nullptr,1.0f);
 	HuntDomain::Execute(runtime.Aggregate,TurnInHunt{});
+	CancelRelicCollection(player, RelicCollectionSpellId, "hunt turned in");
 	ReconcileHuntAura(player, nullptr);
 	RemoveRuntimeObjects(player,runtime);
 	_runtimes.erase(it);
@@ -4104,7 +4185,7 @@ void NativeHuntsManager::OnLogout(Player *player) {
 	if (!player)
 		return;
 	std::uint32_t const guid = player->GetGUID().GetCounter();
-	_pendingRelicCollections.erase(guid);
+	CancelRelicCollection(player, RelicCollectionSpellId, "player logout");
 	_uiLastRequestMs.erase(guid);
 	_uiSequences.erase(guid);
 	_uiLastProjection.erase(guid);
@@ -4166,5 +4247,9 @@ void NativeHuntsManager::OnLogout(Player *player) {
 		SaveAssignment(it->second);
 		ReconcileHuntAura(player, &it->second.Aggregate);
 	}
+}
+
+void NativeHuntsManager::OnMapChanged(Player *player) {
+	CancelRelicCollection(player, RelicCollectionSpellId, "player changed maps");
 }
 } // namespace native_hunts

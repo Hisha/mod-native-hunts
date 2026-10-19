@@ -93,6 +93,10 @@ bool CanUseIssuingHuntmaster(HuntState state, std::uint32_t creatureEntry,
 
 GameplayDecision CanAdvanceTracking(TrackingKillContext const &context);
 GameplayDecision CanCollectRelic(RelicCollectionContext const &context);
+bool MatchesPendingRelicCollectionSpell(bool hasPendingCollection,
+	std::uint32_t expectedSpellId, std::uint32_t callbackSpellId);
+bool IsPendingRelicCollectionStale(bool hasPendingCollection,
+	std::uint32_t expectedSpellId, std::uint32_t activeSpellId);
 std::uint8_t RelicProgressIncrement(std::uint32_t collected,
 	std::uint32_t target);
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,

@@ -210,14 +210,18 @@ public:
 	bool Abandon(Player *player, std::string &message);
 	bool CollectRelic(Player *player, GameObject *object,
 		std::string &message);
-	bool CompleteRelicCollection(Player *player, std::string &message);
-	void CancelRelicCollection(Player *player);
-	bool IsRelicCollectionSpell(SpellInfo const *spellInfo) const;
+	bool CompleteRelicCollection(Player *player, std::string &message,
+		std::uint32_t callbackSpellId = 0);
+	void CancelRelicCollection(Player *player, std::uint32_t spellId = 0,
+		char const *reason = "cancelled");
+	bool IsRelicCollectionSpell(Player const *player,
+		SpellInfo const *spellInfo) const;
 	bool UseCrystal(Player *player, GameObject *object, std::string &message);
 	bool UseReturnRift(Player *player, GameObject *object, std::string &message);
 	void OnCreatureKill(Player *killer, Creature *killed);
 	void OnLogin(Player *player);
 	void OnLogout(Player *player);
+	void OnMapChanged(Player *player);
 	void HandleUiAddonMessage(Player *player, std::string const &payload);
 	std::uint32_t LifetimeCompletions(Player const *player) const;
 	bool IsEliteUnlocked(Player const *player) const;
