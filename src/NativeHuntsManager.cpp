@@ -65,7 +65,7 @@ constexpr char RelicCollectionSpellName[] = "Examine Cursed Relic";
 void LogRelicCollectionLifecycle(char const *event,
 		std::uint32_t characterGuid, ObjectGuid relicGuid,
 		std::uint32_t spellId, char const *reason) {
-	LOG_INFO("module.native_hunts",
+	LOG_DEBUG("module.native_hunts",
 		"Relic collection {}: character_guid={}, relic_guid={}, spell_id={}, reason={}",
 		event, characterGuid, relicGuid.GetCounter(), spellId,
 		reason ? reason : "none");
@@ -2553,8 +2553,8 @@ bool NativeHuntsManager::RequestHunt(Player *player, Creature *giver,
 	AssociateRelicPool(player, _runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	QueueUiState(player);
-	message = "Your quarry is " + std::string(prey.Name) + ". Travel to " +
-			  site->ZoneName + " and hunt suitable creatures to find its trail.";
+	message = BuildHuntAcceptanceDialogue(PreyTier::Standard, prey.Name,
+		site->ZoneName, _config.RelicsCountPerZone > 0);
 	return true;
 }
 
@@ -2650,8 +2650,8 @@ bool NativeHuntsManager::RequestEliteHunt(Player *player, Creature *giver,
 	AssociateRelicPool(player, _runtimes.at(guid));
 	ReconcileHuntAura(player, &_runtimes.at(guid).Aggregate);
 	QueueUiState(player);
-	message = "Elite quarry: " + std::string(chosen->Name) + ". Travel to " +
-		site->ZoneName + ". Abandoning forfeits today's Elite assignment.";
+	message = BuildHuntAcceptanceDialogue(PreyTier::Elite, chosen->Name,
+		site->ZoneName, _config.RelicsCountPerZone > 0);
 	return true;
 }
 
@@ -3323,8 +3323,10 @@ bool NativeHuntsManager::CompleteRelicCollection(Player *player,
 		"collection.`objective_key`='{}' AND collection.`relic_key`='{}'",
 		runtime->HuntInstanceId, RelicObjectiveKey, relicKey);
 	if (!persisted) {
-		LogRelicCollectionLifecycle("collection persistence", guid,
-			pending.RelicGuid, callbackSpellId, "verification query failed");
+		LOG_ERROR("module.native_hunts",
+			"Relic collection persistence failed: character_guid={}, relic_guid={}, "
+			"spell_id={}, reason=verification query failed", guid,
+			pending.RelicGuid.GetCounter(), callbackSpellId);
 		message = acknowledged
 			? "The relic credit could not be verified; no local progress was changed."
 			: "The relic credit transaction failed; try again.";

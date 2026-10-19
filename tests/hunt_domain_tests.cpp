@@ -481,6 +481,54 @@ void TestTrackingEligibility() {
 		  "pending ambush pauses ordinary tracking");
 }
 
+void TestHuntAcceptanceDialogue() {
+	std::string const standardKillOnly = BuildHuntAcceptanceDialogue(
+		PreyTier::Standard, "Gorehide", "Westfall", false);
+	Check(standardKillOnly ==
+		"Your quarry is Gorehide. Travel to Westfall and hunt suitable creatures "
+		"to find its trail.",
+		"disabled relics preserve the Standard kill-only dialogue");
+	Check(standardKillOnly.find("relic") == std::string::npos,
+		"disabled relics are not mentioned in Standard dialogue");
+
+	std::string const standardRelics = BuildHuntAcceptanceDialogue(
+		PreyTier::Standard, "Gorehide", "Westfall", true);
+	Check(standardRelics.find("cursed relics") != std::string::npos &&
+			standardRelics.find("Relic collection is optional") != std::string::npos &&
+			standardRelics.find("normal creature kills still advance the trail") !=
+				std::string::npos &&
+			standardRelics.find("final confrontation") != std::string::npos,
+		"enabled relics explain optional Standard tracking clues and kill progress");
+
+	std::string const eliteKillOnly = BuildHuntAcceptanceDialogue(
+		PreyTier::Elite, "The Headsman", "Crystalsong Forest", false);
+	Check(eliteKillOnly ==
+		"Elite quarry: The Headsman. Travel to Crystalsong Forest. Abandoning "
+		"forfeits today's Elite assignment.",
+		"disabled relics preserve the Elite kill-only dialogue");
+	Check(eliteKillOnly.find("relic") == std::string::npos,
+		"disabled relics are not mentioned in Elite dialogue");
+
+	std::string const eliteRelics = BuildHuntAcceptanceDialogue(
+		PreyTier::Elite, "The Headsman", "Crystalsong Forest", true);
+	Check(eliteRelics.find("cursed relics") != std::string::npos &&
+			eliteRelics.find("Relic collection is optional") != std::string::npos &&
+			eliteRelics.find("normal creature kills still advance the trail") !=
+				std::string::npos &&
+			eliteRelics.find("Abandoning forfeits today's Elite assignment") !=
+				std::string::npos,
+		"enabled relics supplement Elite dialogue without losing its warning");
+
+	HuntAggregate aggregate = Accepted();
+	std::uint8_t const progress = aggregate.Progress;
+	std::uint64_t const revision = aggregate.Revision;
+	(void)BuildHuntAcceptanceDialogue(aggregate.Identity.Tier,
+		aggregate.Identity.PreyName, aggregate.Identity.ZoneName, true);
+	Check(aggregate.State == HuntState::Tracking &&
+			aggregate.Progress == progress && aggregate.Revision == revision,
+		"dialogue formatting does not alter Hunt progression");
+}
+
 void TestRelicPrototypeRules() {
 	RelicCollectionContext eligible{true, true, HuntState::Tracking, true,
 		true, true};
@@ -946,6 +994,7 @@ int main(int argc, char **argv) {
 		TestSealCatalogFiltering();
 	if (selection == "all" || selection == "tracking") {
 		TestTrackingEligibility();
+		TestHuntAcceptanceDialogue();
 		TestRelicPrototypeRules();
 		TestRelicCollectionCastLifecycle();
 		TestRelicPoolPolicy();

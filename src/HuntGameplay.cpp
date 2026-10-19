@@ -52,6 +52,29 @@ bool IsPendingRelicCollectionStale(bool hasPendingCollection,
 	return hasPendingCollection && activeSpellId != expectedSpellId;
 }
 
+std::string BuildHuntAcceptanceDialogue(PreyTier tier,
+		std::string const &preyName, std::string const &zoneName,
+		bool relicsEnabled) {
+	std::string message = tier == PreyTier::Elite
+		? "Elite quarry: " + preyName + ". Travel to " + zoneName + "."
+		: "Your quarry is " + preyName + ". Travel to " + zoneName;
+	if (!relicsEnabled) {
+		if (tier == PreyTier::Elite)
+			return message + " Abandoning forfeits today's Elite assignment.";
+		return message + " and hunt suitable creatures to find its trail.";
+	}
+
+	message += " Hunt the creatures that roam there to uncover its trail. "
+		"You may also discover cursed relics scattered throughout the region; "
+		"examine them for additional clues. Relic collection is optional, and "
+		"normal creature kills still advance the trail. Follow the trail, survive "
+		"whatever your quarry sends against you, and prepare for the final "
+		"confrontation.";
+	if (tier == PreyTier::Elite)
+		message += " Abandoning forfeits today's Elite assignment.";
+	return message;
+}
+
 std::uint8_t RelicProgressIncrement(std::uint32_t collected,
 		std::uint32_t target) {
 	if (collected == 0 || target == 0 || collected > target)

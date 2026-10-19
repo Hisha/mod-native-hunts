@@ -67,6 +67,43 @@ def run_tracking_milestone_source_checks() -> None:
     print("PASS tracking milestone manager integration contracts", flush=True)
 
 
+def run_relic_logging_and_dialogue_source_checks() -> None:
+    manager = (ROOT / "src" / "NativeHuntsManager.cpp").read_text(encoding="utf-8")
+    lifecycle_start = manager.index("void LogRelicCollectionLifecycle")
+    lifecycle_end = manager.index("\n}", lifecycle_start)
+    lifecycle = manager[lifecycle_start:lifecycle_end]
+    if 'LOG_DEBUG("module.native_hunts"' not in lifecycle:
+        raise AssertionError("routine relic collection lifecycle diagnostics are not DEBUG")
+    if 'LOG_INFO("module.native_hunts"' in lifecycle:
+        raise AssertionError("routine relic collection lifecycle diagnostics remain INFO")
+    for token in ("interaction accepted", "pending created", "spell cast started",
+                  "spell completion callback received", "pending cleared",
+                  "collection validation", "collection persisted"):
+        if f'LogRelicCollectionLifecycle("{token}"' not in manager:
+            raise AssertionError(f"routine relic DEBUG diagnostic missing: {token}")
+    if ('LOG_ERROR("module.native_hunts",\n\t\t\t"Relic collection persistence failed:'
+            not in manager):
+        raise AssertionError("relic persistence verification failure lost ERROR severity")
+    if ('LOG_ERROR("module.native_hunts",\n\t\t\t\t"Relic collection spell {} '
+            not in manager):
+        raise AssertionError("invalid relic spell contract lost ERROR severity")
+    if ('LOG_WARN("module.native_hunts",\n\t\t\t"Relic transaction acknowledgement was lost'
+            not in manager):
+        raise AssertionError("verified lost relic acknowledgement lost WARN severity")
+
+    for function, tier in (("RequestHunt", "PreyTier::Standard"),
+                           ("RequestEliteHunt", "PreyTier::Elite")):
+        start = manager.index(f"bool NativeHuntsManager::{function}")
+        end = manager.index("\n}", start)
+        acceptance = manager[start:end]
+        expected = f"BuildHuntAcceptanceDialogue({tier}"
+        if expected not in acceptance or "_config.RelicsCountPerZone > 0" not in acceptance:
+            raise AssertionError(
+                f"{function} dialogue is not gated directly by the configured relic count")
+    print("PASS relic logging severity and Huntmaster dialogue integration contracts",
+          flush=True)
+
+
 def run_relic_persistence_contract_checks() -> None:
     assignment = (ROOT / "data/sql/db-characters/base/001_native_hunt_assignment.sql").read_text(
         encoding="utf-8")
@@ -2448,6 +2485,7 @@ def main() -> None:
         run_function_shadow_guard,
         run_domain_tests,
         run_tracking_milestone_source_checks,
+        run_relic_logging_and_dialogue_source_checks,
         run_relic_persistence_contract_checks,
         run_functional_ui_checks,
         run_frameforge_functional_ui_checks,

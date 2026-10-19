@@ -4,6 +4,7 @@
 #include "HuntDomain.h"
 
 #include <cstdint>
+#include <string>
 
 namespace native_hunts {
 
@@ -97,6 +98,9 @@ bool MatchesPendingRelicCollectionSpell(bool hasPendingCollection,
 	std::uint32_t expectedSpellId, std::uint32_t callbackSpellId);
 bool IsPendingRelicCollectionStale(bool hasPendingCollection,
 	std::uint32_t expectedSpellId, std::uint32_t activeSpellId);
+std::string BuildHuntAcceptanceDialogue(PreyTier tier,
+	std::string const &preyName, std::string const &zoneName,
+	bool relicsEnabled);
 std::uint8_t RelicProgressIncrement(std::uint32_t collected,
 	std::uint32_t target);
 std::uint8_t NextAmbushThreshold(std::uint8_t completed,
