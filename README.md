@@ -68,7 +68,7 @@ runtime objects.
 
 ## Managed content
 
-Package version 22 preserves the protected, functional FrameXML/Lua
+Package version 23 preserves the protected, functional FrameXML/Lua
 architecture and packages the authoritative 49-object FrameForge layout plus
 its eleven generated TGAs as explicit files. Module-owned Lua maps the existing
 Native Hunts snapshot to the exported visual states and dynamic values. The
@@ -88,6 +88,8 @@ metadata, `.fforge` authoring source, and Blizzard-owned assets are not packaged
   category;
 - four allocator-managed ItemExtendedCost rows used to present the configured
   default Seal tier prices in Blizzard's MerchantFrame;
+- the allocator-managed `examine-cursed-relic` spell, cloned from stock spell
+  61413 with the client name `Examine Cursed Relic`;
 - the existing Huntmasters with both gossip and vendor interaction flags.
 
 Every allocated resource is resolved at runtime through `ContentResourceApiV1`.

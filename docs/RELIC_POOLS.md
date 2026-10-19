@@ -48,14 +48,32 @@ loaded on restart and remains the authoritative duplicate guard; visibility is
 reapplied after login and whenever the object re-enters that player's client
 visibility range.
 
-The collection cast uses stock build-12340 spell 61413 (`[DND] Herb
-Gathering`) for its client cast bar and normal interruption lifecycle. This is
-a self-targeted dummy gathering cast with no GameObject, item, or lock target,
-so it does not open, loot, despawn, or change the shared relic. Native Hunts
-only substitutes the configured cast duration. Hunt, pool, indexed relic, map,
-zone, range, and duplicate eligibility are checked again only after a
-successful cast. One pending attempt is allowed per player, and the database
-uniqueness key remains the final concurrency guard.
+The collection cast uses the Content Manager resource
+`mod-native-hunts/examine-cursed-relic` (`spell.id`), displayed by the client as
+`Examine Cursed Relic`. Its `stock-spell-clone-v1` declaration copies build-12340
+spell 61413 (`[DND] Herb Gathering`) without modifying that stock row. The clone
+retains the self-targeted dummy effect, gathering animation and visual,
+movement/damage interruption, and absence of GameObject, item, lock, reagent,
+or equipment requirements. Native Hunts substitutes only the configured cast
+duration. Hunt, pool, indexed relic, map, zone, range, and duplicate eligibility
+are checked again only after a successful cast. One pending attempt is allowed
+per player, and the database uniqueness key remains the final concurrency guard.
+
+The concrete spell ID is allocated persistently by Content Manager from the
+verified Spell baseline and is never authored in this module. The server refuses
+to enable Native Hunts until the ACTIVE/APPLIED resource resolves and the loaded
+SpellInfo matches donor 61413 and the authored name. Deployment therefore
+requires rebuilding `content/mod-native-hunts.epf`, scanning/installing and
+building it with the updated Content Manager, activating the build so the
+managed `spell_dbc` row is applied, installing the generated client patch, and
+restarting both worldserver and the WoW client.
+
+Rollback restores the prior Native Hunts module binary, activates the matching
+prior immutable Content Manager build, and restores that build's client patch,
+then restarts worldserver and client. Module and content must be rolled back as
+one compatibility unit because the updated module requires the new symbolic
+spell resource. The retired spell-ID lease is intentionally retained and is not
+recycled; no character or relic collection records are deleted.
 
 ## Restart recovery
 

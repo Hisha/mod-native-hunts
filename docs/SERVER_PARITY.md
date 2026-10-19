@@ -18,15 +18,15 @@ cross-transaction primitive joining character XP mutation with item/database
 transactions. Physical Seals, equipment, gold, statistics, and assignment
 deletion share the safer recoverable path. Standard Hunts award zero Seals.
 
-## Active-Hunt visual aura
+## Managed spells
 
-The visual-only aura is deferred. The installed generic Content Manager accepts
-managed DBC rows only for Item, CurrencyTypes, CurrencyCategory, and
-ItemExtendedCost; it cannot allocate/build the required Spell.dbc (and related
-icon/aura client rows). Native Hunts will not hijack a stock spell. When generic
-Spell DBC support exists, persisted assignment state already provides the
-authoritative login/restart reconstruction and completion/abandon removal
-signals.
+Content Manager allocates and deploys the Standard/Elite informational auras and
+the dedicated `examine-cursed-relic` spell through paired client `Spell.dbc` and
+server `spell_dbc` rows. The relic spell uses the generic
+`stock-spell-clone-v1` profile with stock donor 61413, changing only its managed
+ID and localized display name. Native Hunts resolves the ID symbolically and
+validates the loaded SpellInfo before enabling gameplay; no allocated spell ID
+is hard-coded.
 
 ## Elite content representation
 

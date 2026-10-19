@@ -73,10 +73,9 @@ NativeHunts.SealStore.Tier4.Cost = 30
 NativeHunts.SealStore.Tier4.MinItemLevel = 264
 NativeHunts.SealStore.Tier4.MaxItemLevel = 264
 
-# Active-Hunt visual aura is intentionally absent: the installed generic
-# Content Manager supports Item, CurrencyTypes, CurrencyCategory, and
-# ItemExtendedCost DBC rows, but not Spell.dbc/SpellIcon.dbc managed content.
-# Native Hunts will not hijack an unrelated stock spell.
+# Active-Hunt visual auras and the relic collection cast are allocator-managed
+# Spell resources declared by the Native Hunts EPF. They have no numeric config
+# because Content Manager owns their client/server identity.
 
 NativeHunts.ReturnRift.Enable = 1
 # Clamped to 1-120 seconds.

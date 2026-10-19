@@ -541,21 +541,21 @@ void TestRelicPrototypeRules() {
 }
 
 void TestRelicCollectionCastLifecycle() {
-	constexpr std::uint32_t collectionSpell = 61413;
+	constexpr std::uint32_t collectionSpell = 80867;
 	Check(MatchesPendingRelicCollectionSpell(true, collectionSpell,
 			collectionSpell),
 		"successful collection callback matches by spell ID while pending");
 	Check(!MatchesPendingRelicCollectionSpell(false, collectionSpell,
 			collectionSpell),
 		"completed or duplicate callback cannot match without pending state");
-	Check(!MatchesPendingRelicCollectionSpell(true, collectionSpell, 3365),
+	Check(!MatchesPendingRelicCollectionSpell(true, collectionSpell, 61413),
 		"unrelated or failed spell callback cannot complete collection");
 	Check(!IsPendingRelicCollectionStale(true, collectionSpell,
 			collectionSpell),
 		"an active collection cast retains its pending state");
 	Check(IsPendingRelicCollectionStale(true, collectionSpell, 0),
 		"a pending record without an active cast is stale");
-	Check(IsPendingRelicCollectionStale(true, collectionSpell, 3365),
+	Check(IsPendingRelicCollectionStale(true, collectionSpell, 61413),
 		"a different active spell cannot keep relic collection pending");
 	Check(!IsPendingRelicCollectionStale(false, collectionSpell, 0),
 		"absence of pending state is not treated as stale");

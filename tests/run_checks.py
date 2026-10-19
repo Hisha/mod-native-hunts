@@ -183,7 +183,7 @@ def run_relic_persistence_contract_checks() -> None:
                   "SPELL_EFFECT_DUMMY",
                   "TARGET_UNIT_CASTER", "SPELL_INTERRUPT_FLAG_MOVEMENT",
                   "TRIGGERED_NONE",
-                  "RelicCollectionSpellId", "CompleteRelicCollection(player, message)"):
+                  "_resources.RelicCollectionSpell", "CompleteRelicCollection(player, message)"):
         if token not in begin_code:
             raise AssertionError(f"interruptible relic cast setup missing: {token}")
     if begin_code.index("_config.RelicCollectionCastTimeMs == 0") > begin_code.index(
@@ -204,8 +204,13 @@ def run_relic_persistence_contract_checks() -> None:
         raise AssertionError("relic progress can be committed before cast completion")
     if "TRIGGERED_IGNORE_EFFECTS" in begin_code:
         raise AssertionError("relic cast suppresses the client-visible spell packets")
-    if "RelicCollectionSpellId = 61413" not in manager:
-        raise AssertionError("verified gathering spell is not selected for relic casting")
+    for token in ('RelicCollectionSpellSymbol[] = "examine-cursed-relic"',
+                  "RelicCollectionSourceSpellId = 61413",
+                  'resolve(RelicCollectionSpellSymbol, "spell.id"',
+                  "_resources.RelicCollectionSpell != RelicCollectionSourceSpellId",
+                  "std::string(collectionSpell->SpellName[0]) == RelicCollectionSpellName"):
+        if token not in manager:
+            raise AssertionError(f"managed relic collection spell contract missing: {token}")
     if "RelicCollectionSpellId = 3365" in manager:
         raise AssertionError("relic casting still uses the incompatible Opening spell")
     for token in ("effect.Effect = 0", "_relicCollectionSpell->Targets ="):
@@ -1074,7 +1079,7 @@ def run_functional_ui_checks() -> None:
             "You are tracking an Elite Hunt target.",
             "An Elite Hunt is active."),
     }
-    if set(spells) != set(expected_spells):
+    if set(spells) != set(expected_spells) | {"examine-cursed-relic"}:
         raise AssertionError("managed active-Hunt spell set is incorrect")
     for symbol, (donor, name, description, aura_description) in expected_spells.items():
         row = spells[symbol]
@@ -1088,6 +1093,13 @@ def run_functional_ui_checks() -> None:
                 "iconCopyFromSpell": donor,
         }):
             raise AssertionError(f"managed active-Hunt spell is incorrect: {symbol}")
+    if spells["examine-cursed-relic"] != {
+            "symbol": "examine-cursed-relic",
+            "copyFrom": 61413,
+            "profile": "stock-spell-clone-v1",
+            "name": {"enUS": "Examine Cursed Relic"},
+    }:
+        raise AssertionError("managed relic collection spell declaration is incorrect")
     creature_symbols = {row["symbol"] for row in manifest["creatureTemplates"]}
     expected_huntmasters = {
         "huntmaster-corvin", "huntmaster-brannoc", "huntmaster-shalara",
@@ -1162,8 +1174,8 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "22-ptr7":
-        print("SKIP functional FrameForge PTR7 contract", flush=True)
+    if manifest.get("version") != "23-ptr1":
+        print("SKIP functional FrameForge PTR8 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
         raise AssertionError("invalid Native Hunts PTR3 package identity")
@@ -1921,7 +1933,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the current PTR package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "22-ptr7":
+    if manifest.get("version") != "23-ptr1":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()

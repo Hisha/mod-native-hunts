@@ -111,6 +111,7 @@ struct ManagedResources {
 	std::array<std::uint32_t, 4> SealStoreExtendedCosts{};
 	std::uint32_t StandardHuntAuraSpell = 0;
 	std::uint32_t EliteHuntAuraSpell = 0;
+	std::uint32_t RelicCollectionSpell = 0;
 };
 
 struct HuntRuntime {

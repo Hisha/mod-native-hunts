@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "22-ptr7",
+  "version": "23-ptr1",
   "description": "Managed Native Hunts gameplay, native Huntmaster merchant integration, and protected FrameXML presentation.",
   "content": [
     {
@@ -275,6 +275,14 @@
         "enUS": "An Elite Hunt is active."
       },
       "iconCopyFromSpell": 67823
+    },
+    {
+      "symbol": "examine-cursed-relic",
+      "copyFrom": 61413,
+      "profile": "stock-spell-clone-v1",
+      "name": {
+        "enUS": "Examine Cursed Relic"
+      }
     }
   ],
   "creatureTemplates": [
