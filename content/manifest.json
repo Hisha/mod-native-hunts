@@ -2,7 +2,7 @@
   "schema": 3,
   "package": "mod-native-hunts",
   "name": "Native Hunts",
-  "version": "23-ptr1",
+  "version": "24-ptr1",
   "description": "Managed Native Hunts gameplay, native Huntmaster merchant integration, and protected FrameXML presentation.",
   "content": [
     {
@@ -137,7 +137,7 @@
     "loadEntries": [
       {
         "target": "Interface/FrameXML/NativeHuntsFrame.xml",
-        "after": "Interface/FrameXML/LFDFrame.xml"
+        "after": "Interface/FrameXML/ContentManagerNativePve.lua"
       },
       {
         "target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
@@ -149,6 +149,16 @@
       }
     ]
   },
+  "nativePvePages": [
+    {
+      "id": "hunts",
+      "name": "Hunts",
+      "frame": "NativeHuntsFrame",
+      "loadTarget": "Interface/FrameXML/NativeHuntsFrame.xml",
+      "onShow": "NativeHuntsFrame_OnPveShow",
+      "onHide": "NativeHuntsFrame_OnPveHide"
+    }
+  ],
   "dbcRows": [
     {
       "op": "add",

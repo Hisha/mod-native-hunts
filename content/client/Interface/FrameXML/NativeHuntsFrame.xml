@@ -89,6 +89,4 @@
 			</Frame>
 		</Frames>
 	</Frame>
-	<Button name="LFDParentFrameTab1" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="1" text="Dungeon Finder"><Anchors><Anchor point="BOTTOMLEFT" relativeTo="LFDParentFrame" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="18" y="-27" /></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
-	<Button name="LFDParentFrameTab2" parent="LFDParentFrame" inherits="CharacterFrameTabButtonTemplate" id="2" text="Hunts"><Anchors><Anchor point="LEFT" relativeTo="LFDParentFrameTab1" relativePoint="RIGHT"><Offset><AbsDimension x="-15" y="0" /></Offset></Anchor></Anchors><Scripts><OnClick>NativeHuntsFrame_SelectTab(self:GetID());</OnClick></Scripts></Button>
 	</Ui>

@@ -1211,7 +1211,7 @@ def run_frameforge_functional_ui_checks() -> None:
     content_root = ROOT / "content"
     manifest_source = (content_root / "manifest.json").read_bytes()
     manifest = json.loads(manifest_source)
-    if manifest.get("version") != "23-ptr1":
+    if manifest.get("version") != "24-ptr1":
         print("SKIP functional FrameForge PTR8 contract", flush=True)
         return
     if (manifest.get("schema"), manifest.get("package")) != (3, "mod-native-hunts"):
@@ -1223,7 +1223,7 @@ def run_frameforge_functional_ui_checks() -> None:
         "stockTocSha256": "3158bea13225ae51137a389f0f3ab8566e94b6be84196dd2c1fda27024677754",
         "loadEntries": [
             {"target": "Interface/FrameXML/NativeHuntsFrame.xml",
-             "after": "Interface/FrameXML/LFDFrame.xml"},
+             "after": "Interface/FrameXML/ContentManagerNativePve.lua"},
             {"target": "Interface/FrameXML/NativeHuntsFrameForgeLayout.xml",
              "after": "Interface/FrameXML/NativeHuntsFrame.xml"},
             {"target": "Interface/FrameXML/NativeHuntsInitializer.xml",
@@ -1231,7 +1231,15 @@ def run_frameforge_functional_ui_checks() -> None:
         ],
     }
     if manifest.get("clientFrameXml") != expected_frame_xml:
-        raise AssertionError("functional FrameXML load order no longer follows LFDFrame.xml")
+        raise AssertionError("functional FrameXML load order no longer follows the shared PvE controller")
+    expected_page = [{
+        "id": "hunts", "name": "Hunts", "frame": "NativeHuntsFrame",
+        "loadTarget": "Interface/FrameXML/NativeHuntsFrame.xml",
+        "onShow": "NativeHuntsFrame_OnPveShow",
+        "onHide": "NativeHuntsFrame_OnPveHide",
+    }]
+    if manifest.get("nativePvePages") != expected_page:
+        raise AssertionError("Native Hunts shared PvE page registration is incorrect")
     required_targets = {
         "Interface/FrameXML/NativeHuntsFrame.xml",
         "Interface/FrameXML/NativeHuntsFrame.lua",
@@ -1354,8 +1362,8 @@ def run_frameforge_functional_ui_checks() -> None:
             host_named.get("$parentContentPanel") is None or
             host_named["$parentContentPanel"].get("hidden") != "true"):
         raise AssertionError("legacy Native Hunts presentation was not suppressed")
-    if not {"LFDParentFrameTab1", "LFDParentFrameTab2"} <= host_named.keys():
-        raise AssertionError("Dungeon Finder and Hunts tabs must both remain defined")
+    if {"LFDParentFrameTab1", "LFDParentFrameTab2"} & host_named.keys():
+        raise AssertionError("Native Hunts must not own shared Dungeon Finder tabs")
     native_frame = host_named["NativeHuntsFrame"]
     shell_layers = next(element for element in native_frame
                         if element.tag.endswith("Layers"))
@@ -1408,13 +1416,13 @@ def run_frameforge_functional_ui_checks() -> None:
         "Complete3B_Location_Value:SetText", "Tracker_Hunt_Progress:SetMinMaxValues(0, 100)",
         "Tracker_Hunt_Progress:SetValue", 'snapshot.state == "T" and "T"',
         'snapshot.state == "F" and "L"', 'snapshot.state == "P" and "F"',
-        'snapshot.state == "R" and "R"', "LFDQueueFrame:Hide()", "NativeHuntsFrame:Show()",
+        'snapshot.state == "R" and "R"',
         "FrameForge_Dungeon_Finder_UI:Show()", "FrameForge_Dungeon_Finder_UI:Hide()",
         'RegisterAddonMessagePrefix(PREFIX)', 'self:RegisterEvent("CHAT_MSG_ADDON")',
         'self:RegisterEvent("GOSSIP_SHOW")', 'if event=="GOSSIP_SHOW" then',
         'HideUIPanel(LFDParentFrame)',
-        'LFDParentFrame.numTabs = 2', 'InitializeTabs();',
-        'type(LFDParentFrame.numTabs) ~= "number"', "ValidateFrameForgeControls",
+        'function NativeHuntsFrame_OnPveShow()',
+        'function NativeHuntsFrame_OnPveHide()', "ValidateFrameForgeControls",
         "NativeHuntsFrameInitializationError", "required exported control is missing",
         "Hunt_Tier_Icon:SetTexture(ELITE_HUNT_ICON_TEXTURE)",
         "Hunt_Tier_Icon:SetTexture(STANDARD_HUNT_ICON_TEXTURE)",
@@ -1758,8 +1766,6 @@ def run_frameforge_functional_ui_checks() -> None:
                 not controls.NativeHuntsFrameInitializer.events["MERCHANT_CLOSED"]):
             raise AssertionError("Native Hunts did not register for the merchant lifecycle")
         controls.FrameForgeTestRequests = 0
-        if controls.LFDParentFrame.numTabs != 2 or controls.LFDParentFrame.selectedTab != 1:
-            raise AssertionError("Blizzard panel templates were not initialized with two numeric tabs")
         if (controls.Tracker_Hunt_Progress.min != 0 or controls.Tracker_Hunt_Progress.max != 100 or
                 controls.Tracker_Hunt_Progress.value != 0):
             raise AssertionError("FrameForge StatusBar was not initialized before the first snapshot")
@@ -1772,58 +1778,24 @@ def run_frameforge_functional_ui_checks() -> None:
         if (not controls.LFDParentFramePortraitTexture.visible or
                 not controls.LFDParentFramePortraitIcon.visible):
             raise AssertionError("initial Dungeon Finder portrait artwork was not preserved")
-        controls.NativeHuntsFrame_SelectTab(2)
-        if (controls.LFDParentFrame.selectedTab != 2 or controls.LFDQueueFrame.visible or
-                not controls.NativeHuntsFrame.visible or
-                not controls.FrameForge_Dungeon_Finder_UI.visible or
-                (controls.LFDParentFramePortraitTexture.visible or
-                 controls.LFDParentFramePortraitIcon.visible) or
-                controls.LFDParentFrame.width != 355 or controls.LFDParentFrame.height != 440 or
-                controls.LFDQueueFrameTitleText.text != "Dungeon Finder" or
-                controls.FrameForgeTestRequests != 1):
-            raise AssertionError("Hunts tab selection did not update Blizzard's panel state")
-        controls.NativeHuntsFrame_SelectTab(1)
-        if (controls.LFDParentFrame.selectedTab != 1 or not controls.LFDQueueFrame.visible or
-                controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
-                (not controls.LFDParentFramePortraitTexture.visible or
-                 not controls.LFDParentFramePortraitIcon.visible) or
-                controls.LFDQueueFrameTitleText.text != "Dungeon Finder"):
-            raise AssertionError("Dungeon Finder tab selection did not restore Blizzard's panel state")
-        controls.FrameForgeTestTime = 12
-        controls.NativeHuntsFrame_SelectTab(2)
-        controls.LFDParentFrame.hooks["OnHide"]()
-        if (controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible or
-                controls.LFDParentFramePortraitTexture.visible or
-                controls.LFDParentFramePortraitIcon.visible):
-            raise AssertionError("closing Dungeon Finder left Native Hunts presentation visible")
-        controls.FrameForgeTestTime = 14
-        controls.LFDParentFrame.hooks["OnShow"]()
-        if (controls.LFDQueueFrame.visible or not controls.NativeHuntsFrame.visible or
+        controls.NativeHuntsFrame.Show(controls.NativeHuntsFrame)
+        controls.NativeHuntsFrame_OnPveShow()
+        if (not controls.NativeHuntsFrame.visible or
                 not controls.FrameForge_Dungeon_Finder_UI.visible or
                 controls.LFDParentFramePortraitTexture.visible or
                 controls.LFDParentFramePortraitIcon.visible or
-                controls.FrameForgeTestRequests != 3):
-            raise AssertionError("reopening Dungeon Finder did not restore Hunts selection")
+                controls.FrameForgeTestRequests != 1):
+            raise AssertionError("shared PvE activation did not show Native Hunts")
+        controls.NativeHuntsFrame_OnPveHide()
+        controls.NativeHuntsFrame.Hide(controls.NativeHuntsFrame)
+        if controls.NativeHuntsFrame.visible or controls.FrameForge_Dungeon_Finder_UI.visible:
+            raise AssertionError("shared PvE deactivation left Native Hunts visible")
+        controls.FrameForgeTestTime = 12
+        controls.NativeHuntsFrame.Show(controls.NativeHuntsFrame)
+        controls.NativeHuntsFrame_OnPveShow()
         controls.NativeHuntsFrame_OnEvent(controls.NativeHuntsFrameInitializer, "GOSSIP_SHOW")
-        if (controls.LFDParentFrame.visible or controls.NativeHuntsFrame.visible or
-                controls.FrameForge_Dungeon_Finder_UI.visible or
-                controls.LFDParentFrame.selectedTab != 2):
+        if controls.LFDParentFrame.visible:
             raise AssertionError("opening gossip did not yield the Hunts panel without losing its state")
-        controls.FrameForgeTestTime = 16
-        controls.LFDParentFrame.visible = True
-        controls.LFDParentFrame.hooks["OnShow"]()
-        if (not controls.NativeHuntsFrame.visible or
-                not controls.FrameForge_Dungeon_Finder_UI.visible or
-                controls.LFDParentFrame.selectedTab != 2):
-            raise AssertionError("reopening Hunts after gossip did not preserve its selected state")
-        controls.NativeHuntsFrame_SelectTab(1)
-        controls.LFDParentFrame.hooks["OnHide"]()
-        controls.LFDParentFrame.hooks["OnShow"]()
-        if (not controls.LFDQueueFrame.visible or controls.NativeHuntsFrame.visible or
-                controls.FrameForge_Dungeon_Finder_UI.visible or
-                not controls.LFDParentFramePortraitTexture.visible or
-                not controls.LFDParentFramePortraitIcon.visible):
-            raise AssertionError("reopening Dungeon Finder did not restore its stock portrait icon")
 
         def lua_table(value):
             if isinstance(value, dict):
@@ -1882,8 +1854,8 @@ def run_frameforge_functional_ui_checks() -> None:
                     not standard_state.Hunt_Tier_Icon.texture.endswith("hunt_icon_standard")):
                 raise AssertionError(f"Standard icon visibility regressed in state {state}")
         rendered(state="T", tier="E")
-        controls.NativeHuntsFrame_SelectTab(1)
-        controls.NativeHuntsFrame_SelectTab(2)
+        controls.NativeHuntsFrame_OnPveHide()
+        controls.NativeHuntsFrame_OnPveShow()
         if (not controls.Hunt_Tier_Icon__FFLayer.visible or
                 not controls.Hunt_Tier_Icon.texture.endswith("hunt_icon_elite")):
             raise AssertionError("reopening the Hunts tab lost Elite icon visibility")
@@ -1931,15 +1903,14 @@ def run_frameforge_functional_ui_checks() -> None:
                 "Browse Huntmaster's Seal rewards. (" in vendor_module or
                 "NativeHunts.SealStore.Tier1.Cost = 5" not in vendor_config):
             raise AssertionError("Seal vendor is not enabled for the Hunt Record regression vector")
-        controls.NativeHuntsFrame_SelectTab(2)
+        controls.NativeHuntsFrame.Show(controls.NativeHuntsFrame)
+        controls.NativeHuntsFrame_OnPveShow()
         for _ in range(6):
             controls.NativeHuntsFrame_OnEvent(
                 controls.NativeHuntsFrameInitializer, "GOSSIP_SHOW")
         controls.LFDParentFrame.visible = True
-        controls.LFDParentFrame.hooks["OnShow"]()
         after_vendor = rendered(active=False, state="I", tier="N", progress=0)
-        if (controls.LFDParentFrame.selectedTab != 2 or
-                not controls.NativeHuntsFrame.visible or
+        if (not controls.NativeHuntsFrame.visible or
                 not controls.FrameForge_Dungeon_Finder_UI.visible or
                 not after_vendor.Hunt_Panel_Record__FFLayer.visible or
                 after_vendor.Standard_Hunts_Value.text != "11" or
@@ -1959,9 +1930,9 @@ def run_frameforge_functional_ui_checks() -> None:
                 not controls.LFDQueueFrame.visible or
                 "Tracker_Target_Name" not in controls.NativeHuntsFrameInitializationError):
             raise AssertionError("missing exported control did not fail safely with a diagnostic")
-        controls.NativeHuntsFrame_SelectTab(2)
-        if controls.LFDParentFrame.selectedTab != 1:
-            raise AssertionError("failed initialization allowed the Hunts tab to activate")
+        controls.NativeHuntsFrame_OnPveShow()
+        if controls.NativeHuntsFrame.visible:
+            raise AssertionError("failed initialization allowed the Hunts page to activate")
         print("PASS direct Lua 5.1 FrameForge state and value vectors", flush=True)
     print("PASS functional FrameForge Native Hunts client contract", flush=True)
 
@@ -1970,7 +1941,7 @@ def run_frameforge_package_checks() -> None:
     """Verify deterministic explicit-content rebuilds for the current PTR package."""
     epf = ROOT / "content" / "mod-native-hunts.epf"
     manifest = json.loads((ROOT / "content" / "manifest.json").read_bytes())
-    if manifest.get("version") != "23-ptr1":
+    if manifest.get("version") != "24-ptr1":
         print("SKIP explicit FrameForge deterministic package contract", flush=True)
         return
     before = epf.read_bytes()

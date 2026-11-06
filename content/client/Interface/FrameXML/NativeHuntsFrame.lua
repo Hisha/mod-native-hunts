@@ -1,10 +1,8 @@
-local NATIVE_HUNTS_DUNGEON_TAB, NATIVE_HUNTS_HUNTS_TAB = 1, 2;
 local PREFIX, VERSION, MAX_MESSAGE, MAX_FRAGMENTS, MAX_RECORD = "NHUNTS", "1", 248, 8, 1024;
 local nonce, pendingNonce, lastSequence = 0, nil, 0;
 local assembly, hasSnapshot, timeoutGroup = nil, false, nil;
 local lastRequestAt = -100;
 local initialized, initializationError = false, nil;
-local selectedTab = NATIVE_HUNTS_DUNGEON_TAB;
 local vendorDropdown, vendorDropdownLabel, vendorCurrencyFrame, vendorCurrencyItem = nil, nil, nil, nil;
 local vendorStateActive = false;
 local vendorSelectedSpec, vendorRevision, vendorSealBalance = 1, 0, 0;
@@ -273,12 +271,6 @@ local function HandleVendorRefreshResult(fields, ready)
 	return true;
 end
 
-local function NativeHuntsFrame_UpdateMicroButtonTooltip(button)
-	if not button or not MicroButtonTooltipText then return; end
-	button.tooltipText = MicroButtonTooltipText("Player vs. Environment", "TOGGLELFGPARENT");
-	button.newbieText = "Find a dungeon group or review your Native Hunts.";
-end
-
 -- Exact control and wrapper identities from frameforge-manifest.json/controlInventory.
 -- State codes here are module-owned: I=Idle, T=Tracking, L=Located, F=Fight, R=Turnin.
 local PRESENTATION = {
@@ -386,8 +378,7 @@ end
 
 local function ValidateFrameForgeControls()
 	local required = {"LFDParentFrame", "LFDQueueFrame", "NativeHuntsFrame",
-		"FrameForge_Dungeon_Finder_UI", "Tracker_Hunt_Progress",
-		"LFDParentFrameTab1", "LFDParentFrameTab2", "LFDParentFramePortraitTexture",
+		"FrameForge_Dungeon_Finder_UI", "Tracker_Hunt_Progress", "LFDParentFramePortraitTexture",
 		"LFDParentFramePortraitIcon"};
 	for _, name in ipairs(required) do
 		if not _G[name] then return nil, name; end
@@ -575,43 +566,15 @@ local function RequestSnapshot()
 	if timeoutGroup then timeoutGroup:Stop(); timeoutGroup:Play(); end
 end
 
-local function PositionTabs()
-	LFDParentFrameTab1:ClearAllPoints();
-	LFDParentFrameTab1:SetPoint("BOTTOMLEFT", LFDParentFrame, "BOTTOMLEFT", 18, -27);
-	LFDParentFrameTab2:ClearAllPoints();
-	LFDParentFrameTab2:SetPoint("LEFT", LFDParentFrameTab1, "RIGHT", -15, 0);
+function NativeHuntsFrame_OnPveShow()
+	if not initialized then
+		ReportInitializationFailure("FrameForge presentation is not initialized."); return;
+	end
+	FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitArtworkVisible(false); RequestSnapshot();
 end
 
-local function InitializeTabs()
-	-- PanelTemplates_SetTab in the 3.3.5a client loops over frame.numTabs.
-	-- Establish that contract directly even when an optional resize helper is absent.
-	LFDParentFrame.numTabs = 2;
-	if PanelTemplates_SetNumTabs then PanelTemplates_SetNumTabs(LFDParentFrame, 2); end
-	if PanelTemplates_TabResize then
-		PanelTemplates_TabResize(LFDParentFrameTab1, 0);
-		PanelTemplates_TabResize(LFDParentFrameTab2, 0);
-	end
-end
-
-function NativeHuntsFrame_SelectTab(tab)
-	if not LFDParentFrame or not LFDQueueFrame or not NativeHuntsFrame then
-		ReportInitializationFailure("required Blizzard Dungeon Finder controls are unavailable."); return;
-	end
-	if tab == NATIVE_HUNTS_HUNTS_TAB and not initialized then
-		ReportInitializationFailure("FrameForge presentation is not initialized.");
-		tab = NATIVE_HUNTS_DUNGEON_TAB;
-	end
-	if type(LFDParentFrame.numTabs) ~= "number" then InitializeTabs(); end
-	PositionTabs();
-	if tab == NATIVE_HUNTS_HUNTS_TAB then
-		selectedTab = tab; LFDQueueFrame:Hide(); NativeHuntsFrame:Show();
-		FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitArtworkVisible(false); RequestSnapshot();
-	else
-		selectedTab = NATIVE_HUNTS_DUNGEON_TAB; NativeHuntsFrame:Hide();
-		if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
-		LFDQueueFrame:Show(); SetBlizzardPortraitArtworkVisible(true); tab = selectedTab;
-	end
-	if PanelTemplates_SetTab then PanelTemplates_SetTab(LFDParentFrame, tab); end
+function NativeHuntsFrame_OnPveHide()
+	if FrameForge_Dungeon_Finder_UI then FrameForge_Dungeon_Finder_UI:Hide(); end
 end
 
 function NativeHuntsFrame_OnLoad(self)
@@ -633,22 +596,6 @@ function NativeHuntsFrame_OnLoad(self)
 	timeout:SetChange(0); timeout:SetDuration(5); timeout:SetOrder(1);
 	timeoutGroup:SetScript("OnFinished",function()
 		if pendingNonce then pendingNonce=nil; hasSnapshot=false; assembly=nil; RenderWaiting("Hunt information unavailable."); end
-	end);
-    InitializeTabs();
-	NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB);
-	if LFDMicroButton then NativeHuntsFrame_UpdateMicroButtonTooltip(LFDMicroButton);
-		if LFDMicroButton.HookScript then LFDMicroButton:HookScript("OnEvent",function(button,event) if event=="UPDATE_BINDINGS" then NativeHuntsFrame_UpdateMicroButtonTooltip(button); end end); end end
-	if hooksecurefunc and type(LFDFrame_OnEvent)=="function" then hooksecurefunc("LFDFrame_OnEvent",function(frame,event) if event=="LFG_OPEN_FROM_GOSSIP" then NativeHuntsFrame_SelectTab(NATIVE_HUNTS_DUNGEON_TAB); end end); end
-	LFDParentFrame:HookScript("OnShow",function()
-		if selectedTab == NATIVE_HUNTS_HUNTS_TAB then
-			LFDQueueFrame:Hide(); NativeHuntsFrame:Show(); FrameForge_Dungeon_Finder_UI:Show(); SetBlizzardPortraitArtworkVisible(false); RequestSnapshot();
-		else
-			NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide(); LFDQueueFrame:Show(); SetBlizzardPortraitArtworkVisible(true);
-		end
-		PositionTabs();
-	end);
-	LFDParentFrame:HookScript("OnHide",function()
-		NativeHuntsFrame:Hide(); FrameForge_Dungeon_Finder_UI:Hide();
 	end);
 end
 
@@ -690,7 +637,7 @@ function NativeHuntsFrame_OnEvent(self,event,...)
 		-- panels when gossip opens, but our Hunts child could keep that parent's
 		-- mouse-bearing presentation alive.  Close only the custom Hunts view;
 		-- selectedTab and the last snapshot remain intact for the next reopen.
-		if selectedTab==NATIVE_HUNTS_HUNTS_TAB and LFDParentFrame and LFDParentFrame:IsShown() then
+		if NativeHuntsFrame and NativeHuntsFrame:IsShown() and LFDParentFrame and LFDParentFrame:IsShown() then
 			if HideUIPanel then HideUIPanel(LFDParentFrame); else LFDParentFrame:Hide(); end
 		end
 		return;
